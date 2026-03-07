@@ -1,4 +1,6 @@
 import { Image, Navigator, Text, View } from '@tarojs/components';
+import PageCtaCard from '../../components/PageCtaCard';
+import PageSectionTitle from '../../components/PageSectionTitle';
 
 const stats = [
   { value: '核心', label: '教研团队', note: '全职坐班答疑' },
@@ -74,6 +76,7 @@ const directions = [
     tag: '优势王牌',
     tagColor: '#4f46e5',
     tagBackground: '#eef2ff',
+    headerBackground: '#f7f5ff',
     iconColor: '#5b4dff',
     iconType: 'medical',
     desc: '覆盖解剖、生理、护理等核心课程与公共课同步辅导，适合目标明确的医护类学员。'
@@ -83,6 +86,7 @@ const directions = [
     tag: '重点建设',
     tagColor: '#0f172a',
     tagBackground: '#e2e8f0',
+    headerBackground: '#f8fafc',
     iconColor: '#334155',
     iconType: 'grid',
     desc: '从基础梳理到冲刺刷题的系统提分路线，适合理工与经管类考生。'
@@ -94,23 +98,6 @@ const environmentCards = [
   { label: '标准化宿舍', seed: 'dorm1' },
   { label: '自习室与答疑区', seed: 'library' }
 ];
-
-function SectionTitle(props) {
-  return (
-    <View style={{ display: 'flex', alignItems: 'center', marginBottom: '24rpx' }}>
-      <View
-        style={{
-          width: '10rpx',
-          height: '34rpx',
-          borderRadius: '999rpx',
-          backgroundColor: '#4f46e5',
-          marginRight: '14rpx'
-        }}
-      />
-      <Text style={{ fontSize: '34rpx', fontWeight: 800, color: '#0f172a' }}>{props.children}</Text>
-    </View>
-  );
-}
 
 function QuickIcon(props) {
   const commonWrap = {
@@ -1064,7 +1051,7 @@ export default function HomePage() {
       </View>
 
       <View style={{ margin: '42rpx 24rpx 0' }}>
-        <SectionTitle>四大学习优势</SectionTitle>
+        <PageSectionTitle>四大学习优势</PageSectionTitle>
         <View style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between' }}>
           {advantages.map((item) => (
             <View
@@ -1122,7 +1109,7 @@ export default function HomePage() {
 
       <View style={{ margin: '42rpx 24rpx 0' }}>
         <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24rpx' }}>
-          <SectionTitle>沉浸式学习环境</SectionTitle>
+          <PageSectionTitle marginBottom="0">沉浸式学习环境</PageSectionTitle>
           <Navigator url="/pages/about/index" openType="switchTab">
             <Text style={{ fontSize: '22rpx', color: '#64748b', marginTop: '-18rpx' }}>查看更多</Text>
           </Navigator>
@@ -1194,7 +1181,7 @@ export default function HomePage() {
       </View>
 
       <View style={{ margin: '42rpx 20rpx 0' }}>
-        <SectionTitle>核心专业方向</SectionTitle>
+        <PageSectionTitle>核心专业方向</PageSectionTitle>
         {directions.map((item, index) => (
           <Navigator
             key={item.title}
@@ -1217,32 +1204,41 @@ export default function HomePage() {
               }}
             >
               <View>
-                <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '34rpx' }}>
-                  <View style={{ display: 'flex', alignItems: 'center', flex: 1, paddingRight: '20rpx' }}>
-                    <View style={{ marginRight: '18rpx', flexShrink: 0 }}>
-                      <DirectionIcon type={item.iconType} color={item.iconColor} />
+                <View
+                  style={{
+                    backgroundColor: item.headerBackground,
+                    borderRadius: '24rpx',
+                    padding: '18rpx 18rpx',
+                    marginBottom: '30rpx'
+                  }}
+                >
+                  <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <View style={{ display: 'flex', alignItems: 'center', flex: 1, paddingRight: '20rpx' }}>
+                      <View style={{ marginRight: '18rpx', flexShrink: 0 }}>
+                        <DirectionIcon type={item.iconType} color={item.iconColor} />
+                      </View>
+                      <Text style={{ fontSize: '38rpx', color: '#0f172a', fontWeight: 800 }}>{item.title}</Text>
                     </View>
-                    <Text style={{ fontSize: '38rpx', color: '#0f172a', fontWeight: 800 }}>{item.title}</Text>
+                    <Text
+                      style={{
+                        fontSize: '20rpx',
+                        color: item.tagColor,
+                        backgroundColor: item.tagBackground,
+                        padding: '10rpx 18rpx',
+                        borderRadius: '999rpx',
+                        fontWeight: 700,
+                        flexShrink: 0
+                      }}
+                    >
+                      {item.tag}
+                    </Text>
                   </View>
-                  <Text
-                    style={{
-                      fontSize: '20rpx',
-                      color: item.tagColor,
-                      backgroundColor: item.tagBackground,
-                      padding: '10rpx 18rpx',
-                      borderRadius: '999rpx',
-                      fontWeight: 700,
-                      flexShrink: 0
-                    }}
-                  >
-                    {item.tag}
-                  </Text>
                 </View>
                 <Text
                   style={{
                     display: 'block',
                     fontSize: '23rpx',
-                    width: '84%',
+                    width: '88%',
                     lineHeight: 1.95,
                     color: '#64748b'
                   }}
@@ -1262,96 +1258,77 @@ export default function HomePage() {
             </View>
           </Navigator>
         ))}
+
+        <View
+          style={{
+            marginTop: '24rpx',
+            background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
+            borderRadius: '40rpx',
+            padding: '40rpx 38rpx 36rpx',
+            minHeight: '280rpx',
+            border: '1rpx solid rgba(226,232,240,0.95)',
+            boxSizing: 'border-box'
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: '#eef2f7',
+              borderRadius: '24rpx',
+              padding: '18rpx 18rpx',
+              marginBottom: '26rpx',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}
+          >
+            <View style={{ display: 'flex', alignItems: 'center', flex: 1, paddingRight: '18rpx' }}>
+              <View
+                style={{
+                  width: '28rpx',
+                  height: '28rpx',
+                  borderWidth: '3rpx',
+                  borderStyle: 'solid',
+                  borderColor: '#94a3b8',
+                  borderRadius: '6rpx',
+                  marginRight: '18rpx',
+                  boxSizing: 'border-box'
+                }}
+              />
+              <Text style={{ fontSize: '36rpx', color: '#94a3b8', fontWeight: 800 }}>更多专业方向</Text>
+            </View>
+            <Text
+              style={{
+                fontSize: '20rpx',
+                color: '#64748b',
+                backgroundColor: '#e2e8f0',
+                padding: '10rpx 18rpx',
+                borderRadius: '999rpx',
+                fontWeight: 700
+              }}
+            >
+              筹备中
+            </Text>
+          </View>
+          <Text
+            style={{
+              display: 'block',
+              width: '88%',
+              fontSize: '23rpx',
+              lineHeight: 1.9,
+              color: '#94a3b8'
+            }}
+          >
+            经管、计算机等更多方向教研团队正在组建中，敬请期待。
+          </Text>
+        </View>
       </View>
 
-      <View
-        style={{
-          margin: '42rpx 24rpx 0',
-          borderRadius: '34rpx',
-          padding: '36rpx 30rpx 34rpx',
-          background: 'linear-gradient(135deg, #111d3f 0%, #0f1936 60%, #0a1229 100%)',
-          boxShadow: '0 16rpx 30rpx rgba(15,23,42,0.18)',
-          overflow: 'hidden',
-          position: 'relative'
-        }}
-      >
-        <View
-          style={{
-            position: 'absolute',
-            right: '-56rpx',
-            top: '-48rpx',
-            width: '220rpx',
-            height: '220rpx',
-            borderRadius: '999rpx',
-            backgroundColor: 'rgba(91,77,255,0.14)'
-          }}
-        />
-        <View
-          style={{
-            position: 'absolute',
-            left: '250rpx',
-            top: '0',
-            width: '1rpx',
-            height: '100%',
-            backgroundColor: 'rgba(255,255,255,0.05)'
-          }}
-        />
-        <Text
-          style={{
-            position: 'relative',
-            display: 'block',
-            fontSize: '40rpx',
-            color: '#ffffff',
-            fontWeight: 900,
-            marginBottom: '14rpx'
-          }}
-        >
-          免费学情评估
-        </Text>
-        <Text
-          style={{
-            position: 'relative',
-            display: 'block',
-            fontSize: '22rpx',
-            lineHeight: 1.75,
-            color: '#cbd5e1',
-            marginBottom: '28rpx',
-            width: '520rpx',
-            maxWidth: '100%'
-          }}
-        >
-          不确定适合哪个方向，或者想知道当前基础与目标院校之间差距，可以先做一次评估。
-        </Text>
-        <Navigator
-          url="/pages/about/index"
-          openType="switchTab"
-          style={{
-            position: 'relative',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minWidth: '228rpx',
-            height: '84rpx',
-            padding: '0 30rpx',
-            borderRadius: '26rpx',
-            backgroundColor: '#ffffff',
-            boxShadow: '0 12rpx 24rpx rgba(15,23,42,0.16)'
-          }}
-        >
-          <Text style={{ fontSize: '26rpx', color: '#0f172a', fontWeight: 800 }}>预约咨询</Text>
-        </Navigator>
-        <Text
-          style={{
-            position: 'relative',
-            display: 'block',
-            marginTop: '18rpx',
-            fontSize: '18rpx',
-            color: '#94a3b8'
-          }}
-        >
-          方向建议 · 学情诊断 · 备考规划
-        </Text>
-      </View>
+      <PageCtaCard
+        title="免费学情评估"
+        desc="不确定适合哪个方向，或者想知道当前基础与目标院校之间差距，可以先做一次评估。"
+        buttonText="预约咨询"
+        footnote="方向建议 · 学情诊断 · 备考规划"
+      />
 
       <Navigator
         url="/pages/about/index"

@@ -10,12 +10,12 @@ export default {
     navigationBarTitleText: '淮安启航',
     navigationBarBackgroundColor: '#ffffff',
     navigationBarTextStyle: 'black',
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#f3f5fb',
     backgroundTextStyle: 'dark'
   },
   tabBar: {
-    color: '#94a3b8',
-    selectedColor: '#4f46e5',
+    color: '#64748b',
+    selectedColor: '#5b4dff',
     backgroundColor: '#ffffff',
     borderStyle: 'black',
     list: [
