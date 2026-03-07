@@ -1,16 +1,25 @@
 import { ScrollView, Text, View } from '@tarojs/components';
-import BottomNav from '@/components/BottomNav';
 
 const categories = ['全部方向', '医护大类', '高数专项', '更多筹备'];
-const medicalItems = ['核心专业课精讲', '历年真题与考点串讲', '公共课同步辅导', '全职教研答疑'];
-const mathItems = ['基础到公式定理讲解', '典型例题剖析', '阶段测评与复盘', '小班精细教学'];
+const medicalItems = [
+  '核心专业课精讲',
+  '历年真题与考点串讲',
+  '公共课同步辅导',
+  '全职教研答疑'
+];
+const mathItems = [
+  '基础概念与公式体系重建',
+  '典型题型拆解与训练',
+  '阶段测评与错题复盘',
+  '小班制精细化讲解'
+];
 
 export default function CoursesPage() {
   return (
     <View className="page bg-slate-50">
       <View className="bg-white px-4 pb-4 pt-12 shadow-sm">
         <Text className="mb-1 block text-2xl font-extrabold text-slate-900">开设方向</Text>
-        <Text className="mb-3 block text-xs text-slate-500">精细化教研，按专业方向提供针对性辅导</Text>
+        <Text className="mb-3 block text-xs text-slate-500">根据不同基础和目标，提供聚焦方向与提分路径。</Text>
         <ScrollView scrollX className="whitespace-nowrap">
           {categories.map((cat, index) => (
             <View
@@ -26,20 +35,23 @@ export default function CoursesPage() {
       </View>
 
       <View className="p-4">
-        <View className="mb-6 rounded-3xl border border-indigo-100 bg-indigo-50 p-5">
-          <View className="mb-3 flex items-center">
-            <View className="mr-2 h-2 w-2 rounded-full bg-indigo-500" />
-            <Text className="text-sm font-bold text-indigo-900">方向选择建议</Text>
-          </View>
-          <Text className="mb-2 block text-xs text-indigo-800">护理、助产、临床背景建议优先选择医护方向。</Text>
-          <Text className="mb-2 block text-xs text-indigo-800">高数基础薄弱建议优先选择高数专项。</Text>
-          <Text className="mb-4 block text-xs text-indigo-800">如果还不确定方向，建议先做学情评估。</Text>
-          <View className="rounded-xl bg-white py-3">
-            <Text className="block text-center text-xs font-bold text-indigo-600">免费获取 1 对 1 规划</Text>
+        <View
+          className="mb-6 border border-indigo-100 bg-indigo-50 p-5"
+          style={{ borderRadius: '30rpx' }}
+        >
+          <Text className="mb-3 block text-sm font-bold text-indigo-900">方向选择建议</Text>
+          <Text className="mb-2 block text-xs text-indigo-800">护理、助产、临床等背景适合优先选择医护方向。</Text>
+          <Text className="mb-2 block text-xs text-indigo-800">高数基础薄弱或跨度较大，建议优先选择高数专项。</Text>
+          <Text className="mb-4 block text-xs text-indigo-800">如果还不确定方向，建议先做一次学情评估。</Text>
+          <View className="rounded-2xl bg-white py-3">
+            <Text className="text-center text-xs font-bold text-indigo-600">免费获取 1 对 1 规划</Text>
           </View>
         </View>
 
-        <View className="mb-6 overflow-hidden rounded-3xl bg-slate-900 p-5 text-white">
+        <View
+          className="mb-6 overflow-hidden bg-slate-900 p-5"
+          style={{ borderRadius: '30rpx' }}
+        >
           <View className="mb-4 flex items-start justify-between">
             <View>
               <View className="mb-2 inline-flex rounded-md bg-indigo-900 px-2 py-1">
@@ -50,10 +62,10 @@ export default function CoursesPage() {
             <View className="h-10 w-10 rounded-full bg-indigo-800" />
           </View>
 
-          <View className="mb-4 rounded-2xl bg-slate-800 p-4">
+          <View className="mb-4 bg-slate-800 p-4" style={{ borderRadius: '24rpx' }}>
             <Text className="mb-2 block text-xs text-slate-300">适合人群</Text>
-            <Text className="block text-sm font-medium text-white">
-              适合护理、助产、临床等专业，目标为公办或优质民办本科的学员。
+            <Text className="block text-sm leading-6 text-white">
+              护理、助产、临床等专业，目标公办或优质民办本科的学员。
             </Text>
           </View>
 
@@ -73,12 +85,15 @@ export default function CoursesPage() {
             </View>
           </View>
 
-          <View className="rounded-xl bg-indigo-600 py-3">
+          <View className="rounded-2xl bg-indigo-600 py-3">
             <Text className="text-center text-sm font-bold text-white">查看医护方向详情</Text>
           </View>
         </View>
 
-        <View className="rounded-3xl border border-slate-200 bg-white p-5">
+        <View
+          className="border border-slate-200 bg-white p-5"
+          style={{ borderRadius: '30rpx' }}
+        >
           <View className="mb-4 flex items-start justify-between">
             <View>
               <View className="mb-2 inline-flex rounded-md bg-slate-100 px-2 py-1">
@@ -89,10 +104,10 @@ export default function CoursesPage() {
             <View className="h-10 w-10 rounded-full bg-slate-100" />
           </View>
 
-          <View className="mb-4 rounded-2xl bg-slate-50 p-4">
+          <View className="mb-4 bg-slate-50 p-4" style={{ borderRadius: '24rpx' }}>
             <Text className="mb-1 block text-xs text-slate-500">适合人群</Text>
-            <Text className="block text-sm font-medium text-slate-800">
-              适合理工、经管类考生，以及高数基础薄弱需要系统提分的学员。
+            <Text className="block text-sm leading-6 text-slate-800">
+              理工、经管类考生，以及高数基础薄弱、需要系统提分的学员。
             </Text>
           </View>
 
@@ -112,13 +127,11 @@ export default function CoursesPage() {
             </View>
           </View>
 
-          <View className="rounded-xl bg-slate-900 py-3">
+          <View className="rounded-2xl bg-slate-900 py-3">
             <Text className="text-center text-sm font-bold text-white">查看高数方向详情</Text>
           </View>
         </View>
       </View>
-
-      <BottomNav />
     </View>
   );
 }
