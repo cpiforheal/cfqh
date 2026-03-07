@@ -668,28 +668,74 @@ function AdvantageIcon(props) {
 }
 
 function DirectionIcon(props) {
-  const outerColor = props.color;
-
   if (props.type === 'medical') {
     return (
       <View
         style={{
-          width: '36rpx',
-          height: '36rpx',
-          borderRadius: '12rpx',
-          backgroundColor: '#f6f7ff',
-          border: '1rpx solid rgba(226,232,240,0.9)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
+          position: 'relative',
+          width: '28rpx',
+          height: '24rpx'
         }}
       >
         <View
           style={{
-            width: '14rpx',
-            height: '14rpx',
+            position: 'absolute',
+            left: '0',
+            top: '12rpx',
+            width: '7rpx',
+            height: '3rpx',
             borderRadius: '999rpx',
-            backgroundColor: outerColor
+            backgroundColor: props.color
+          }}
+        />
+        <View
+          style={{
+            position: 'absolute',
+            left: '6rpx',
+            top: '6rpx',
+            width: '4rpx',
+            height: '10rpx',
+            borderTopWidth: '3rpx',
+            borderRightWidth: '3rpx',
+            borderStyle: 'solid',
+            borderColor: props.color,
+            transform: 'rotate(24deg)'
+          }}
+        />
+        <View
+          style={{
+            position: 'absolute',
+            left: '11rpx',
+            top: '12rpx',
+            width: '5rpx',
+            height: '3rpx',
+            borderRadius: '999rpx',
+            backgroundColor: props.color
+          }}
+        />
+        <View
+          style={{
+            position: 'absolute',
+            left: '15rpx',
+            top: '6rpx',
+            width: '4rpx',
+            height: '10rpx',
+            borderTopWidth: '3rpx',
+            borderRightWidth: '3rpx',
+            borderStyle: 'solid',
+            borderColor: props.color,
+            transform: 'rotate(-24deg)'
+          }}
+        />
+        <View
+          style={{
+            position: 'absolute',
+            right: '0',
+            top: '12rpx',
+            width: '7rpx',
+            height: '3rpx',
+            borderRadius: '999rpx',
+            backgroundColor: props.color
           }}
         />
       </View>
@@ -699,32 +745,42 @@ function DirectionIcon(props) {
   return (
     <View
       style={{
-        width: '36rpx',
-        height: '36rpx',
-        borderRadius: '12rpx',
-        backgroundColor: '#f8fafc',
-        border: '1rpx solid rgba(226,232,240,0.9)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexWrap: 'wrap',
-        padding: '8rpx',
+        position: 'relative',
+        width: '24rpx',
+        height: '28rpx',
+        borderWidth: '3rpx',
+        borderStyle: 'solid',
+        borderColor: props.color,
+        borderRadius: '5rpx',
         boxSizing: 'border-box'
       }}
     >
       <View
         style={{
-          width: '6rpx',
-          height: '6rpx',
-          borderRadius: '2rpx',
-          backgroundColor: outerColor,
+          position: 'absolute',
+          left: '4rpx',
+          top: '4rpx',
+          width: '3rpx',
+          height: '3rpx',
+          borderRadius: '1rpx',
+          backgroundColor: props.color,
           boxShadow:
-            '10rpx 0 0 ' +
-            outerColor +
-            ', 0 10rpx 0 ' +
-            outerColor +
-            ', 10rpx 10rpx 0 ' +
-            outerColor
+            '6rpx 0 0 ' +
+            props.color +
+            ', 12rpx 0 0 ' +
+            props.color +
+            ', 0 6rpx 0 ' +
+            props.color +
+            ', 6rpx 6rpx 0 ' +
+            props.color +
+            ', 12rpx 6rpx 0 ' +
+            props.color +
+            ', 0 12rpx 0 ' +
+            props.color +
+            ', 6rpx 12rpx 0 ' +
+            props.color +
+            ', 12rpx 12rpx 0 ' +
+            props.color
         }}
       />
     </View>
@@ -899,10 +955,11 @@ export default function HomePage() {
       <View style={{ margin: '-60rpx 24rpx 0', position: 'relative', zIndex: 3 }}>
         <View
           style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '34rpx',
-            padding: '30rpx 20rpx 24rpx',
-            boxShadow: '0 20rpx 50rpx rgba(15,23,42,0.10)'
+            background: 'linear-gradient(180deg, #ffffff 0%, #fbfcff 100%)',
+            borderRadius: '36rpx',
+            padding: '28rpx 18rpx 24rpx',
+            boxShadow: '0 14rpx 30rpx rgba(148,163,184,0.12)',
+            border: '1rpx solid rgba(226,232,240,0.82)'
           }}
         >
           <View style={{ display: 'flex', alignItems: 'stretch', justifyContent: 'space-between' }}>
@@ -932,7 +989,7 @@ export default function HomePage() {
                   style={{
                     display: 'block',
                     textAlign: 'center',
-                    fontSize: '44rpx',
+                    fontSize: '42rpx',
                     color: '#0f172a',
                     fontWeight: 900,
                     lineHeight: 1.1
@@ -944,9 +1001,9 @@ export default function HomePage() {
                   style={{
                     display: 'block',
                     textAlign: 'center',
-                    fontSize: '22rpx',
+                    fontSize: '20rpx',
                     color: '#64748b',
-                    marginTop: '10rpx'
+                    marginTop: '8rpx'
                   }}
                 >
                   {item.note}
@@ -972,9 +1029,9 @@ export default function HomePage() {
             <View
               style={{
                 background: item.cardBackground,
-                borderRadius: '30rpx',
+                borderRadius: '32rpx',
                 padding: '22rpx 10rpx 22rpx',
-                boxShadow: '0 12rpx 28rpx rgba(148,163,184,0.10)',
+                boxShadow: '0 12rpx 24rpx rgba(148,163,184,0.10)',
                 border: '1rpx solid rgba(226,232,240,0.85)'
               }}
             >
@@ -1016,9 +1073,9 @@ export default function HomePage() {
                 width: '48.2%',
                 marginBottom: '16rpx',
                 padding: '26rpx 24rpx 24rpx',
-                borderRadius: '30rpx',
+                borderRadius: '32rpx',
                 background: 'linear-gradient(180deg, #ffffff 0%, #fbfcff 100%)',
-                boxShadow: '0 12rpx 24rpx rgba(148,163,184,0.10)',
+                boxShadow: '0 12rpx 24rpx rgba(148,163,184,0.09)',
                 border: '1rpx solid rgba(226,232,240,0.75)',
                 boxSizing: 'border-box'
               }}
@@ -1078,7 +1135,7 @@ export default function HomePage() {
               style={{
                 width: '48.5%',
                 height: '270rpx',
-                borderRadius: '30rpx',
+                borderRadius: '32rpx',
                 overflow: 'hidden',
                 position: 'relative'
               }}
@@ -1108,7 +1165,7 @@ export default function HomePage() {
         <View
           style={{
             height: '270rpx',
-            borderRadius: '30rpx',
+            borderRadius: '32rpx',
             overflow: 'hidden',
             position: 'relative'
           }}
@@ -1136,57 +1193,72 @@ export default function HomePage() {
         </View>
       </View>
 
-      <View style={{ margin: '42rpx 24rpx 0' }}>
+      <View style={{ margin: '42rpx 20rpx 0' }}>
         <SectionTitle>核心专业方向</SectionTitle>
         {directions.map((item, index) => (
           <Navigator
             key={item.title}
             url="/pages/courses/index"
             openType="switchTab"
-            style={{ display: 'block', marginBottom: index === directions.length - 1 ? '0' : '14rpx' }}
+            style={{ display: 'block', marginBottom: index === directions.length - 1 ? '0' : '24rpx' }}
           >
             <View
               style={{
-                background: 'linear-gradient(180deg, #ffffff 0%, #fbfcff 100%)',
-                borderRadius: '32rpx',
-                padding: '28rpx 28rpx 26rpx',
-                boxShadow: '0 12rpx 24rpx rgba(148,163,184,0.10)',
-                border: '1rpx solid rgba(226,232,240,0.85)'
+                background: '#ffffff',
+                borderRadius: '40rpx',
+                padding: '44rpx 38rpx 40rpx',
+                minHeight: '336rpx',
+                boxShadow: '0 20rpx 38rpx rgba(148,163,184,0.15)',
+                border: '1rpx solid rgba(226,232,240,0.92)',
+                boxSizing: 'border-box',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between'
               }}
             >
-              <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16rpx' }}>
-                <View style={{ display: 'flex', alignItems: 'center', flex: 1, paddingRight: '16rpx' }}>
-                  <View style={{ marginRight: '12rpx', flexShrink: 0 }}>
-                    <DirectionIcon type={item.iconType} color={item.iconColor} />
+              <View>
+                <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '34rpx' }}>
+                  <View style={{ display: 'flex', alignItems: 'center', flex: 1, paddingRight: '20rpx' }}>
+                    <View style={{ marginRight: '18rpx', flexShrink: 0 }}>
+                      <DirectionIcon type={item.iconType} color={item.iconColor} />
+                    </View>
+                    <Text style={{ fontSize: '38rpx', color: '#0f172a', fontWeight: 800 }}>{item.title}</Text>
                   </View>
-                  <Text style={{ fontSize: '30rpx', color: '#0f172a', fontWeight: 800 }}>{item.title}</Text>
+                  <Text
+                    style={{
+                      fontSize: '20rpx',
+                      color: item.tagColor,
+                      backgroundColor: item.tagBackground,
+                      padding: '10rpx 18rpx',
+                      borderRadius: '999rpx',
+                      fontWeight: 700,
+                      flexShrink: 0
+                    }}
+                  >
+                    {item.tag}
+                  </Text>
                 </View>
                 <Text
                   style={{
-                    fontSize: '20rpx',
-                    color: item.tagColor,
-                    backgroundColor: item.tagBackground,
-                    padding: '8rpx 14rpx',
-                    borderRadius: '999rpx',
-                    fontWeight: 700,
-                    flexShrink: 0
+                    display: 'block',
+                    fontSize: '23rpx',
+                    width: '84%',
+                    lineHeight: 1.95,
+                    color: '#64748b'
                   }}
                 >
-                  {item.tag}
+                  {item.desc}
                 </Text>
               </View>
-              <Text
+              <View
                 style={{
-                  display: 'block',
-                  fontSize: '22rpx',
-                  lineHeight: 1.7,
-                  color: '#64748b',
-                  marginBottom: '16rpx'
+                  marginTop: '28rpx',
+                  paddingTop: '22rpx',
+                  borderTop: '1rpx solid rgba(226,232,240,0.7)'
                 }}
               >
-                {item.desc}
-              </Text>
-              <Text style={{ fontSize: '22rpx', color: '#1e293b', fontWeight: 700 }}>查看方向详情</Text>
+                <Text style={{ fontSize: '24rpx', color: item.tagColor, fontWeight: 700 }}>查看方向详情 ›</Text>
+              </View>
             </View>
           </Navigator>
         ))}
@@ -1195,30 +1267,57 @@ export default function HomePage() {
       <View
         style={{
           margin: '42rpx 24rpx 0',
-          borderRadius: '32rpx',
-          padding: '34rpx 30rpx',
-          background: 'linear-gradient(135deg, #101a33 0%, #0f172a 100%)',
-          boxShadow: '0 16rpx 34rpx rgba(15,23,42,0.16)'
+          borderRadius: '34rpx',
+          padding: '36rpx 30rpx 34rpx',
+          background: 'linear-gradient(135deg, #111d3f 0%, #0f1936 60%, #0a1229 100%)',
+          boxShadow: '0 16rpx 30rpx rgba(15,23,42,0.18)',
+          overflow: 'hidden',
+          position: 'relative'
         }}
       >
+        <View
+          style={{
+            position: 'absolute',
+            right: '-56rpx',
+            top: '-48rpx',
+            width: '220rpx',
+            height: '220rpx',
+            borderRadius: '999rpx',
+            backgroundColor: 'rgba(91,77,255,0.14)'
+          }}
+        />
+        <View
+          style={{
+            position: 'absolute',
+            left: '250rpx',
+            top: '0',
+            width: '1rpx',
+            height: '100%',
+            backgroundColor: 'rgba(255,255,255,0.05)'
+          }}
+        />
         <Text
           style={{
+            position: 'relative',
             display: 'block',
-            fontSize: '36rpx',
+            fontSize: '40rpx',
             color: '#ffffff',
-            fontWeight: 800,
-            marginBottom: '12rpx'
+            fontWeight: 900,
+            marginBottom: '14rpx'
           }}
         >
           免费学情评估
         </Text>
         <Text
           style={{
+            position: 'relative',
             display: 'block',
             fontSize: '22rpx',
-            lineHeight: 1.7,
+            lineHeight: 1.75,
             color: '#cbd5e1',
-            marginBottom: '24rpx'
+            marginBottom: '28rpx',
+            width: '520rpx',
+            maxWidth: '100%'
           }}
         >
           不确定适合哪个方向，或者想知道当前基础与目标院校之间差距，可以先做一次评估。
@@ -1227,33 +1326,86 @@ export default function HomePage() {
           url="/pages/about/index"
           openType="switchTab"
           style={{
+            position: 'relative',
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            minWidth: '216rpx',
-            height: '80rpx',
-            padding: '0 28rpx',
-            borderRadius: '24rpx',
-            backgroundColor: '#ffffff'
+            minWidth: '228rpx',
+            height: '84rpx',
+            padding: '0 30rpx',
+            borderRadius: '26rpx',
+            backgroundColor: '#ffffff',
+            boxShadow: '0 12rpx 24rpx rgba(15,23,42,0.16)'
           }}
         >
           <Text style={{ fontSize: '26rpx', color: '#0f172a', fontWeight: 800 }}>预约咨询</Text>
         </Navigator>
+        <Text
+          style={{
+            position: 'relative',
+            display: 'block',
+            marginTop: '18rpx',
+            fontSize: '18rpx',
+            color: '#94a3b8'
+          }}
+        >
+          方向建议 · 学情诊断 · 备考规划
+        </Text>
       </View>
 
-      <View
+      <Navigator
+        url="/pages/about/index"
+        openType="switchTab"
         style={{
           position: 'fixed',
           right: '26rpx',
           bottom: '182rpx',
-          width: '92rpx',
-          height: '92rpx',
+          width: '96rpx',
+          height: '96rpx',
           borderRadius: '999rpx',
-          backgroundColor: '#ff7a00',
-          boxShadow: '0 16rpx 28rpx rgba(234,88,12,0.34)',
+          background: 'linear-gradient(180deg, #ff8a1f 0%, #ff6a00 100%)',
+          boxShadow: '0 18rpx 34rpx rgba(255,106,0,0.40)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 20
         }}
-   
+      >
+        <View
+          style={{
+            position: 'absolute',
+            width: '116rpx',
+            height: '116rpx',
+            borderRadius: '999rpx',
+            border: '1rpx solid rgba(255,186,120,0.24)'
+          }}
+        />
+        <View
+          style={{
+            width: '40rpx',
+            height: '40rpx',
+            borderRadius: '999rpx',
+            borderWidth: '4rpx',
+            borderStyle: 'solid',
+            borderColor: '#ffffff',
+            position: 'relative',
+            boxSizing: 'border-box'
+          }}
+        >
+          <View
+            style={{
+              position: 'absolute',
+              right: '-4rpx',
+              bottom: '-7rpx',
+              width: '12rpx',
+              height: '12rpx',
+              borderBottom: '4rpx solid #ffffff',
+              borderRight: '4rpx solid #ffffff',
+              transform: 'rotate(42deg)'
+            }}
+          />
+        </View>
+      </Navigator>
+    </View>
+  );
+}
