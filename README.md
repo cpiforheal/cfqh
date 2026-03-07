@@ -1,20 +1,61 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# 🎓 专转本精细化教研平台 (Mobile Web App)
 
-# Run and deploy your AI Studio app
+本项目是一个专为“江苏专转本”初创精品培训机构量身定制的移动端 Web 应用。抛弃了传统教培机构“重销售、卖班型”的刻板印象，本项目以**“精细化教研”**为核心定位，主打**“医护大类”**与**“高数专项”**两大王牌方向，致力于通过专业、克制、值得信赖的 UI 设计，向学员传递高质量的教学服务价值。
 
-This contains everything you need to run your app locally.
+## ✨ 核心设计理念 (Design Philosophy)
 
-View your app in AI Studio: https://ai.studio/apps/23f1c6b0-8fdd-445b-897c-adb748014ff9
+- **去销售化，重专业度**：移除了满屏的“VIP班”、“特训营”和价格标签，将核心导航替换为“开设方向”，引导用户按专业和自身短板进行探索。
+- **深色质感与留白**：采用 `Slate` (深石板蓝) 与 `Indigo` (靛蓝) 的主色调，结合大圆角和毛玻璃效果 (Glassmorphism)，营造出严谨、高端、学术的机构氛围。
+- **移动端优先 (Mobile-First)**：全面适配移动端交互习惯，底部固定导航栏，卡片式布局，流畅的滚动体验。
 
-## Run Locally
+## 🚀 核心功能模块 (Core Modules)
 
-**Prerequisites:**  Node.js
+1. **🏠 首页 (Home)**
+   - 品牌 Hero 区：直击痛点的 Slogan 与核心教研数据背书。
+   - 快捷导航：快速直达机构介绍、开设方向、师资团队等核心页面。
+   - 王牌方向展示：突出展示“医护大类”与“高数专项”。
+2. **🧭 开设方向 (Directions)**
+   - 医护大类方向：深色沉浸式卡片，展示适合人群、培养方式与历届成果。
+   - 高数专项突破：浅色清爽卡片，聚焦零基础扫盲与提分策略。
+3. **👨‍🏫 师资团队 (Teachers)**
+   - 名师卡片：展示教师教龄、主讲方向、教学方法论（如“三步解题法”、“模块化拆解法”）。
+   - 提分成果：用真实数据说话，直击学员痛点。
+4. **🏢 关于我们 (About)**
+   - 机构简介：传递“严管厚爱，教书育人”的办学理念。
+   - 教学环境：展示沉浸式自习室、全封闭校区等硬件设施。
 
+## 🛠️ 技术栈 (Tech Stack)
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+- **前端框架**: React 18 + TypeScript
+- **构建工具**: Vite
+- **样式方案**: Tailwind CSS (Utility-first CSS)
+- **图标库**: Lucide React
+
+## 📦 快速开始 (Getting Started)
+
+### 1. 安装依赖
+```bash
+npm install
+```
+
+### 2. 启动开发服务器
+```bash
+npm run dev
+```
+启动后，打开浏览器访问 `http://localhost:3000` 即可预览项目。
+
+### 3. 构建生产版本
+```bash
+npm run build
+```
+构建产物将生成在 `dist` 目录下。
+
+## 📱 微信小程序适配指南
+
+本项目当前基于 React + Tailwind CSS 构建 Web H5 版本。如需将其迁移至**微信小程序**，推荐以下方案：
+
+1. **Taro + weapp-tailwindcss (强烈推荐)**：可近乎 100% 复用本项目的 React 语法和 Tailwind 类名，直接编译为小程序代码，大幅降低迁移成本。
+2. **原生 WXML + WXSS**：将项目中的 `div` 替换为 `view`，`span` 替换为 `text`，并将 Tailwind 的 `rem/px` 单位按比例替换为小程序的 `rpx` 响应式单位。
+
+---
+*Designed & Built for the next generation of educational institutions.*
