@@ -1,85 +1,89 @@
 ---
 name: taro-weapp-constraints
-description: [TODO: Complete and informative explanation of what the skill does and when to use it. Include WHEN to use this skill - specific scenarios, file types, or tasks that trigger it.]
+description: Build, style, debug, or review a Taro-based WeChat Mini Program in this repository. Use when editing `src/app.config.ts`, `src/pages/**`, `src/app.css`, tabBar settings, Tailwind/Taro styling, WXSS compatibility, WeChat DevTools white screens, or Taro build output under `dist/`.
 ---
 
 # Taro Weapp Constraints
 
 ## Overview
 
-[TODO: 1-2 sentences explaining what this skill enables]
+Use this skill when working on the Taro WeChat Mini Program in this repo. Favor changes that survive Taro compilation and render correctly in WeChat DevTools, even if that means using plainer patterns than on the web.
 
-## Structuring This Skill
+## Workflow
 
-[TODO: Choose the structure that best fits this skill's purpose. Common patterns:
+1. Edit source under `src/`, not `dist/`.
+2. Change navigation in `src/app.config.ts`.
+3. Change shared base styles in `src/app.css`.
+4. Change pages in `src/pages/**`.
+5. Run `npm run build:weapp` after meaningful edits.
+6. If build passes but DevTools shows a blank page, inspect `dist/app.wxss`, `dist/app.json`, and the newest DevTools log before changing page logic.
 
-**1. Workflow-Based** (best for sequential processes)
-- Works well when there are clear step-by-step procedures
-- Example: DOCX skill with "Workflow Decision Tree" -> "Reading" -> "Creating" -> "Editing"
-- Structure: ## Overview -> ## Workflow Decision Tree -> ## Step 1 -> ## Step 2...
+## Styling Rules
 
-**2. Task-Based** (best for tool collections)
-- Works well when the skill offers different operations/capabilities
-- Example: PDF skill with "Quick Start" -> "Merge PDFs" -> "Split PDFs" -> "Extract Text"
-- Structure: ## Overview -> ## Quick Start -> ## Task Category 1 -> ## Task Category 2...
+- Prefer stable Tailwind utility classes only.
+- Avoid Tailwind arbitrary values such as `rounded-[20rpx]`, `w-[123rpx]`, `shadow-[...]`, and similar bracket syntax.
+- Avoid slash-opacity classes such as `bg-white/10`, `border-white/20`, `text-slate-900/70`.
+- Avoid relying on classes that compile to escaped selectors in WXSS. If `dist/app.wxss` contains `\`, treat that as a bug.
+- Use inline `style` for:
+  - `rpx`-based radii and spacing that need exact values
+  - gradients
+  - overlay opacity
+  - uncommon shadows
+  - one-off dimensions
+- Keep `className` values simple and predictable. Good examples: `bg-white`, `rounded-xl`, `px-4`, `text-sm`, `grid-cols-2`.
+- If a visual effect is optional, prefer the simpler WXSS-safe version.
 
-**3. Reference/Guidelines** (best for standards or specifications)
-- Works well for brand guidelines, coding standards, or requirements
-- Example: Brand styling with "Brand Guidelines" -> "Colors" -> "Typography" -> "Features"
-- Structure: ## Overview -> ## Guidelines -> ## Specifications -> ## Usage...
+## Navigation Rules
 
-**4. Capabilities-Based** (best for integrated systems)
-- Works well when the skill provides multiple interrelated features
-- Example: Product Management with "Core Capabilities" -> numbered capability list
-- Structure: ## Overview -> ## Core Capabilities -> ### 1. Feature -> ### 2. Feature...
+- Use native `tabBar` in `src/app.config.ts` for bottom navigation.
+- Do not build a fake bottom nav inside pages unless the task explicitly requires a custom non-tab page footer.
+- For tab switching, use `Navigator` with `openType="switchTab"`.
+- Use normal page navigation only for non-tab pages.
 
-Patterns can be mixed and matched as needed. Most skills combine patterns (e.g., start with task-based, add workflow for complex operations).
+## Page Rules
 
-Delete this entire "Structuring This Skill" section when done - it's just guidance.]
+- Build pages with `@tarojs/components`, not DOM tags.
+- Prefer explicit layout containers and visible content near the top of the page so white-screen debugging is easy.
+- If a page is visually critical, make the first screen work with inline `style` first, then reintroduce safe utility classes gradually.
+- When content looks blank, verify whether elements exist in `dist/pages/**/index.js` before assuming the route failed.
 
-## [TODO: Replace with the first main section based on chosen structure]
+## Build And Debug
 
-[TODO: Add content here. See examples in existing skills:
-- Code samples for technical skills
-- Decision trees for complex workflows
-- Concrete examples with realistic user requests
-- References to scripts/templates/references as needed]
+### Build check
 
-## Resources (optional)
+- Run `npm run build:weapp`.
+- Confirm `dist/app.json` includes the expected pages and `tabBar`.
+- Confirm `dist/assets/**` contains required icons.
 
-Create only the resource directories this skill actually needs. Delete this section if no resources are required.
+### WXSS failure
 
-### scripts/
-Executable code (Python/Bash/etc.) that can be run directly to perform specific operations.
+If DevTools reports `app.wxss ... unexpected '\'`:
 
-**Examples from other skills:**
-- PDF skill: `fill_fillable_fields.py`, `extract_form_field_info.py` - utilities for PDF manipulation
-- DOCX skill: `document.py`, `utilities.py` - Python modules for document processing
+1. Search `dist/app.wxss` for `\`.
+2. Search `src/` for bracket utilities and slash-opacity utilities.
+3. Replace those classes with inline `style` or simpler classes.
+4. Rebuild and recheck that `dist/app.wxss` no longer contains `\`.
 
-**Appropriate for:** Python scripts, shell scripts, or any executable code that performs automation, data processing, or specific operations.
+### White screen
 
-**Note:** Scripts may be executed without loading into context, but can still be read by Codex for patching or environment adjustments.
+If DevTools shows a blank page:
 
-### references/
-Documentation and reference material intended to be loaded into context to inform Codex's process and thinking.
+1. Confirm `npm run build:weapp` succeeds.
+2. Check DevTools console for WXSS parse errors before JS errors.
+3. Inspect the newest DevTools log in the repo if one was exported there.
+4. Confirm the page exists in `dist/app.json`.
+5. Confirm the page module in `dist/pages/**/index.js` contains rendered text/content.
+6. Clear DevTools cache and recompile only after checking the generated files.
 
-**Examples from other skills:**
-- Product management: `communication.md`, `context_building.md` - detailed workflow guides
-- BigQuery: API reference documentation and query examples
-- Finance: Schema documentation, company policies
+### DevTools environment
 
-**Appropriate for:** In-depth documentation, API references, database schemas, comprehensive guides, or any detailed information that Codex should reference while working.
+- Use the real `appid` in `project.config.json`, not tourist mode, when possible.
+- If root import behaves oddly, try reimporting the project after a successful Taro build.
+- Keep only one active `npm run dev:weapp` watcher.
 
-### assets/
-Files not intended to be loaded into context, but rather used within the output Codex produces.
+## Project-Specific Guardrails
 
-**Examples from other skills:**
-- Brand styling: PowerPoint template files (.pptx), logo files
-- Frontend builder: HTML/React boilerplate project directories
-- Typography: Font files (.ttf, .woff2)
-
-**Appropriate for:** Templates, boilerplate code, document templates, images, icons, fonts, or any files meant to be copied or used in the final output.
-
----
-
-**Not every skill requires all three types of resources.**
+- Treat `dist/` as generated output.
+- Treat `src/pages/home/index.tsx` as the first page to stabilize when the app turns blank.
+- Keep Chinese copy in UTF-8 and verify with `Get-Content ... -Encoding UTF8` if terminal output looks garbled.
+- If Tailwind appears to compile but DevTools renders poorly, prefer correctness over abstraction and move the unstable part to inline `style`.

@@ -57,5 +57,9 @@ npm run build
 1. **Taro + weapp-tailwindcss (强烈推荐)**：可近乎 100% 复用本项目的 React 语法和 Tailwind 类名，直接编译为小程序代码，大幅降低迁移成本。
 2. **原生 WXML + WXSS**：将项目中的 `div` 替换为 `view`，`span` 替换为 `text`，并将 Tailwind 的 `rem/px` 单位按比例替换为小程序的 `rpx` 响应式单位。
 
+## 🤖 Project Skill
+
+项目内已新增 Taro 小程序约束 skill：`skills/taro-weapp-constraints/SKILL.md`。后续如果要继续做 Taro 页面开发、WXSS 兼容处理、原生 `tabBar`、白屏排查或构建验证，可以直接复用这份 skill。
+
 ---
 *Designed & Built for the next generation of educational institutions.*

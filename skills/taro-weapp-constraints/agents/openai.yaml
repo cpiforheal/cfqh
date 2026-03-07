@@ -1,0 +1,4 @@
+interface:
+  display_name: "Taro Weapp Guardrails"
+  short_description: "Guardrails for Taro WeChat Mini Program UI and debugging"
+  default_prompt: "Use $taro-weapp-constraints to build or debug a Taro-based WeChat Mini Program safely."
