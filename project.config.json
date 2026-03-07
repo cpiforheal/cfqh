@@ -1,0 +1,15 @@
+{
+  "compileType": "miniprogram",
+  "miniprogramRoot": "dist/",
+  "setting": {
+    "es6": true,
+    "postcss": true,
+    "minified": true,
+    "uglifyFileName": false,
+    "enhance": true,
+    "useCompilerPlugins": false,
+    "minifyWXML": true
+  },
+  "appid": "touristappid",
+  "editorSetting": {}
+}
