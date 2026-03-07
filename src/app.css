@@ -9,5 +9,19 @@ page {
 
 .page {
   min-height: 100vh;
-  padding-bottom: 96rpx;
+  padding-bottom: 120rpx;
+}
+
+.pb-safe {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 24rpx);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
 }

@@ -1,6 +1,4 @@
-import { defineAppConfig } from '@tarojs/taro';
-
-export default defineAppConfig({
+export default {
   pages: [
     'pages/home/index',
     'pages/courses/index',
@@ -15,4 +13,4 @@ export default defineAppConfig({
     backgroundColor: '#f8fafc',
     backgroundTextStyle: 'dark'
   }
-});
+};

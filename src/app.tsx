@@ -1,7 +1,7 @@
 import './app.css';
 
-function App({ children }: { children: React.ReactNode }) {
-  return children;
+function App(props) {
+  return props?.children || null;
 }
 
 export default App;
