@@ -4,10 +4,11 @@ export default {
     'pages/courses/index',
     'pages/teachers/index',
     'pages/success/index',
+    'pages/materials/index',
     'pages/about/index'
   ],
   window: {
-    navigationBarTitleText: '淮安启航',
+    navigationBarTitleText: '启航',
     navigationBarBackgroundColor: '#ffffff',
     navigationBarTextStyle: 'black',
     backgroundColor: '#f3f5fb',
@@ -44,10 +45,10 @@ export default {
         selectedIconPath: 'assets/tabbar/success-active.png'
       },
       {
-        pagePath: 'pages/about/index',
-        text: '关于',
-        iconPath: 'assets/tabbar/about.png',
-        selectedIconPath: 'assets/tabbar/about-active.png'
+        pagePath: 'pages/materials/index',
+        text: '教材',
+        iconPath: 'assets/tabbar/materials.png',
+        selectedIconPath: 'assets/tabbar/materials-active.png'
       }
     ]
   }

@@ -35,7 +35,7 @@ export default function AboutPage() {
           }}
         >
           <Text style={{ display: 'block', fontSize: '28rpx', color: '#0f172a', fontWeight: 800, marginBottom: '10rpx' }}>
-            淮安启航专转本
+            乘帆启航专转本
           </Text>
           <Text style={{ display: 'block', fontSize: '22rpx', lineHeight: 1.75, color: '#64748b' }}>
             围绕方向规划、课程辅导、班级管理和日常答疑，帮助学员建立更稳定的备考节奏。
