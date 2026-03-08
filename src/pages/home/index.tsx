@@ -1,18 +1,20 @@
 import { Image, Navigator, Text, View } from '@tarojs/components';
 import PageCtaCard from '../../components/PageCtaCard';
 import PageSectionTitle from '../../components/PageSectionTitle';
+import { pageStyle, surfaceCardStyle, ui } from '../../styles/ui';
 
 const stats = [
-  { value: '核心', label: '教研团队', note: '全职坐班答疑' },
-  { value: '精品', label: '小班督学', note: '关注每个学员' },
-  { value: '高', label: '上岸率', note: '医护/高数方向' }
+  { value: '核心', label: '教研团队', note: '全职答疑' },
+  { value: '精品', label: '小班督学', note: '全程跟进' },
+  { value: '高', label: '上岸率', note: '双主线教研' }
 ];
 
 const quickLinks = [
   {
     label: '机构介绍',
-    desc: '了解品牌实力',
+    desc: '看品牌介绍',
     url: '/pages/about/index',
+    openType: 'navigate',
     icon: 'building',
     background: '#eef2ff',
     accent: '#5b4dff',
@@ -20,7 +22,7 @@ const quickLinks = [
   },
   {
     label: '开设方向',
-    desc: '查看课程方向',
+    desc: '看方向配置',
     url: '/pages/courses/index',
     icon: 'compass',
     background: '#f5f7fb',
@@ -29,7 +31,7 @@ const quickLinks = [
   },
   {
     label: '师资团队',
-    desc: '认识核心老师',
+    desc: '看老师阵容',
     url: '/pages/teachers/index',
     icon: 'team',
     background: '#f5f7fb',
@@ -38,7 +40,7 @@ const quickLinks = [
   },
   {
     label: '办学成果',
-    desc: '上岸案例展示',
+    desc: '看上岸案例',
     url: '/pages/success/index',
     icon: 'trophy',
     background: '#f5f7fb',
@@ -51,22 +53,22 @@ const advantages = [
   {
     icon: 'team',
     title: '全职教研团队',
-    desc: '拒绝兼职走穴，老师全天候坐班答疑'
+    desc: '老师全职坐班，答疑更及时'
   },
   {
     icon: 'building',
     title: '独立封闭校区',
-    desc: '吃住学一体化，排除外界一切干扰'
+    desc: '吃住学一体化，节奏更稳定'
   },
   {
     icon: 'book',
     title: '自编内部教材',
-    desc: '紧跟考纲变化，每年迭代辅助资料'
+    desc: '紧跟考纲更新，自编配套资料'
   },
   {
     icon: 'shield',
     title: '严格督学体系',
-    desc: '班主任全程跟班，日清周测月考'
+    desc: '日清周测月考，全程督学'
   }
 ];
 
@@ -79,7 +81,7 @@ const directions = [
     headerBackground: '#f7f5ff',
     iconColor: '#5b4dff',
     iconType: 'medical',
-    desc: '覆盖解剖、生理、护理等核心课程与公共课同步辅导，适合目标明确的医护类学员。'
+    desc: '适合护理、助产、临床等方向，专业课与公共课同步推进。'
   },
   {
     title: '高数专项突破',
@@ -89,7 +91,7 @@ const directions = [
     headerBackground: '#f8fafc',
     iconColor: '#334155',
     iconType: 'grid',
-    desc: '从基础梳理到冲刺刷题的系统提分路线，适合理工与经管类考生。'
+    desc: '适合理工、经管类考生，按基础梳理到冲刺训练推进。'
   }
 ];
 
@@ -776,16 +778,15 @@ function DirectionIcon(props) {
 
 export default function HomePage() {
   return (
-    <View style={{ minHeight: '100vh', backgroundColor: '#f3f5fb', paddingBottom: '48rpx' }}>
+    <View style={pageStyle}>
       <View
         style={{
           position: 'relative',
           overflow: 'hidden',
           borderBottomLeftRadius: '64rpx',
           borderBottomRightRadius: '64rpx',
-          padding: '28rpx 24rpx 120rpx',
-          background:
-            'linear-gradient(180deg, #2f3b5b 0%, #18233e 52%, #09142c 100%)'
+          padding: `24rpx ${ui.spacing.page} 132rpx`,
+          background: 'linear-gradient(180deg, #33415f 0%, #1c2946 48%, #0b1530 100%)'
         }}
       >
         <Image
@@ -793,44 +794,43 @@ export default function HomePage() {
           mode="aspectFill"
           style={{
             position: 'absolute',
-            right: '-60rpx',
-            bottom: '-10rpx',
-            width: '440rpx',
-            height: '560rpx',
-            opacity: 0.18
+            right: '-52rpx',
+            bottom: '-14rpx',
+            width: '456rpx',
+            height: '584rpx',
+            opacity: 0.16
           }}
         />
         <View
           style={{
             position: 'absolute',
-            left: '-120rpx',
-            top: '-80rpx',
-            width: '340rpx',
-            height: '340rpx',
+            left: '-130rpx',
+            top: '-94rpx',
+            width: '360rpx',
+            height: '360rpx',
             borderRadius: '999rpx',
-            backgroundColor: 'rgba(99,102,241,0.18)'
+            backgroundColor: 'rgba(116,128,255,0.18)'
           }}
         />
         <View
           style={{
             position: 'absolute',
-            right: '-40rpx',
-            top: '120rpx',
-            width: '220rpx',
-            height: '220rpx',
+            right: '-26rpx',
+            top: '136rpx',
+            width: '232rpx',
+            height: '232rpx',
             borderRadius: '999rpx',
-            backgroundColor: 'rgba(59,130,246,0.10)'
+            backgroundColor: 'rgba(59,130,246,0.08)'
           }}
         />
         <View
           style={{
             position: 'absolute',
-            right: '84rpx',
-            top: '296rpx',
-            width: '8rpx',
-            height: '128rpx',
-            borderRadius: '999rpx',
-            backgroundColor: 'rgba(15,23,42,0.4)'
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: '180rpx',
+            background: 'linear-gradient(180deg, rgba(8,15,32,0) 0%, rgba(8,15,32,0.46) 100%)'
           }}
         />
 
@@ -841,9 +841,9 @@ export default function HomePage() {
               alignItems: 'center',
               padding: '8rpx 16rpx',
               borderRadius: '999rpx',
-              backgroundColor: 'rgba(255,255,255,0.12)',
-              border: '1rpx solid rgba(255,255,255,0.22)',
-              marginBottom: '34rpx'
+              backgroundColor: 'rgba(255,255,255,0.11)',
+              border: '1rpx solid rgba(255,255,255,0.2)',
+              marginBottom: '30rpx'
             }}
           >
             <View
@@ -857,17 +857,17 @@ export default function HomePage() {
                 marginRight: '10rpx'
               }}
             />
-            <Text style={{ fontSize: '20rpx', color: '#e2e8f0', fontWeight: 600 }}>
+            <Text style={{ fontSize: ui.type.chip, color: '#e2e8f0', fontWeight: 600 }}>
               江苏省专转本权威培训品牌
             </Text>
           </View>
 
-          <View style={{ marginBottom: '22rpx' }}>
+          <View style={{ marginBottom: '18rpx' }}>
             <Text
               style={{
                 display: 'block',
-                fontSize: '56rpx',
-                lineHeight: 1.12,
+                fontSize: '50rpx',
+                lineHeight: 1.14,
                 color: '#ffffff',
                 fontWeight: 900,
                 letterSpacing: '-1rpx'
@@ -878,9 +878,9 @@ export default function HomePage() {
             <Text
               style={{
                 display: 'block',
-                fontSize: '54rpx',
-                lineHeight: 1.14,
-                color: '#7c83ff',
+                fontSize: '46rpx',
+                lineHeight: 1.16,
+                color: '#8b90ff',
                 fontWeight: 900,
                 letterSpacing: '-1rpx',
                 marginTop: '4rpx'
@@ -893,48 +893,66 @@ export default function HomePage() {
           <Text
             style={{
               display: 'block',
-              width: '520rpx',
+              width: '500rpx',
               maxWidth: '100%',
-              fontSize: '24rpx',
-              lineHeight: 1.95,
+              fontSize: ui.type.meta,
+              lineHeight: 1.8,
               color: '#d8e1f2',
-              marginBottom: '34rpx'
+              marginBottom: '24rpx'
             }}
           >
-            秉承“严管厚爱，教书育人”的办学理念，以医护大类与高数专项为核心，为学员提供精准、高效的提分路径。
+            以医护大类与高数专项为核心，提供更稳、更清晰的专转本备考支持。
           </Text>
 
-          <View style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
+          <View style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', marginBottom: '18rpx' }}>
             <Navigator
               url="/pages/about/index"
-              openType="switchTab"
+              openType="navigate"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                minWidth: '238rpx',
-                height: '82rpx',
-                padding: '0 30rpx',
-                borderRadius: '26rpx',
+                minWidth: '214rpx',
+                height: '78rpx',
+                padding: '0 26rpx',
+                borderRadius: '24rpx',
                 background: 'linear-gradient(90deg, #5b4dff 0%, #4f46e5 100%)',
-                boxShadow: '0 18rpx 36rpx rgba(79,70,229,0.35)',
+                boxShadow: '0 14rpx 28rpx rgba(79,70,229,0.26)',
                 boxSizing: 'border-box'
               }}
             >
-              <Text style={{ fontSize: '28rpx', color: '#ffffff', fontWeight: 800 }}>
+              <Text style={{ fontSize: ui.type.body, color: '#ffffff', fontWeight: 800 }}>
                 了解机构实力 →
               </Text>
             </Navigator>
             <Text
               style={{
                 marginLeft: '18rpx',
-                fontSize: '20rpx',
+                fontSize: ui.type.note,
                 color: '#cbd5e1',
                 marginTop: '8rpx'
               }}
             >
-              全日制集训 · 小班管理 · 跟踪答疑
+              集训管理 · 跟踪答疑
             </Text>
+          </View>
+
+          <View style={{ display: 'flex', flexWrap: 'wrap' }}>
+            {['机构介绍', '开设方向', '师资团队'].map((item, index) => (
+              <View
+                key={item}
+                style={{
+                  marginRight: index === 2 ? '0' : '12rpx',
+                  marginBottom: '10rpx',
+                  padding: '9rpx 14rpx',
+                  borderRadius: '999rpx',
+                  backgroundColor: 'rgba(255,255,255,0.08)',
+                  border: '1rpx solid rgba(255,255,255,0.12)'
+                }}
+              >
+                <Text style={{ fontSize: ui.type.note, color: '#d7def0', fontWeight: 600 }}>{item}</Text>
+              </View>
+            ))}
           </View>
         </View>
       </View>
@@ -942,13 +960,25 @@ export default function HomePage() {
       <View style={{ margin: '-60rpx 24rpx 0', position: 'relative', zIndex: 3 }}>
         <View
           style={{
-            background: 'linear-gradient(180deg, #ffffff 0%, #fbfcff 100%)',
+            ...surfaceCardStyle,
             borderRadius: '36rpx',
-            padding: '28rpx 18rpx 24rpx',
-            boxShadow: '0 14rpx 30rpx rgba(148,163,184,0.12)',
-            border: '1rpx solid rgba(226,232,240,0.82)'
+            padding: '20rpx 18rpx',
+            boxShadow: '0 12rpx 24rpx rgba(148,163,184,0.10)'
           }}
         >
+          <Text
+            style={{
+              display: 'block',
+              fontSize: ui.type.note,
+              color: ui.colors.textSoft,
+              fontWeight: 700,
+              letterSpacing: '1rpx',
+              textAlign: 'center',
+              marginBottom: '12rpx'
+            }}
+          >
+            机构概览
+          </Text>
           <View style={{ display: 'flex', alignItems: 'stretch', justifyContent: 'space-between' }}>
             {stats.map((item, index) => (
               <View
@@ -964,10 +994,10 @@ export default function HomePage() {
                   style={{
                     display: 'block',
                     textAlign: 'center',
-                    fontSize: '24rpx',
-                    color: '#475569',
-                    fontWeight: 600,
-                    marginBottom: '8rpx'
+                    fontSize: ui.type.note,
+                    color: ui.colors.textMuted,
+                    fontWeight: 700,
+                    marginBottom: '6rpx'
                   }}
                 >
                   {item.label}
@@ -976,8 +1006,8 @@ export default function HomePage() {
                   style={{
                     display: 'block',
                     textAlign: 'center',
-                    fontSize: '42rpx',
-                    color: '#0f172a',
+                    fontSize: '38rpx',
+                    color: ui.colors.text,
                     fontWeight: 900,
                     lineHeight: 1.1
                   }}
@@ -988,9 +1018,9 @@ export default function HomePage() {
                   style={{
                     display: 'block',
                     textAlign: 'center',
-                    fontSize: '20rpx',
-                    color: '#64748b',
-                    marginTop: '8rpx'
+                    fontSize: ui.type.note,
+                    color: ui.colors.textMuted,
+                    marginTop: '6rpx'
                   }}
                 >
                   {item.note}
@@ -1006,7 +1036,7 @@ export default function HomePage() {
           <Navigator
             key={item.url}
             url={item.url}
-            openType="switchTab"
+            openType={item.openType || 'switchTab'}
             style={{
               width: '23%',
               display: 'block',
@@ -1016,9 +1046,9 @@ export default function HomePage() {
             <View
               style={{
                 background: item.cardBackground,
-                borderRadius: '32rpx',
-                padding: '22rpx 10rpx 22rpx',
-                boxShadow: '0 12rpx 24rpx rgba(148,163,184,0.10)',
+                borderRadius: '30rpx',
+                padding: '20rpx 10rpx 18rpx',
+                boxShadow: '0 10rpx 18rpx rgba(148,163,184,0.07)',
                 border: '1rpx solid rgba(226,232,240,0.85)'
               }}
             >
@@ -1026,10 +1056,10 @@ export default function HomePage() {
               <Text
                 style={{
                   display: 'block',
-                  fontSize: '24rpx',
+                  fontSize: ui.type.body,
                   color: item.accent,
                   fontWeight: 700,
-                  marginBottom: '8rpx'
+                  marginBottom: '6rpx'
                 }}
               >
                 {item.label}
@@ -1037,9 +1067,9 @@ export default function HomePage() {
               <Text
                 style={{
                   display: 'block',
-                  fontSize: '18rpx',
+                  fontSize: ui.type.note,
                   color: '#64748b',
-                  lineHeight: 1.5,
+                  lineHeight: 1.45,
                   padding: '0 4rpx'
                 }}
               >
@@ -1050,8 +1080,8 @@ export default function HomePage() {
         ))}
       </View>
 
-      <View style={{ margin: '42rpx 24rpx 0' }}>
-        <PageSectionTitle>四大学习优势</PageSectionTitle>
+      <View style={{ margin: '44rpx 24rpx 0' }}>
+        <PageSectionTitle lineColor="#8a92ff">四大学习优势</PageSectionTitle>
         <View style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between' }}>
           {advantages.map((item) => (
             <View
@@ -1059,10 +1089,10 @@ export default function HomePage() {
               style={{
                 width: '48.2%',
                 marginBottom: '16rpx',
-                padding: '26rpx 24rpx 24rpx',
+                padding: '24rpx 22rpx 22rpx',
                 borderRadius: '32rpx',
                 background: 'linear-gradient(180deg, #ffffff 0%, #fbfcff 100%)',
-                boxShadow: '0 12rpx 24rpx rgba(148,163,184,0.09)',
+                boxShadow: '0 10rpx 18rpx rgba(148,163,184,0.07)',
                 border: '1rpx solid rgba(226,232,240,0.75)',
                 boxSizing: 'border-box'
               }}
@@ -1084,10 +1114,10 @@ export default function HomePage() {
               <Text
                 style={{
                   display: 'block',
-                  fontSize: '30rpx',
-                  color: '#0f172a',
+                  fontSize: ui.type.subtitle,
+                  color: ui.colors.text,
                   fontWeight: 800,
-                  marginBottom: '10rpx'
+                  marginBottom: '8rpx'
                 }}
               >
                 {item.title}
@@ -1095,9 +1125,9 @@ export default function HomePage() {
               <Text
                 style={{
                   display: 'block',
-                  fontSize: '22rpx',
-                  lineHeight: 1.65,
-                  color: '#64748b'
+                  fontSize: ui.type.meta,
+                  lineHeight: 1.7,
+                  color: ui.colors.textMuted
                 }}
               >
                 {item.desc}
@@ -1107,81 +1137,109 @@ export default function HomePage() {
         </View>
       </View>
 
-      <View style={{ margin: '42rpx 24rpx 0' }}>
+      <View style={{ margin: '44rpx 24rpx 0' }}>
         <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24rpx' }}>
-          <PageSectionTitle marginBottom="0">沉浸式学习环境</PageSectionTitle>
-          <Navigator url="/pages/about/index" openType="switchTab">
-            <Text style={{ fontSize: '22rpx', color: '#64748b', marginTop: '-18rpx' }}>查看更多</Text>
+          <PageSectionTitle marginBottom="0" lineColor="#8a92ff">沉浸式学习环境</PageSectionTitle>
+          <Navigator url="/pages/about/index" openType="navigate">
+            <Text style={{ fontSize: ui.type.body, color: ui.colors.textMuted, marginTop: '-18rpx' }}>查看更多</Text>
           </Navigator>
-        </View>
-
-        <View style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10rpx' }}>
-          {environmentCards.slice(0, 2).map((item) => (
-            <View
-              key={item.label}
-              style={{
-                width: '48.5%',
-                height: '270rpx',
-                borderRadius: '32rpx',
-                overflow: 'hidden',
-                position: 'relative'
-              }}
-            >
-              <Image
-                src={`https://picsum.photos/seed/${item.seed}/400/320`}
-                mode="aspectFill"
-                style={{ width: '100%', height: '100%' }}
-              />
-              <View
-                style={{
-                  position: 'absolute',
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  padding: '18rpx 22rpx',
-                  background:
-                    'linear-gradient(180deg, rgba(15,23,42,0) 0%, rgba(15,23,42,0.82) 100%)'
-                }}
-              >
-                <Text style={{ color: '#ffffff', fontSize: '24rpx', fontWeight: 700 }}>{item.label}</Text>
-              </View>
-            </View>
-          ))}
         </View>
 
         <View
           style={{
-            height: '270rpx',
-            borderRadius: '32rpx',
-            overflow: 'hidden',
-            position: 'relative'
+            ...surfaceCardStyle,
+            padding: '16rpx',
+            borderRadius: '34rpx'
           }}
         >
-          <Image
-            src={`https://picsum.photos/seed/${environmentCards[2].seed}/700/400`}
-            mode="aspectFill"
-            style={{ width: '100%', height: '100%' }}
-          />
-          <View
+          <Text
             style={{
-              position: 'absolute',
-              left: 0,
-              right: 0,
-              bottom: 0,
-              padding: '18rpx 22rpx',
-              background:
-                'linear-gradient(180deg, rgba(15,23,42,0) 0%, rgba(15,23,42,0.82) 100%)'
+              display: 'block',
+              fontSize: ui.type.note,
+              color: ui.colors.textMuted,
+              marginBottom: '12rpx'
             }}
           >
-            <Text style={{ color: '#ffffff', fontSize: '24rpx', fontWeight: 700 }}>
-              {environmentCards[2].label}
-            </Text>
+            学习与生活空间
+          </Text>
+          <View style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10rpx' }}>
+            {environmentCards.slice(0, 2).map((item) => (
+              <View
+                key={item.label}
+                style={{
+                  width: '48.5%',
+                  height: '238rpx',
+                  borderRadius: '26rpx',
+                  overflow: 'hidden',
+                  position: 'relative'
+                }}
+              >
+                <Image
+                  src={`https://picsum.photos/seed/${item.seed}/400/320`}
+                  mode="aspectFill"
+                  style={{ width: '100%', height: '100%' }}
+                />
+                <View
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    padding: '18rpx 22rpx',
+                    background: 'linear-gradient(180deg, rgba(15,23,42,0) 0%, rgba(15,23,42,0.82) 100%)'
+                  }}
+                >
+                  <Text style={{ color: '#ffffff', fontSize: ui.type.body, fontWeight: 700 }}>{item.label}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+
+          <View
+            style={{
+              height: '238rpx',
+              borderRadius: '26rpx',
+              overflow: 'hidden',
+              position: 'relative'
+            }}
+          >
+            <Image
+              src={`https://picsum.photos/seed/${environmentCards[2].seed}/700/400`}
+              mode="aspectFill"
+              style={{ width: '100%', height: '100%' }}
+            />
+            <View
+              style={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                bottom: 0,
+                padding: '18rpx 22rpx',
+                background: 'linear-gradient(180deg, rgba(15,23,42,0) 0%, rgba(15,23,42,0.82) 100%)'
+              }}
+            >
+              <Text style={{ color: '#ffffff', fontSize: ui.type.body, fontWeight: 700 }}>
+                {environmentCards[2].label}
+              </Text>
+            </View>
           </View>
         </View>
       </View>
 
-      <View style={{ margin: '42rpx 20rpx 0' }}>
-        <PageSectionTitle>核心专业方向</PageSectionTitle>
+      <View style={{ margin: '40rpx 20rpx 0' }}>
+        <PageSectionTitle lineColor="#5b4dff">核心专业方向</PageSectionTitle>
+        <View style={{ marginBottom: '18rpx', padding: '0 6rpx' }}>
+          <Text
+            style={{
+              display: 'block',
+              fontSize: ui.type.meta,
+              lineHeight: 1.7,
+              color: ui.colors.textMuted
+            }}
+          >
+            两条成熟教研主线，对应不同基础与目标。
+          </Text>
+        </View>
         {directions.map((item, index) => (
           <Navigator
             key={item.title}
@@ -1191,25 +1249,42 @@ export default function HomePage() {
           >
             <View
               style={{
-                background: '#ffffff',
+                background: index === 0 ? 'linear-gradient(180deg, #ffffff 0%, #fbfcff 100%)' : '#ffffff',
                 borderRadius: '40rpx',
-                padding: '44rpx 38rpx 40rpx',
-                minHeight: '336rpx',
-                boxShadow: '0 20rpx 38rpx rgba(148,163,184,0.15)',
+                padding: index === 0 ? '36rpx 34rpx 32rpx' : '34rpx 32rpx 30rpx',
+                minHeight: '286rpx',
+                boxShadow: index === 0 ? '0 18rpx 34rpx rgba(102,116,255,0.14)' : '0 12rpx 22rpx rgba(148,163,184,0.10)',
                 border: '1rpx solid rgba(226,232,240,0.92)',
                 boxSizing: 'border-box',
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'space-between'
+                justifyContent: 'space-between',
+                position: 'relative',
+                overflow: 'hidden'
               }}
             >
+              {index === 0 ? (
+                <View
+                  style={{
+                    position: 'absolute',
+                    right: '-28rpx',
+                    top: '-24rpx',
+                    width: '170rpx',
+                    height: '170rpx',
+                    borderRadius: '999rpx',
+                    backgroundColor: 'rgba(91,77,255,0.08)'
+                  }}
+                />
+              ) : null}
               <View>
                 <View
                   style={{
                     backgroundColor: item.headerBackground,
                     borderRadius: '24rpx',
                     padding: '18rpx 18rpx',
-                    marginBottom: '30rpx'
+                    marginBottom: '26rpx',
+                    position: 'relative',
+                    zIndex: 2
                   }}
                 >
                   <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -1217,14 +1292,14 @@ export default function HomePage() {
                       <View style={{ marginRight: '18rpx', flexShrink: 0 }}>
                         <DirectionIcon type={item.iconType} color={item.iconColor} />
                       </View>
-                      <Text style={{ fontSize: '38rpx', color: '#0f172a', fontWeight: 800 }}>{item.title}</Text>
+                      <Text style={{ fontSize: '34rpx', color: '#0f172a', fontWeight: 800 }}>{item.title}</Text>
                     </View>
                     <Text
                       style={{
-                        fontSize: '20rpx',
+                        fontSize: ui.type.note,
                         color: item.tagColor,
                         backgroundColor: item.tagBackground,
-                        padding: '10rpx 18rpx',
+                        padding: '8rpx 16rpx',
                         borderRadius: '999rpx',
                         fontWeight: 700,
                         flexShrink: 0
@@ -1237,10 +1312,12 @@ export default function HomePage() {
                 <Text
                   style={{
                     display: 'block',
-                    fontSize: '23rpx',
+                    fontSize: ui.type.meta,
                     width: '88%',
-                    lineHeight: 1.95,
-                    color: '#64748b'
+                    lineHeight: 1.72,
+                    color: ui.colors.textMuted,
+                    position: 'relative',
+                    zIndex: 2
                   }}
                 >
                   {item.desc}
@@ -1248,12 +1325,16 @@ export default function HomePage() {
               </View>
               <View
                 style={{
-                  marginTop: '28rpx',
-                  paddingTop: '22rpx',
-                  borderTop: '1rpx solid rgba(226,232,240,0.7)'
+                  marginTop: '22rpx',
+                  paddingTop: '18rpx',
+                  borderTop: '1rpx solid rgba(226,232,240,0.7)',
+                  position: 'relative',
+                  zIndex: 2
                 }}
               >
-                <Text style={{ fontSize: '24rpx', color: item.tagColor, fontWeight: 700 }}>查看方向详情 ›</Text>
+                <Text style={{ fontSize: ui.type.meta, color: index === 0 ? '#4f46e5' : ui.colors.textSubtle, fontWeight: 700 }}>
+                  查看方向详情 ›
+                </Text>
               </View>
             </View>
           </Navigator>
@@ -1261,11 +1342,11 @@ export default function HomePage() {
 
         <View
           style={{
-            marginTop: '24rpx',
+            marginTop: '20rpx',
             background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
             borderRadius: '40rpx',
-            padding: '40rpx 38rpx 36rpx',
-            minHeight: '280rpx',
+            padding: '30rpx 30rpx 28rpx',
+            minHeight: '220rpx',
             border: '1rpx solid rgba(226,232,240,0.95)',
             boxSizing: 'border-box'
           }}
@@ -1274,8 +1355,8 @@ export default function HomePage() {
             style={{
               backgroundColor: '#eef2f7',
               borderRadius: '24rpx',
-              padding: '18rpx 18rpx',
-              marginBottom: '26rpx',
+              padding: '14rpx 16rpx',
+              marginBottom: '18rpx',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between'
@@ -1294,14 +1375,14 @@ export default function HomePage() {
                   boxSizing: 'border-box'
                 }}
               />
-              <Text style={{ fontSize: '36rpx', color: '#94a3b8', fontWeight: 800 }}>更多专业方向</Text>
+              <Text style={{ fontSize: '30rpx', color: '#94a3b8', fontWeight: 800 }}>更多专业方向</Text>
             </View>
             <Text
               style={{
-                fontSize: '20rpx',
+                fontSize: ui.type.note,
                 color: '#64748b',
                 backgroundColor: '#e2e8f0',
-                padding: '10rpx 18rpx',
+                padding: '8rpx 14rpx',
                 borderRadius: '999rpx',
                 fontWeight: 700
               }}
@@ -1313,8 +1394,8 @@ export default function HomePage() {
             style={{
               display: 'block',
               width: '88%',
-              fontSize: '23rpx',
-              lineHeight: 1.9,
+              fontSize: ui.type.meta,
+              lineHeight: 1.7,
               color: '#94a3b8'
             }}
           >
@@ -1325,23 +1406,25 @@ export default function HomePage() {
 
       <PageCtaCard
         title="免费学情评估"
-        desc="不确定适合哪个方向，或者想知道当前基础与目标院校之间差距，可以先做一次评估。"
+        desc="不确定适合哪个方向时，可以先做一次简要评估。"
         buttonText="预约咨询"
-        footnote="方向建议 · 学情诊断 · 备考规划"
+        footnote="方向建议 · 学情诊断"
+        margin="38rpx 24rpx 0"
+        background="linear-gradient(135deg, #162445 0%, #101a36 100%)"
       />
 
       <Navigator
         url="/pages/about/index"
-        openType="switchTab"
+        openType="navigate"
         style={{
           position: 'fixed',
           right: '26rpx',
           bottom: '182rpx',
-          width: '96rpx',
-          height: '96rpx',
+          width: '88rpx',
+          height: '88rpx',
           borderRadius: '999rpx',
           background: 'linear-gradient(180deg, #ff8a1f 0%, #ff6a00 100%)',
-          boxShadow: '0 18rpx 34rpx rgba(255,106,0,0.40)',
+          boxShadow: '0 12rpx 24rpx rgba(255,106,0,0.28)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -1351,8 +1434,8 @@ export default function HomePage() {
         <View
           style={{
             position: 'absolute',
-            width: '116rpx',
-            height: '116rpx',
+            width: '104rpx',
+            height: '104rpx',
             borderRadius: '999rpx',
             border: '1rpx solid rgba(255,186,120,0.24)'
           }}

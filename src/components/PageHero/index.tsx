@@ -1,4 +1,5 @@
 import { Image, Text, View } from '@tarojs/components';
+import { ui } from '../../styles/ui';
 
 export default function PageHero(props) {
   return (
@@ -6,10 +7,10 @@ export default function PageHero(props) {
       style={{
         position: 'relative',
         overflow: 'hidden',
-        borderBottomLeftRadius: '56rpx',
-        borderBottomRightRadius: '56rpx',
+        borderBottomLeftRadius: ui.radius.hero,
+        borderBottomRightRadius: ui.radius.hero,
         background: props.background || 'linear-gradient(180deg, #334266 0%, #18233f 56%, #0d1730 100%)',
-        padding: '34rpx 24rpx 108rpx'
+        padding: `34rpx ${ui.spacing.page} 108rpx`
       }}
     >
       {props.imageSeed ? (
@@ -34,7 +35,7 @@ export default function PageHero(props) {
           top: props.bubbleTop || '26rpx',
           width: props.bubbleSize || '220rpx',
           height: props.bubbleSize || '220rpx',
-          borderRadius: '999rpx',
+          borderRadius: ui.radius.pill,
           backgroundColor: props.bubbleColor || 'rgba(91,77,255,0.14)'
         }}
       />
@@ -44,18 +45,18 @@ export default function PageHero(props) {
           style={{
             display: 'inline-flex',
             padding: '8rpx 18rpx',
-            borderRadius: '999rpx',
+            borderRadius: ui.radius.pill,
             backgroundColor: 'rgba(255,255,255,0.12)',
             border: '1rpx solid rgba(255,255,255,0.18)',
             marginBottom: '30rpx'
           }}
         >
-          <Text style={{ fontSize: '20rpx', color: '#dbe4ff', fontWeight: 600 }}>{props.chip}</Text>
+          <Text style={{ fontSize: ui.type.chip, color: '#dbe4ff', fontWeight: 600 }}>{props.chip}</Text>
         </View>
         <Text
           style={{
             display: 'block',
-            fontSize: '56rpx',
+            fontSize: ui.type.hero,
             lineHeight: 1.12,
             color: '#ffffff',
             fontWeight: 900,
@@ -67,8 +68,8 @@ export default function PageHero(props) {
         <Text
           style={{
             display: 'block',
-            fontSize: '26rpx',
-            lineHeight: 1.85,
+            fontSize: ui.type.body,
+            lineHeight: 1.78,
             color: '#d7e0f3',
             width: '560rpx',
             maxWidth: '100%'

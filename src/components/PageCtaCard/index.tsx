@@ -1,14 +1,15 @@
 import { Navigator, Text, View } from '@tarojs/components';
+import { darkPanelStyle, ui } from '../../styles/ui';
 
 export default function PageCtaCard(props) {
   return (
     <View
       style={{
-        margin: props.margin || '42rpx 24rpx 0',
-        borderRadius: '34rpx',
+        margin: props.margin || `${ui.spacing.section} ${ui.spacing.page} 0`,
+        borderRadius: ui.radius.lg,
         padding: '36rpx 30rpx 34rpx',
-        background: props.background || 'linear-gradient(135deg, #111d3f 0%, #0f1936 60%, #0a1229 100%)',
-        boxShadow: '0 16rpx 30rpx rgba(15,23,42,0.18)',
+        background: props.background || darkPanelStyle.background,
+        boxShadow: darkPanelStyle.boxShadow,
         overflow: 'hidden',
         position: 'relative'
       }}
@@ -20,7 +21,7 @@ export default function PageCtaCard(props) {
           top: '-48rpx',
           width: '220rpx',
           height: '220rpx',
-          borderRadius: '999rpx',
+          borderRadius: ui.radius.pill,
           backgroundColor: 'rgba(91,77,255,0.14)'
         }}
       />
@@ -29,7 +30,7 @@ export default function PageCtaCard(props) {
         style={{
           position: 'relative',
           display: 'block',
-          fontSize: '36rpx',
+          fontSize: '34rpx',
           color: '#ffffff',
           fontWeight: 900,
           marginBottom: '14rpx'
@@ -41,9 +42,9 @@ export default function PageCtaCard(props) {
         style={{
           position: 'relative',
           display: 'block',
-          fontSize: '22rpx',
-          lineHeight: 1.75,
-          color: '#cbd5e1',
+          fontSize: ui.type.body,
+          lineHeight: 1.78,
+          color: ui.colors.darkText,
           marginBottom: '26rpx',
           width: '520rpx',
           maxWidth: '100%'
@@ -53,7 +54,7 @@ export default function PageCtaCard(props) {
       </Text>
       <Navigator
         url={props.url || '/pages/about/index'}
-        openType={props.openType || 'switchTab'}
+        openType={props.openType || 'navigate'}
         style={{
           position: 'relative',
           display: 'inline-flex',
@@ -62,12 +63,12 @@ export default function PageCtaCard(props) {
           minWidth: '220rpx',
           height: '82rpx',
           padding: '0 30rpx',
-          borderRadius: '26rpx',
+          borderRadius: ui.radius.sm,
           backgroundColor: '#ffffff',
           boxShadow: '0 12rpx 24rpx rgba(15,23,42,0.16)'
         }}
       >
-        <Text style={{ fontSize: '26rpx', color: '#0f172a', fontWeight: 800 }}>
+        <Text style={{ fontSize: ui.type.button, color: ui.colors.text, fontWeight: 800 }}>
           {props.buttonText || '立即咨询'}
         </Text>
       </Navigator>
@@ -77,8 +78,8 @@ export default function PageCtaCard(props) {
             position: 'relative',
             display: 'block',
             marginTop: '18rpx',
-            fontSize: '18rpx',
-            color: '#94a3b8'
+            fontSize: ui.type.note,
+            color: ui.colors.textSoft
           }}
         >
           {props.footnote}

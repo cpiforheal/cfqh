@@ -2,6 +2,7 @@ import { ScrollView, Text, View } from '@tarojs/components';
 import PageCtaCard from '../../components/PageCtaCard';
 import PageHero from '../../components/PageHero';
 import PageSectionTitle from '../../components/PageSectionTitle';
+import { pageStyle, surfaceCardStyle, ui } from '../../styles/ui';
 
 const tabs = ['全部资料', '高数系列', '医护系列', '考前冲刺'];
 
@@ -120,21 +121,19 @@ function StatCard(props) {
     <View
       style={{
         width: '31.5%',
-        background: 'linear-gradient(180deg, #ffffff 0%, #fbfcff 100%)',
-        borderRadius: '28rpx',
+        ...surfaceCardStyle,
+        borderRadius: ui.radius.sm,
         padding: '22rpx 14rpx',
-        boxShadow: '0 12rpx 24rpx rgba(148,163,184,0.10)',
-        border: '1rpx solid rgba(226,232,240,0.82)',
         boxSizing: 'border-box'
       }}
     >
-      <Text style={{ display: 'block', textAlign: 'center', fontSize: '38rpx', color: '#0f172a', fontWeight: 900, marginBottom: '8rpx' }}>
+      <Text style={{ display: 'block', textAlign: 'center', fontSize: ui.type.stat, color: ui.colors.text, fontWeight: 900, marginBottom: '8rpx' }}>
         {props.value}
       </Text>
-      <Text style={{ display: 'block', textAlign: 'center', fontSize: '22rpx', color: '#334155', fontWeight: 700, marginBottom: '8rpx' }}>
+      <Text style={{ display: 'block', textAlign: 'center', fontSize: ui.type.body, color: ui.colors.textSubtle, fontWeight: 700, marginBottom: '8rpx' }}>
         {props.label}
       </Text>
-      <Text style={{ display: 'block', textAlign: 'center', fontSize: '18rpx', lineHeight: 1.5, color: '#64748b' }}>
+      <Text style={{ display: 'block', textAlign: 'center', fontSize: ui.type.note, lineHeight: 1.6, color: ui.colors.textMuted }}>
         {props.note}
       </Text>
     </View>
@@ -147,7 +146,7 @@ function FeaturedSetCard(props) {
       style={{
         width: '48.4%',
         background: props.gradient,
-        borderRadius: '34rpx',
+        borderRadius: ui.radius.lg,
         padding: '26rpx 24rpx 24rpx',
         boxSizing: 'border-box',
         boxShadow: '0 18rpx 32rpx rgba(15,23,42,0.14)'
@@ -157,17 +156,17 @@ function FeaturedSetCard(props) {
         style={{
           display: 'inline-flex',
           padding: '8rpx 14rpx',
-          borderRadius: '999rpx',
+          borderRadius: ui.radius.pill,
           backgroundColor: 'rgba(255,255,255,0.18)',
           marginBottom: '18rpx'
         }}
       >
-        <Text style={{ fontSize: '18rpx', color: '#ffffff', fontWeight: 700 }}>{props.tag}</Text>
+        <Text style={{ fontSize: ui.type.note, color: '#ffffff', fontWeight: 700 }}>{props.tag}</Text>
       </View>
-      <Text style={{ display: 'block', fontSize: '30rpx', color: '#ffffff', fontWeight: 800, marginBottom: '12rpx' }}>
+      <Text style={{ display: 'block', fontSize: ui.type.cardTitle, color: '#ffffff', fontWeight: 800, marginBottom: '12rpx' }}>
         {props.title}
       </Text>
-      <Text style={{ display: 'block', fontSize: '20rpx', lineHeight: 1.7, color: 'rgba(255,255,255,0.84)', marginBottom: '18rpx' }}>
+      <Text style={{ display: 'block', fontSize: ui.type.meta, lineHeight: 1.7, color: 'rgba(255,255,255,0.84)', marginBottom: '18rpx' }}>
         {props.desc}
       </Text>
       <View style={{ display: 'flex', flexWrap: 'wrap' }}>
@@ -178,11 +177,11 @@ function FeaturedSetCard(props) {
               marginRight: '10rpx',
               marginBottom: '10rpx',
               padding: '8rpx 12rpx',
-              borderRadius: '999rpx',
+              borderRadius: ui.radius.pill,
               backgroundColor: 'rgba(255,255,255,0.14)'
             }}
           >
-            <Text style={{ fontSize: '18rpx', color: '#ffffff' }}>{item}</Text>
+            <Text style={{ fontSize: ui.type.note, color: '#ffffff' }}>{item}</Text>
           </View>
         ))}
       </View>
@@ -196,18 +195,16 @@ function PreviewBookCard(props) {
       style={{
         width: '264rpx',
         marginRight: '18rpx',
-        backgroundColor: '#ffffff',
-        borderRadius: '30rpx',
+        ...surfaceCardStyle,
+        borderRadius: ui.radius.md,
         padding: '18rpx',
-        boxShadow: '0 12rpx 24rpx rgba(148,163,184,0.10)',
-        border: '1rpx solid rgba(226,232,240,0.82)',
         boxSizing: 'border-box'
       }}
     >
       <View
         style={{
           height: '300rpx',
-          borderRadius: '24rpx',
+          borderRadius: ui.radius.sm,
           background: props.gradient,
           padding: '20rpx 18rpx',
           boxSizing: 'border-box',
@@ -222,27 +219,27 @@ function PreviewBookCard(props) {
             display: 'inline-flex',
             alignSelf: 'flex-start',
             padding: '8rpx 14rpx',
-            borderRadius: '999rpx',
+            borderRadius: ui.radius.pill,
             backgroundColor: 'rgba(255,255,255,0.16)'
           }}
         >
-          <Text style={{ fontSize: '18rpx', color: '#ffffff', fontWeight: 700 }}>{props.type}</Text>
+          <Text style={{ fontSize: ui.type.note, color: '#ffffff', fontWeight: 700 }}>{props.type}</Text>
         </View>
         <View>
-          <Text style={{ display: 'block', fontSize: '28rpx', color: '#ffffff', fontWeight: 800, marginBottom: '10rpx' }}>
+          <Text style={{ display: 'block', fontSize: ui.type.subtitle, color: '#ffffff', fontWeight: 800, marginBottom: '10rpx' }}>
             {props.title}
           </Text>
-          <Text style={{ display: 'block', fontSize: '18rpx', color: 'rgba(255,255,255,0.82)', marginBottom: '6rpx' }}>
+          <Text style={{ display: 'block', fontSize: ui.type.note, color: 'rgba(255,255,255,0.82)', marginBottom: '6rpx' }}>
             {props.subtitle}
           </Text>
-          <Text style={{ display: 'block', fontSize: '18rpx', color: 'rgba(255,255,255,0.82)' }}>{props.stage}</Text>
+          <Text style={{ display: 'block', fontSize: ui.type.note, color: 'rgba(255,255,255,0.82)' }}>{props.stage}</Text>
         </View>
       </View>
 
-      <Text style={{ display: 'block', fontSize: '24rpx', color: '#0f172a', fontWeight: 800, marginBottom: '8rpx' }}>
+      <Text style={{ display: 'block', fontSize: ui.type.body, color: ui.colors.text, fontWeight: 800, marginBottom: '8rpx' }}>
         {props.title}
       </Text>
-      <Text style={{ display: 'block', fontSize: '20rpx', color: '#64748b', lineHeight: 1.7, marginBottom: '14rpx' }}>
+      <Text style={{ display: 'block', fontSize: ui.type.meta, color: ui.colors.textMuted, lineHeight: 1.7, marginBottom: '14rpx' }}>
         {props.desc}
       </Text>
       <View style={{ display: 'flex', flexWrap: 'wrap' }}>
@@ -253,11 +250,11 @@ function PreviewBookCard(props) {
               marginRight: '8rpx',
               marginBottom: '8rpx',
               padding: '8rpx 12rpx',
-              borderRadius: '999rpx',
+              borderRadius: ui.radius.pill,
               backgroundColor: '#f1f5f9'
             }}
           >
-            <Text style={{ fontSize: '18rpx', color: '#475569', fontWeight: 600 }}>{item}</Text>
+            <Text style={{ fontSize: ui.type.note, color: ui.colors.textSubtle, fontWeight: 600 }}>{item}</Text>
           </View>
         ))}
       </View>
@@ -270,36 +267,35 @@ function CatalogGroup(props) {
     <View
       style={{
         marginBottom: props.isLast ? '0' : '32rpx',
-        backgroundColor: '#ffffff',
-        borderRadius: '36rpx',
+        ...surfaceCardStyle,
+        borderRadius: ui.radius.lg,
         padding: '30rpx 24rpx 26rpx',
-        boxShadow: '0 14rpx 28rpx rgba(148,163,184,0.11)',
-        border: '1rpx solid rgba(226,232,240,0.82)'
+        boxShadow: ui.shadow.cardRaised
       }}
     >
       <View
         style={{
           backgroundColor: props.background,
-          borderRadius: '26rpx',
+          borderRadius: ui.radius.sm,
           padding: '18rpx 18rpx',
           marginBottom: '24rpx'
         }}
       >
-        <Text style={{ display: 'block', fontSize: '34rpx', color: '#0f172a', fontWeight: 800, marginBottom: '10rpx' }}>
+        <Text style={{ display: 'block', fontSize: ui.type.section, color: ui.colors.text, fontWeight: 800, marginBottom: '10rpx' }}>
           {props.title}
         </Text>
-        <Text style={{ display: 'block', fontSize: '22rpx', color: '#64748b', lineHeight: 1.75, marginBottom: '14rpx' }}>
+        <Text style={{ display: 'block', fontSize: ui.type.body, color: ui.colors.textMuted, lineHeight: 1.78, marginBottom: '14rpx' }}>
           {props.desc}
         </Text>
         <View
           style={{
             display: 'inline-flex',
             padding: '8rpx 14rpx',
-            borderRadius: '999rpx',
+            borderRadius: ui.radius.pill,
             backgroundColor: '#ffffff'
           }}
         >
-          <Text style={{ fontSize: '18rpx', color: props.accent, fontWeight: 700 }}>{props.shelfLabel}</Text>
+          <Text style={{ fontSize: ui.type.note, color: props.accent, fontWeight: 700 }}>{props.shelfLabel}</Text>
         </View>
       </View>
 
@@ -324,7 +320,7 @@ function CatalogGroup(props) {
 
 export default function MaterialsPage() {
   return (
-    <View style={{ minHeight: '100vh', backgroundColor: '#f3f5fb', paddingBottom: '48rpx' }}>
+    <View style={pageStyle}>
       <PageHero
         chip="教材资料"
         title="自编资料体系"
@@ -335,16 +331,8 @@ export default function MaterialsPage() {
         bubbleSize="228rpx"
       />
 
-      <View style={{ margin: '-54rpx 24rpx 0', position: 'relative', zIndex: 3 }}>
-        <View
-          style={{
-            background: 'linear-gradient(180deg, #ffffff 0%, #fbfcff 100%)',
-            borderRadius: '34rpx',
-            padding: '24rpx 20rpx',
-            boxShadow: '0 14rpx 30rpx rgba(148,163,184,0.12)',
-            border: '1rpx solid rgba(226,232,240,0.82)'
-          }}
-        >
+      <View style={{ margin: `-54rpx ${ui.spacing.page} 0`, position: 'relative', zIndex: 4 }}>
+        <View style={{ ...surfaceCardStyle, borderRadius: ui.radius.lg, padding: '24rpx 20rpx', boxShadow: ui.shadow.cardRaised }}>
           <ScrollView scrollX>
             <View style={{ display: 'flex', whiteSpace: 'nowrap' }}>
               {tabs.map((item, index) => (
@@ -353,14 +341,14 @@ export default function MaterialsPage() {
                   style={{
                     marginRight: '14rpx',
                     padding: '16rpx 24rpx',
-                    borderRadius: '999rpx',
-                    backgroundColor: index === 0 ? '#0f172a' : '#f1f5f9'
+                    borderRadius: ui.radius.pill,
+                    backgroundColor: index === 0 ? ui.colors.text : '#f1f5f9'
                   }}
                 >
                   <Text
                     style={{
-                      fontSize: '22rpx',
-                      color: index === 0 ? '#ffffff' : '#64748b',
+                      fontSize: ui.type.body,
+                      color: index === 0 ? '#ffffff' : ui.colors.textMuted,
                       fontWeight: 700
                     }}
                   >
@@ -374,7 +362,7 @@ export default function MaterialsPage() {
       </View>
 
       <View style={{ margin: '38rpx 24rpx 0' }}>
-        <PageSectionTitle>套系总览</PageSectionTitle>
+        <PageSectionTitle lineColor="#8a92ff">套系总览</PageSectionTitle>
         <View style={{ display: 'flex', justifyContent: 'space-between' }}>
           {overviewCards.map((item) => (
             <StatCard key={item.label} {...item} />
@@ -382,8 +370,8 @@ export default function MaterialsPage() {
         </View>
       </View>
 
-      <View style={{ margin: '42rpx 24rpx 0' }}>
-        <PageSectionTitle>主推套装</PageSectionTitle>
+      <View style={{ margin: `${ui.spacing.section} ${ui.spacing.page} 0` }}>
+        <PageSectionTitle lineColor="#8a92ff">主推套装</PageSectionTitle>
         <View style={{ display: 'flex', justifyContent: 'space-between' }}>
           {featuredSets.map((item) => (
             <FeaturedSetCard key={item.title} {...item} />
@@ -391,8 +379,8 @@ export default function MaterialsPage() {
         </View>
       </View>
 
-      <View style={{ margin: '42rpx 24rpx 0' }}>
-        <PageSectionTitle>目录预览</PageSectionTitle>
+      <View style={{ margin: `${ui.spacing.section} ${ui.spacing.page} 0` }}>
+        <PageSectionTitle lineColor="#8a92ff">目录预览</PageSectionTitle>
         {groups.map((group, index) => (
           <CatalogGroup key={group.title} {...group} isLast={index === groups.length - 1} />
         ))}

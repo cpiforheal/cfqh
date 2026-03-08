@@ -1,4 +1,5 @@
 import { Text, View } from '@tarojs/components';
+import { ui } from '../../styles/ui';
 
 export default function PageSectionTitle(props) {
   return (
@@ -7,12 +8,12 @@ export default function PageSectionTitle(props) {
         style={{
           width: '10rpx',
           height: '34rpx',
-          borderRadius: '999rpx',
-          backgroundColor: '#4f46e5',
+          borderRadius: ui.radius.pill,
+          backgroundColor: props.lineColor || ui.colors.accentLine,
           marginRight: '14rpx'
         }}
       />
-      <Text style={{ fontSize: '34rpx', fontWeight: 800, color: '#0f172a' }}>{props.children}</Text>
+      <Text style={{ fontSize: ui.type.section, fontWeight: 800, color: ui.colors.text }}>{props.children}</Text>
     </View>
   );
 }
