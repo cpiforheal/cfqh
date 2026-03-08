@@ -1,53 +1,37 @@
 import { ScrollView, Text, View } from '@tarojs/components';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useDidShow } from '@tarojs/taro';
 import PageSectionTitle from '../../components/PageSectionTitle';
+import fallbackContent from '../../data/contentFallback';
+import { getPublicContent } from '../../services/content';
 import { pageStyle, surfaceCardStyle, ui } from '../../styles/ui';
 
-const categories = ['全部方向', '医护大类', '高数专项', '更多筹备'];
+const defaultCoursesPage = fallbackContent.pages.courses;
+const defaultDirections = fallbackContent.directions;
 
-const suggestions = [
-  '护理/助产/临床背景，建议选择 医护大类方向',
-  '理工/经管类且数学薄弱，建议选择 高数专项突破',
-  '跨考或暂未明确方向，建议先进行 1对1 学情评估'
-];
+function mapCourseCards(directions) {
+  return (directions || []).map((item) => ({
+    style: item.coursesCard?.style || 'light',
+    tag: item.coursesCard?.tag || item.featuredTag || '',
+    title: item.name,
+    audience: item.audience || '',
+    features: item.features || [],
+    chips: item.chips || [],
+    accent: item.coursesCard?.accent || '#334155',
+    background: item.coursesCard?.background || '#ffffff',
+    iconBg: item.coursesCard?.iconBg || '#eef2f7',
+    iconType: item.coursesCard?.iconType || 'grid'
+  }));
+}
 
-const directionCards = [
-  {
-    style: 'dark',
-    tag: '优势王牌方向',
-    title: '医护大类方向',
-    audience: '专科为护理、助产、临床医学等专业，目标公办或优质民办本科的学员。',
-    features: [
-      '解剖学、生理学等核心专业课精讲',
-      '历年医护类真题题库与考点串讲',
-      '阶段测评与医护方向专项答疑',
-      '小班化督学管理，兼顾进度与吸收率'
-    ],
-    chips: ['适合医护类学员', '医护方向教研组', '历届高上岸表现'],
-    accent: '#5b4dff',
-    background: 'linear-gradient(180deg, #101a38 0%, #0b1430 100%)',
-    iconBg: 'rgba(91,77,255,0.24)',
-    iconType: 'pulse'
-  },
-  {
-    style: 'light',
-    tag: '重点建设方向',
-    title: '高数专项突破',
-    audience: '理工、经管类考生，高数基础薄弱、恐惧数学，需要单科提分的学员。',
-    features: [
-      '从零基础概念扫盲到公式定理推导',
-      '典型例题剖析与解题套路总结',
-      '阶段性测试反馈，查漏补缺',
-      '小班化精细教学，关注个体吸收率'
-    ],
-    chips: ['专职高数教研组', '稳扎稳打策略'],
-    accent: '#334155',
-    background: '#ffffff',
-    iconBg: '#eef2f7',
-    iconType: 'grid'
-  }
-];
+function getInitialCoursesState() {
+  return {
+    page: defaultCoursesPage,
+    directions: defaultDirections
+  };
+}
 
-function FilterScroller() {
+function FilterScroller(props) {
   return (
     <View
       style={{
@@ -59,7 +43,7 @@ function FilterScroller() {
     >
       <ScrollView scrollX>
         <View style={{ display: 'flex', whiteSpace: 'nowrap', marginBottom: '16rpx' }}>
-          {categories.map((item, index) => (
+          {(props.categories || []).map((item, index) => (
             <View
               key={item}
               style={{
@@ -110,7 +94,7 @@ function FilterScroller() {
   );
 }
 
-function SuggestionCard() {
+function SuggestionCard(props) {
   return (
     <View
       style={{
@@ -140,7 +124,7 @@ function SuggestionCard() {
         <Text style={{ fontSize: ui.type.cardTitle, color: ui.colors.text, fontWeight: 800 }}>不知道如何规划专业方向？</Text>
       </View>
 
-      {suggestions.map((item) => (
+      {(props.suggestions || []).map((item) => (
         <View key={item} style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '12rpx' }}>
           <Text style={{ fontSize: ui.type.body, color: ui.colors.accent, marginRight: '10rpx', marginTop: '4rpx' }}>•</Text>
           <Text style={{ flex: 1, fontSize: ui.type.body, color: '#4f46e5', lineHeight: 1.8 }}>{item}</Text>
@@ -386,23 +370,106 @@ function DetailCard(props) {
 }
 
 export default function CoursesPage() {
+  const [content, setContent] = useState(getInitialCoursesState());
+  const [loadState, setLoadState] = useState({ source: 'fallback', error: '' });
+
+  const loadContent = useCallback(() => {
+    let mounted = true;
+
+    getPublicContent('courses')
+      .then((payload) => {
+        if (!mounted || !payload) return;
+        setContent({
+          page: payload.page || defaultCoursesPage,
+          directions: (payload.directions && payload.directions.length ? payload.directions : defaultDirections)
+        });
+        setLoadState({
+          source: payload.__meta?.source || 'cloud',
+          error: ''
+        });
+      })
+      .catch((error) => {
+        if (!mounted) return;
+        setLoadState({
+          source: 'error',
+          error: error && error.message ? error.message : '云端内容读取失败'
+        });
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const cleanup = loadContent();
+    return cleanup;
+  }, []);
+
+  useDidShow(() => {
+    loadContent();
+  });
+
+  const categories = content.page?.categories || defaultCoursesPage.categories;
+  const suggestions = content.page?.suggestions || defaultCoursesPage.suggestions;
+  const directionCards = useMemo(() => {
+    const featuredIds = content.page?.featuredDirectionIds || [];
+    const source = featuredIds.length
+      ? featuredIds
+          .map((id) => (content.directions || []).find((item) => item._id === id))
+          .filter(Boolean)
+      : content.directions || [];
+
+    return mapCourseCards(source);
+  }, [content]);
+  const moreSection = content.page?.moreSection || defaultCoursesPage.moreSection;
+
   return (
     <View style={pageStyle}>
+      {loadState.error ? (
+        <View
+          style={{
+            margin: '18rpx 24rpx 0',
+            padding: '16rpx 18rpx',
+            borderRadius: '18rpx',
+            backgroundColor: '#fff7ed',
+            border: '1rpx solid #fdba74'
+          }}
+        >
+          <Text style={{ fontSize: ui.type.meta, color: '#9a3412', fontWeight: 700 }}>
+            云端内容未加载成功：{loadState.error}
+          </Text>
+        </View>
+      ) : null}
+
       <View style={{ padding: `28rpx ${ui.spacing.page} 0` }}>
+        <View
+          style={{
+            display: 'inline-flex',
+            padding: '8rpx 14rpx',
+            borderRadius: '999rpx',
+            backgroundColor: '#eef2ff',
+            marginBottom: '14rpx'
+          }}
+        >
+          <Text style={{ fontSize: ui.type.note, color: '#4f46e5', fontWeight: 700 }}>
+            {loadState.source === 'cloud' ? '云端内容' : '本地内容'}
+          </Text>
+        </View>
         <Text style={{ display: 'block', fontSize: ui.type.hero, lineHeight: 1.12, color: ui.colors.text, fontWeight: 900, marginBottom: '10rpx' }}>
-          开设方向
+          {content.page?.title || defaultCoursesPage.title}
         </Text>
         <Text style={{ display: 'block', fontSize: ui.type.body, lineHeight: 1.75, color: ui.colors.textMuted }}>
-          精细化教研，按专业方向提供针对性辅导
+          {content.page?.subtitle || defaultCoursesPage.subtitle}
         </Text>
       </View>
 
       <View style={{ margin: `26rpx ${ui.spacing.page} 0` }}>
-        <FilterScroller />
+        <FilterScroller categories={categories} />
       </View>
 
       <View style={{ margin: `34rpx ${ui.spacing.page} 0` }}>
-        <SuggestionCard />
+        <SuggestionCard suggestions={suggestions} />
       </View>
 
       <View style={{ margin: `34rpx ${ui.spacing.pageCompact} 0` }}>
@@ -421,7 +488,7 @@ export default function CoursesPage() {
         }}
       >
         <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18rpx' }}>
-          <Text style={{ fontSize: ui.type.section, color: ui.colors.textSoft, fontWeight: 800 }}>更多专业方向</Text>
+          <Text style={{ fontSize: ui.type.section, color: ui.colors.textSoft, fontWeight: 800 }}>{moreSection.title}</Text>
           <View
             style={{
               padding: '10rpx 18rpx',
@@ -429,11 +496,11 @@ export default function CoursesPage() {
               backgroundColor: '#e2e8f0'
             }}
           >
-            <Text style={{ fontSize: ui.type.meta, color: ui.colors.textMuted, fontWeight: 700 }}>筹备中</Text>
+            <Text style={{ fontSize: ui.type.meta, color: ui.colors.textMuted, fontWeight: 700 }}>{moreSection.tag}</Text>
           </View>
         </View>
         <Text style={{ display: 'block', width: '88%', fontSize: ui.type.body, lineHeight: 1.85, color: ui.colors.textSoft }}>
-          经管、计算机等更多方向教研团队正在组建中，敬请期待。
+          {moreSection.desc}
         </Text>
       </View>
     </View>

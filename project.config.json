@@ -31,5 +31,7 @@
   "packOptions": {
     "ignore": [],
     "include": []
-  }
+  },
+  "cloudfunctionRoot": "cloudfunctions/",
+  "cloudfunctionTemplateRoot": "cloudfunctionTemplate/"
 }

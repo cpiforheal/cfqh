@@ -4,10 +4,12 @@
   "version": "0.1.0",
   "scripts": {
     "dev:weapp": "taro build --type weapp --watch",
-    "build:weapp": "taro build --type weapp"
+    "build:weapp": "taro build --type weapp",
+    "admin:web": "node tools/admin-web/server.cjs"
   },
   "dependencies": {
     "@babel/runtime": "^7.27.6",
+    "@cloudbase/node-sdk": "^3.18.0",
     "@tarojs/components": "^3.6.30",
     "@tarojs/react": "^3.6.30",
     "@tarojs/taro": "^3.6.30",

@@ -1,105 +1,42 @@
 import { Image, Navigator, Text, View } from '@tarojs/components';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useDidShow } from '@tarojs/taro';
 import PageCtaCard from '../../components/PageCtaCard';
 import PageSectionTitle from '../../components/PageSectionTitle';
+import fallbackContent from '../../data/contentFallback';
+import { getPublicContent } from '../../services/content';
 import { pageStyle, surfaceCardStyle, ui } from '../../styles/ui';
 
-const stats = [
-  { value: '核心', label: '教研团队', note: '全职答疑' },
-  { value: '精品', label: '小班督学', note: '全程跟进' },
-  { value: '高', label: '上岸率', note: '双主线教研' }
-];
+const defaultHomePage = fallbackContent.pages.home;
+const defaultDirections = fallbackContent.directions;
 
-const quickLinks = [
-  {
-    label: '机构介绍',
-    desc: '看品牌介绍',
-    url: '/pages/about/index',
-    openType: 'navigate',
-    icon: 'building',
-    background: '#eef2ff',
-    accent: '#5b4dff',
-    cardBackground: 'linear-gradient(180deg, #ffffff 0%, #f8faff 100%)'
-  },
-  {
-    label: '开设方向',
-    desc: '看方向配置',
-    url: '/pages/courses/index',
-    icon: 'compass',
-    background: '#f5f7fb',
-    accent: '#475569',
-    cardBackground: 'linear-gradient(180deg, #ffffff 0%, #fafbfc 100%)'
-  },
-  {
-    label: '师资团队',
-    desc: '看老师阵容',
-    url: '/pages/teachers/index',
-    icon: 'team',
-    background: '#f5f7fb',
-    accent: '#475569',
-    cardBackground: 'linear-gradient(180deg, #ffffff 0%, #fafbfc 100%)'
-  },
-  {
-    label: '办学成果',
-    desc: '看上岸案例',
-    url: '/pages/success/index',
-    icon: 'trophy',
-    background: '#f5f7fb',
-    accent: '#475569',
-    cardBackground: 'linear-gradient(180deg, #ffffff 0%, #fafbfc 100%)'
-  }
-];
+function mapHomeDirections(page, allDirections) {
+  const featuredIds = page?.featuredDirectionIds || [];
+  const source = featuredIds.length
+    ? featuredIds
+        .map((id) => (allDirections || []).find((item) => item._id === id))
+        .filter(Boolean)
+    : (allDirections || []).filter((item) => item.isFeatured);
 
-const advantages = [
-  {
-    icon: 'team',
-    title: '全职教研团队',
-    desc: '老师全职坐班，答疑更及时'
-  },
-  {
-    icon: 'building',
-    title: '独立封闭校区',
-    desc: '吃住学一体化，节奏更稳定'
-  },
-  {
-    icon: 'book',
-    title: '自编内部教材',
-    desc: '紧跟考纲更新，自编配套资料'
-  },
-  {
-    icon: 'shield',
-    title: '严格督学体系',
-    desc: '日清周测月考，全程督学'
-  }
-];
+  return source.map((item) => ({
+    title: item.name,
+    tag: item.homeTag || item.featuredTag || '',
+    tagColor: item.homeCard?.tagColor || '#4f46e5',
+    tagBackground: item.homeCard?.tagBackground || '#eef2ff',
+    headerBackground: item.homeCard?.headerBackground || '#f7f5ff',
+    iconColor: item.homeCard?.iconColor || '#5b4dff',
+    iconType: item.iconType === 'pulse' ? 'medical' : item.iconType,
+    desc: item.summary || ''
+  }));
+}
 
-const directions = [
-  {
-    title: '医护大类方向',
-    tag: '优势王牌',
-    tagColor: '#4f46e5',
-    tagBackground: '#eef2ff',
-    headerBackground: '#f7f5ff',
-    iconColor: '#5b4dff',
-    iconType: 'medical',
-    desc: '适合护理、助产、临床等方向，专业课与公共课同步推进。'
-  },
-  {
-    title: '高数专项突破',
-    tag: '重点建设',
-    tagColor: '#0f172a',
-    tagBackground: '#e2e8f0',
-    headerBackground: '#f8fafc',
-    iconColor: '#334155',
-    iconType: 'grid',
-    desc: '适合理工、经管类考生，按基础梳理到冲刺训练推进。'
-  }
-];
-
-const environmentCards = [
-  { label: '多媒体教室', seed: 'classroom1' },
-  { label: '标准化宿舍', seed: 'dorm1' },
-  { label: '自习室与答疑区', seed: 'library' }
-];
+function getInitialHomeState() {
+  return {
+    site: fallbackContent.site,
+    page: defaultHomePage,
+    directions: defaultDirections
+  };
+}
 
 function QuickIcon(props) {
   const commonWrap = {
@@ -777,8 +714,75 @@ function DirectionIcon(props) {
 }
 
 export default function HomePage() {
+  const [content, setContent] = useState(getInitialHomeState());
+  const [loadState, setLoadState] = useState({ source: 'fallback', error: '' });
+
+  const loadContent = useCallback(() => {
+    let mounted = true;
+
+    getPublicContent('home')
+      .then((payload) => {
+        if (!mounted || !payload) return;
+        setContent({
+          site: payload.site || fallbackContent.site,
+          page: payload.page || defaultHomePage,
+          directions: (payload.directions && payload.directions.length ? payload.directions : defaultDirections)
+        });
+        setLoadState({
+          source: payload.__meta?.source || 'cloud',
+          error: ''
+        });
+      })
+      .catch((error) => {
+        if (!mounted) return;
+        setLoadState({
+          source: 'error',
+          error: error && error.message ? error.message : '云端内容读取失败'
+        });
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const cleanup = loadContent();
+    return cleanup;
+  }, []);
+
+  useDidShow(() => {
+    loadContent();
+  });
+
+  const hero = content.page?.hero || defaultHomePage.hero;
+  const stats = content.page?.overviewStats || defaultHomePage.overviewStats;
+  const quickLinks = content.page?.quickLinks || defaultHomePage.quickLinks;
+  const advantages = content.page?.advantages || defaultHomePage.advantages;
+  const directions = useMemo(() => mapHomeDirections(content.page || defaultHomePage, content.directions || defaultDirections), [content]);
+  const environmentCards = content.page?.environmentSection?.cards || defaultHomePage.environmentSection.cards;
+  const bottomEnvironmentCard = environmentCards[2] || environmentCards[0];
+  const moreDirectionCard = content.page?.moreDirectionCard || defaultHomePage.moreDirectionCard;
+  const cta = content.page?.cta || defaultHomePage.cta;
+
   return (
     <View style={pageStyle}>
+      {loadState.error ? (
+        <View
+          style={{
+            margin: '18rpx 24rpx 0',
+            padding: '16rpx 18rpx',
+            borderRadius: '18rpx',
+            backgroundColor: '#fff7ed',
+            border: '1rpx solid #fdba74'
+          }}
+        >
+          <Text style={{ fontSize: ui.type.meta, color: '#9a3412', fontWeight: 700 }}>
+            云端内容未加载成功：{loadState.error}
+          </Text>
+        </View>
+      ) : null}
+
       <View
         style={{
           position: 'relative',
@@ -790,7 +794,7 @@ export default function HomePage() {
         }}
       >
         <Image
-          src="https://picsum.photos/seed/university/900/700"
+          src={`https://picsum.photos/seed/${hero.backgroundImageSeed || 'university'}/900/700`}
           mode="aspectFill"
           style={{
             position: 'absolute',
@@ -857,8 +861,22 @@ export default function HomePage() {
                 marginRight: '10rpx'
               }}
             />
-            <Text style={{ fontSize: ui.type.chip, color: '#e2e8f0', fontWeight: 600 }}>
-              江苏省专转本权威培训品牌
+            <Text style={{ fontSize: ui.type.chip, color: '#e2e8f0', fontWeight: 600 }}>{hero.chip}</Text>
+          </View>
+
+          <View
+            style={{
+              position: 'absolute',
+              right: '10rpx',
+              top: '24rpx',
+              padding: '8rpx 14rpx',
+              borderRadius: '999rpx',
+              backgroundColor: 'rgba(255,255,255,0.1)',
+              border: '1rpx solid rgba(255,255,255,0.14)'
+            }}
+          >
+            <Text style={{ fontSize: ui.type.note, color: '#d7def0', fontWeight: 700 }}>
+              {loadState.source === 'cloud' ? '云端内容' : '本地内容'}
             </Text>
           </View>
 
@@ -873,7 +891,7 @@ export default function HomePage() {
                 letterSpacing: '-1rpx'
               }}
             >
-              专注江苏专转本
+              {hero.title}
             </Text>
             <Text
               style={{
@@ -886,7 +904,7 @@ export default function HomePage() {
                 marginTop: '4rpx'
               }}
             >
-              医护与高数精细化教研
+              {hero.highlightTitle}
             </Text>
           </View>
 
@@ -901,13 +919,13 @@ export default function HomePage() {
               marginBottom: '24rpx'
             }}
           >
-            以医护大类与高数专项为核心，提供更稳、更清晰的专转本备考支持。
+            {hero.desc}
           </Text>
 
           <View style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', marginBottom: '18rpx' }}>
             <Navigator
-              url="/pages/about/index"
-              openType="navigate"
+              url={hero.primaryButton?.url || '/pages/about/index'}
+              openType={hero.primaryButton?.openType || 'navigate'}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -922,7 +940,7 @@ export default function HomePage() {
               }}
             >
               <Text style={{ fontSize: ui.type.body, color: '#ffffff', fontWeight: 800 }}>
-                了解机构实力 →
+                {hero.primaryButton?.text || '了解机构实力'}
               </Text>
             </Navigator>
             <Text
@@ -933,12 +951,12 @@ export default function HomePage() {
                 marginTop: '8rpx'
               }}
             >
-              集训管理 · 跟踪答疑
+              {hero.secondaryNote || '集训管理 · 跟踪答疑'}
             </Text>
           </View>
 
           <View style={{ display: 'flex', flexWrap: 'wrap' }}>
-            {['机构介绍', '开设方向', '师资团队'].map((item, index) => (
+            {(hero.tags || []).map((item, index) => (
               <View
                 key={item}
                 style={{
@@ -1175,7 +1193,7 @@ export default function HomePage() {
                 }}
               >
                 <Image
-                  src={`https://picsum.photos/seed/${item.seed}/400/320`}
+                  src={`https://picsum.photos/seed/${item.imageSeed || item.seed}/400/320`}
                   mode="aspectFill"
                   style={{ width: '100%', height: '100%' }}
                 />
@@ -1204,7 +1222,7 @@ export default function HomePage() {
             }}
           >
             <Image
-              src={`https://picsum.photos/seed/${environmentCards[2].seed}/700/400`}
+              src={`https://picsum.photos/seed/${bottomEnvironmentCard.imageSeed || bottomEnvironmentCard.seed}/700/400`}
               mode="aspectFill"
               style={{ width: '100%', height: '100%' }}
             />
@@ -1219,7 +1237,7 @@ export default function HomePage() {
               }}
             >
               <Text style={{ color: '#ffffff', fontSize: ui.type.body, fontWeight: 700 }}>
-                {environmentCards[2].label}
+                {bottomEnvironmentCard.label}
               </Text>
             </View>
           </View>
@@ -1237,7 +1255,7 @@ export default function HomePage() {
               color: ui.colors.textMuted
             }}
           >
-            两条成熟教研主线，对应不同基础与目标。
+            {content.page?.directionsIntro || defaultHomePage.directionsIntro}
           </Text>
         </View>
         {directions.map((item, index) => (
@@ -1375,7 +1393,7 @@ export default function HomePage() {
                   boxSizing: 'border-box'
                 }}
               />
-              <Text style={{ fontSize: '30rpx', color: '#94a3b8', fontWeight: 800 }}>更多专业方向</Text>
+              <Text style={{ fontSize: '30rpx', color: '#94a3b8', fontWeight: 800 }}>{moreDirectionCard.title}</Text>
             </View>
             <Text
               style={{
@@ -1387,7 +1405,7 @@ export default function HomePage() {
                 fontWeight: 700
               }}
             >
-              筹备中
+              {moreDirectionCard.tag}
             </Text>
           </View>
           <Text
@@ -1399,16 +1417,16 @@ export default function HomePage() {
               color: '#94a3b8'
             }}
           >
-            经管、计算机等更多方向教研团队正在组建中，敬请期待。
+            {moreDirectionCard.desc}
           </Text>
         </View>
       </View>
 
       <PageCtaCard
-        title="免费学情评估"
-        desc="不确定适合哪个方向时，可以先做一次简要评估。"
-        buttonText="预约咨询"
-        footnote="方向建议 · 学情诊断"
+        title={cta.title}
+        desc={cta.desc}
+        buttonText={cta.buttonText}
+        footnote={cta.footnote}
         margin="38rpx 24rpx 0"
         background="linear-gradient(135deg, #162445 0%, #101a36 100%)"
       />

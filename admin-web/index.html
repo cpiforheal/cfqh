@@ -1,0 +1,73 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>启航后台</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">QH</div>
+          <div>
+            <div class="brand-title">启航后台</div>
+            <div class="brand-subtitle">本地管理端</div>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-title">单页内容</div>
+          <div id="page-nav" class="nav-list"></div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-title">列表内容</div>
+          <div id="list-nav" class="nav-list"></div>
+        </div>
+
+        <div class="sidebar-section">
+          <button id="reset-seed" class="secondary-btn full-width">重置为初始数据</button>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <div id="panel-kicker" class="panel-kicker">本地浏览器后台</div>
+            <h1 id="panel-title" class="panel-title">加载中</h1>
+          </div>
+          <div id="status" class="status-pill">准备中</div>
+        </header>
+
+        <section id="page-panel" class="panel hidden">
+          <div class="panel-actions">
+            <button id="save-page" class="primary-btn">保存页面</button>
+          </div>
+          <textarea id="page-editor" class="editor"></textarea>
+        </section>
+
+        <section id="list-panel" class="panel hidden">
+          <div class="list-layout">
+            <div class="item-list-wrap">
+              <div class="panel-actions sticky-actions">
+                <button id="new-item" class="primary-btn">新增条目</button>
+              </div>
+              <div id="item-list" class="item-list"></div>
+            </div>
+            <div class="item-editor-wrap">
+              <div class="panel-actions">
+                <button id="save-item" class="primary-btn">保存条目</button>
+                <button id="delete-item" class="secondary-btn">删除条目</button>
+              </div>
+              <textarea id="item-editor" class="editor"></textarea>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

@@ -1,14 +1,19 @@
-export default {
+﻿export default {
   pages: [
     'pages/home/index',
     'pages/courses/index',
     'pages/teachers/index',
     'pages/success/index',
     'pages/materials/index',
-    'pages/about/index'
+    'pages/about/index',
+    'pages/admin/login/index',
+    'pages/admin/dashboard/index',
+    'pages/admin/page-editor/index',
+    'pages/admin/list-editor/index',
+    'pages/admin/item-editor/index'
   ],
   window: {
-    navigationBarTitleText: '启航',
+    navigationBarTitleText: '启航专转本',
     navigationBarBackgroundColor: '#ffffff',
     navigationBarTextStyle: 'black',
     backgroundColor: '#f3f5fb',
