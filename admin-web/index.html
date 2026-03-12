@@ -1,73 +1,93 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>启航后台</title>
-    <link rel="stylesheet" href="/styles.css" />
+    <title>启航 CMS 控制台</title>
+    <link rel="stylesheet" href="/styles.css?v=20260312-1" />
   </head>
   <body>
-    <div class="shell">
-      <aside class="sidebar">
-        <div class="brand">
-          <div class="brand-mark">QH</div>
-          <div>
-            <div class="brand-title">启航后台</div>
-            <div class="brand-subtitle">本地管理端</div>
+    <div id="app" class="admin-shell">
+      <aside id="sidebar" class="sidebar" aria-label="主导航">
+        <div class="sidebar-head">
+          <div class="brand">
+            <div class="brand-mark">QH</div>
+            <div class="brand-copy">
+              <strong>启航 CMS</strong>
+              <span>教育门户内容管理</span>
+            </div>
           </div>
+          <button id="sidebar-toggle" class="icon-button" type="button" aria-label="折叠侧边栏"></button>
         </div>
 
-        <div class="sidebar-section">
-          <div class="sidebar-title">单页内容</div>
-          <div id="page-nav" class="nav-list"></div>
+        <div class="sidebar-meta">
+          <div class="meta-chip-row">
+            <span id="env-badge" class="env-badge">检测中</span>
+            <span class="meta-chip">CMS</span>
+          </div>
+          <p id="env-note" class="sidebar-note">读取后台环境信息中。</p>
         </div>
 
-        <div class="sidebar-section">
-          <div class="sidebar-title">列表内容</div>
-          <div id="list-nav" class="nav-list"></div>
-        </div>
+        <nav id="sidebar-nav" class="sidebar-nav"></nav>
 
-        <div class="sidebar-section">
-          <button id="reset-seed" class="secondary-btn full-width">重置为初始数据</button>
+        <div class="sidebar-footer">
+          <button id="theme-toggle" class="sidebar-action" type="button"></button>
+          <button id="reset-seed" class="sidebar-action danger" type="button"></button>
         </div>
       </aside>
 
-      <main class="main">
+      <div class="workspace">
         <header class="topbar">
-          <div>
-            <div id="panel-kicker" class="panel-kicker">本地浏览器后台</div>
-            <h1 id="panel-title" class="panel-title">加载中</h1>
+          <div class="topbar-copy">
+            <div id="topbar-kicker" class="topbar-kicker">Content Control</div>
+            <div id="topbar-breadcrumb" class="topbar-breadcrumb">控制台 / 总览</div>
+            <h1 id="view-title" class="view-title">控制台</h1>
+            <p id="view-subtitle" class="view-subtitle">站点与内容系统总控面板。</p>
           </div>
-          <div id="status" class="status-pill">准备中</div>
+
+          <div class="topbar-tools">
+            <div class="runtime-card">
+              <div id="status-pill" class="status-pill">准备中</div>
+              <div class="runtime-meta">
+                <span id="runtime-mode">本地模式</span>
+                <span id="session-counter">会话改动 0</span>
+              </div>
+            </div>
+            <div class="toolbar-actions">
+              <button id="refresh-view" class="toolbar-button" type="button"></button>
+            </div>
+          </div>
         </header>
 
-        <section id="page-panel" class="panel hidden">
-          <div class="panel-actions">
-            <button id="save-page" class="primary-btn">保存页面</button>
-          </div>
-          <textarea id="page-editor" class="editor"></textarea>
-        </section>
-
-        <section id="list-panel" class="panel hidden">
-          <div class="list-layout">
-            <div class="item-list-wrap">
-              <div class="panel-actions sticky-actions">
-                <button id="new-item" class="primary-btn">新增条目</button>
-              </div>
-              <div id="item-list" class="item-list"></div>
-            </div>
-            <div class="item-editor-wrap">
-              <div class="panel-actions">
-                <button id="save-item" class="primary-btn">保存条目</button>
-                <button id="delete-item" class="secondary-btn">删除条目</button>
-              </div>
-              <textarea id="item-editor" class="editor"></textarea>
-            </div>
-          </div>
-        </section>
-      </main>
+        <main id="content" class="content"></main>
+      </div>
     </div>
 
-    <script src="/app.js"></script>
+    <div id="drawer" class="drawer hidden" aria-hidden="true">
+      <div id="drawer-backdrop" class="drawer-backdrop"></div>
+      <aside class="drawer-panel" role="dialog" aria-modal="true" aria-labelledby="drawer-title">
+        <header class="drawer-head">
+          <div>
+            <div id="drawer-kicker" class="drawer-kicker">编辑器</div>
+            <h2 id="drawer-title" class="drawer-title">内容编辑</h2>
+            <p id="drawer-subtitle" class="drawer-subtitle">在抽屉中维护当前数据。</p>
+          </div>
+          <button id="drawer-close" class="icon-button" type="button" aria-label="关闭抽屉"></button>
+        </header>
+
+        <div id="drawer-body" class="drawer-body"></div>
+
+        <footer class="drawer-foot">
+          <div id="drawer-foot-note" class="drawer-foot-note">保存后会写入当前数据源。</div>
+          <div class="drawer-actions">
+            <button id="drawer-delete" class="toolbar-button danger hidden" type="button">删除</button>
+            <button id="drawer-cancel" class="toolbar-button" type="button">取消</button>
+            <button id="drawer-save" class="toolbar-button primary hidden" type="button">保存</button>
+          </div>
+        </footer>
+      </aside>
+    </div>
+
+    <script src="/app.js?v=20260312-1"></script>
   </body>
 </html>
