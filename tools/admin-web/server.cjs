@@ -64,7 +64,7 @@ function loadSeed() {
 
 function ensureDataFile() {
   if (!fs.existsSync(DATA_FILE)) {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(loadSeed(), null, 2), 'utf8');
+    fs.writeFileSync(DATA_FILE, JSON.stringify(stampSeedData(loadSeed()), null, 2), 'utf8');
   }
 }
 
@@ -138,6 +138,52 @@ function stripId(payload) {
   const next = { ...payload };
   delete next._id;
   return next;
+}
+
+function nowIso() {
+  return new Date().toISOString();
+}
+
+function stampPagePayload(payload, existing = null, timestamp = nowIso()) {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return payload;
+  }
+
+  return {
+    ...payload,
+    _createdAt: payload._createdAt || existing?._createdAt || timestamp,
+    _updatedAt: timestamp
+  };
+}
+
+function stampCollectionItem(payload, itemId, existing = null, timestamp = nowIso()) {
+  const nextItem = { ...(payload || {}), _id: itemId || payload?._id || existing?._id };
+  return {
+    ...nextItem,
+    createdAt: nextItem.createdAt || existing?.createdAt || timestamp,
+    updatedAt: timestamp
+  };
+}
+
+function stampSeedData(seed, timestamp = nowIso()) {
+  const nextSeed = {
+    ...seed,
+    site: stampPagePayload(seed.site, null, timestamp),
+    pages: Object.fromEntries(
+      Object.entries(seed.pages || {}).map(([pageKey, pageValue]) => [
+        pageKey,
+        stampPagePayload(pageValue, null, timestamp)
+      ])
+    )
+  };
+
+  for (const collectionKey of Object.keys(LIST_COLLECTIONS)) {
+    nextSeed[collectionKey] = (seed[collectionKey] || []).map((item) =>
+      stampCollectionItem(item, item._id || makeId(collectionKey), null, timestamp)
+    );
+  }
+
+  return nextSeed;
 }
 
 function getEmptyTemplate(collectionKey) {
@@ -251,13 +297,15 @@ class LocalStore {
 
   async savePage(pageKey, payload) {
     const data = readData();
+    const existing = pageKey === 'site' ? data.site : data.pages[pageKey];
+    const nextPage = stampPagePayload(payload, existing);
     if (pageKey === 'site') {
-      data.site = payload;
+      data.site = nextPage;
     } else {
-      data.pages[pageKey] = payload;
+      data.pages[pageKey] = nextPage;
     }
     writeData(data);
-    return payload;
+    return nextPage;
   }
 
   async listCollection(collectionKey) {
@@ -272,7 +320,7 @@ class LocalStore {
 
   async createItem(collectionKey, payload) {
     const data = readData();
-    const nextItem = { ...payload, _id: payload._id || makeId(collectionKey) };
+    const nextItem = stampCollectionItem(payload, payload._id || makeId(collectionKey));
     data[collectionKey] = [...(data[collectionKey] || []), nextItem];
     writeData(data);
     return nextItem;
@@ -280,11 +328,13 @@ class LocalStore {
 
   async updateItem(collectionKey, itemId, payload) {
     const data = readData();
+    const existing = (data[collectionKey] || []).find((entry) => entry._id === itemId) || null;
+    const nextItem = stampCollectionItem(payload, itemId, existing);
     data[collectionKey] = (data[collectionKey] || []).map((entry) =>
-      entry._id === itemId ? { ...payload, _id: itemId } : entry
+      entry._id === itemId ? nextItem : entry
     );
     writeData(data);
-    return { ...payload, _id: itemId };
+    return nextItem;
   }
 
   async deleteItem(collectionKey, itemId) {
@@ -294,7 +344,7 @@ class LocalStore {
   }
 
   async resetSeed() {
-    writeData(loadSeed());
+    writeData(stampSeedData(loadSeed()));
   }
 }
 
@@ -334,8 +384,10 @@ class CloudStore {
     const collection = PAGE_COLLECTIONS[pageKey];
     const docId = PAGE_DOC_IDS[pageKey];
     if (!collection || !docId) throw new Error('未知页面');
-    await this.db.collection(collection).doc(docId).set(stripId(payload));
-    return payload;
+    const existing = await this.getPage(pageKey).catch(() => null);
+    const nextPage = stampPagePayload(payload, existing);
+    await this.db.collection(collection).doc(docId).set(stripId(nextPage));
+    return nextPage;
   }
 
   async listCollection(collectionKey) {
@@ -356,7 +408,7 @@ class CloudStore {
     const collection = LIST_COLLECTIONS[collectionKey];
     if (!collection) throw new Error('未知集合');
     const itemId = payload._id || makeId(collectionKey);
-    const nextItem = { ...payload, _id: itemId };
+    const nextItem = stampCollectionItem(payload, itemId);
     await this.db.collection(collection).doc(itemId).set(stripId(nextItem));
     return nextItem;
   }
@@ -364,7 +416,8 @@ class CloudStore {
   async updateItem(collectionKey, itemId, payload) {
     const collection = LIST_COLLECTIONS[collectionKey];
     if (!collection) throw new Error('未知集合');
-    const nextItem = { ...payload, _id: itemId };
+    const existing = await this.getItem(collectionKey, itemId).catch(() => null);
+    const nextItem = stampCollectionItem(payload, itemId, existing);
     await this.db.collection(collection).doc(itemId).set(stripId(nextItem));
     return nextItem;
   }
@@ -376,7 +429,7 @@ class CloudStore {
   }
 
   async resetSeed() {
-    const seed = loadSeed();
+    const seed = stampSeedData(loadSeed());
 
     const collectionNames = [
       ...new Set([...Object.values(PAGE_COLLECTIONS), ...Object.values(LIST_COLLECTIONS)])
@@ -414,8 +467,7 @@ class CloudStore {
       }
 
       for (const item of seed[collectionKey] || []) {
-        const itemId = item._id || makeId(collectionKey);
-        await this.db.collection(collectionName).doc(itemId).set(stripId({ ...item, _id: itemId }));
+        await this.createItem(collectionKey, item);
       }
     }
   }

@@ -8,7 +8,9 @@
     "contactQrcode": "",
     "address": "江苏省淮安市",
     "serviceHours": "09:00-21:00",
-    "intro": "专注江苏专转本备考服务。"
+    "intro": "专注江苏专转本备考服务。",
+    "_createdAt": "2026-03-12T13:37:26.800Z",
+    "_updatedAt": "2026-03-12T13:37:26.800Z"
   },
   "pages": {
     "home": {
@@ -132,7 +134,9 @@
         "desc": "不确定适合哪个方向时，可以先做一次简要评估。",
         "buttonText": "预约咨询",
         "footnote": "方向建议 · 学情诊断"
-      }
+      },
+      "_createdAt": "2026-03-12T13:37:26.800Z",
+      "_updatedAt": "2026-03-12T13:37:26.800Z"
     },
     "courses": {
       "title": "开设方向",
@@ -156,7 +160,9 @@
         "title": "更多专业方向",
         "tag": "筹备中",
         "desc": "经管、计算机等更多方向教研团队正在组建中，敬请期待。"
-      }
+      },
+      "_createdAt": "2026-03-12T13:37:26.800Z",
+      "_updatedAt": "2026-03-12T13:37:26.800Z"
     },
     "teachers": {
       "hero": {
@@ -188,7 +194,9 @@
         "desc": "不同方向、不同基础的学员，适合的主讲与督学组合并不相同，先沟通再安排更稳。",
         "buttonText": "预约老师咨询",
         "footnote": "方向匹配 · 课程说明 · 督学方式"
-      }
+      },
+      "_createdAt": "2026-03-12T13:37:26.800Z",
+      "_updatedAt": "2026-03-12T13:37:26.800Z"
     },
     "success": {
       "hero": {
@@ -218,7 +226,9 @@
         "desc": "方向选择、课程安排、阶段测评、督学反馈与复盘执行持续协同，结果才会更稳定。",
         "buttonText": "了解上岸规划",
         "footnote": "路径规划 · 节奏管理 · 结果复盘"
-      }
+      },
+      "_createdAt": "2026-03-12T13:37:26.800Z",
+      "_updatedAt": "2026-03-12T13:37:26.800Z"
     },
     "about": {
       "hero": {
@@ -256,7 +266,9 @@
         "desc": "如果你想先确认环境、管理方式、课程节奏和方向匹配，可以先预约一次机构沟通。",
         "buttonText": "预约机构咨询",
         "footnote": "环境了解 · 课程说明 · 方向建议"
-      }
+      },
+      "_createdAt": "2026-03-12T13:37:26.800Z",
+      "_updatedAt": "2026-03-12T13:37:26.800Z"
     },
     "materials": {
       "hero": {
@@ -297,7 +309,9 @@
         "desc": "如果你想知道每本教材适合哪个阶段、配套什么题目训练，先沟通后再安排会更清楚。",
         "buttonText": "咨询资料详情",
         "footnote": "资料目录 · 使用建议 · 阶段搭配"
-      }
+      },
+      "_createdAt": "2026-03-12T13:37:26.800Z",
+      "_updatedAt": "2026-03-12T13:37:26.800Z"
     }
   },
   "directions": [
@@ -339,7 +353,9 @@
         "iconType": "pulse"
       },
       "sort": 10,
-      "status": "published"
+      "status": "published",
+      "createdAt": "2026-03-12T13:37:26.800Z",
+      "updatedAt": "2026-03-12T13:37:26.800Z"
     },
     {
       "_id": "direction_math",
@@ -378,7 +394,9 @@
         "iconType": "grid"
       },
       "sort": 20,
-      "status": "published"
+      "status": "published",
+      "createdAt": "2026-03-12T13:37:26.800Z",
+      "updatedAt": "2026-03-12T13:37:26.800Z"
     }
   ],
   "teachers": [
@@ -391,7 +409,9 @@
       "intro": "",
       "specialties": [],
       "sort": 10,
-      "status": "published"
+      "status": "published",
+      "createdAt": "2026-03-12T13:37:26.800Z",
+      "updatedAt": "2026-03-12T13:37:26.800Z"
     },
     {
       "_id": "teacher_li",
@@ -402,7 +422,9 @@
       "intro": "",
       "specialties": [],
       "sort": 20,
-      "status": "published"
+      "status": "published",
+      "createdAt": "2026-03-12T13:37:26.800Z",
+      "updatedAt": "2026-03-12T13:37:26.800Z"
     },
     {
       "_id": "teacher_wang",
@@ -413,7 +435,9 @@
       "intro": "",
       "specialties": [],
       "sort": 30,
-      "status": "published"
+      "status": "published",
+      "createdAt": "2026-03-12T13:37:26.800Z",
+      "updatedAt": "2026-03-12T13:37:26.800Z"
     },
     {
       "_id": "teacher_zhao",
@@ -424,7 +448,9 @@
       "intro": "",
       "specialties": [],
       "sort": 40,
-      "status": "published"
+      "status": "published",
+      "createdAt": "2026-03-12T13:37:26.800Z",
+      "updatedAt": "2026-03-12T13:37:26.800Z"
     }
   ],
   "successCases": [
@@ -436,7 +462,9 @@
       "year": 2025,
       "category": "医护方向",
       "sort": 10,
-      "status": "published"
+      "status": "published",
+      "createdAt": "2026-03-12T13:37:26.800Z",
+      "updatedAt": "2026-03-12T13:37:26.800Z"
     },
     {
       "_id": "success_2024",
@@ -446,7 +474,9 @@
       "year": 2024,
       "category": "高数专项",
       "sort": 20,
-      "status": "published"
+      "status": "published",
+      "createdAt": "2026-03-12T13:37:26.800Z",
+      "updatedAt": "2026-03-12T13:37:26.800Z"
     },
     {
       "_id": "success_2023",
@@ -456,7 +486,9 @@
       "year": 2023,
       "category": "跨考案例",
       "sort": 30,
-      "status": "published"
+      "status": "published",
+      "createdAt": "2026-03-12T13:37:26.800Z",
+      "updatedAt": "2026-03-12T13:37:26.800Z"
     }
   ],
   "materialSeries": [
@@ -476,7 +508,9 @@
         "冲刺卷"
       ],
       "sort": 10,
-      "status": "published"
+      "status": "published",
+      "createdAt": "2026-03-12T13:37:26.800Z",
+      "updatedAt": "2026-03-12T13:37:26.800Z"
     },
     {
       "_id": "series_medical",
@@ -494,7 +528,9 @@
         "冲刺卷"
       ],
       "sort": 20,
-      "status": "published"
+      "status": "published",
+      "createdAt": "2026-03-12T13:37:26.800Z",
+      "updatedAt": "2026-03-12T13:37:26.800Z"
     }
   ],
   "materialItems": [
@@ -512,7 +548,9 @@
         "阶段小结"
       ],
       "sort": 10,
-      "status": "published"
+      "status": "published",
+      "createdAt": "2026-03-12T13:37:26.800Z",
+      "updatedAt": "2026-03-12T13:37:26.800Z"
     },
     {
       "_id": "material_math_exercises",
@@ -528,7 +566,9 @@
         "解题方法"
       ],
       "sort": 20,
-      "status": "published"
+      "status": "published",
+      "createdAt": "2026-03-12T13:37:26.800Z",
+      "updatedAt": "2026-03-12T13:37:26.800Z"
     },
     {
       "_id": "material_math_mock",
@@ -544,7 +584,9 @@
         "时间分配"
       ],
       "sort": 30,
-      "status": "published"
+      "status": "published",
+      "createdAt": "2026-03-12T13:37:26.800Z",
+      "updatedAt": "2026-03-12T13:37:26.800Z"
     },
     {
       "_id": "material_math_final",
@@ -560,7 +602,9 @@
         "考前提示"
       ],
       "sort": 40,
-      "status": "published"
+      "status": "published",
+      "createdAt": "2026-03-12T13:37:26.800Z",
+      "updatedAt": "2026-03-12T13:37:26.800Z"
     },
     {
       "_id": "material_medical_textbook",
@@ -576,7 +620,9 @@
         "重点归纳"
       ],
       "sort": 50,
-      "status": "published"
+      "status": "published",
+      "createdAt": "2026-03-12T13:37:26.800Z",
+      "updatedAt": "2026-03-12T13:37:26.800Z"
     },
     {
       "_id": "material_medical_exercises",
@@ -592,7 +638,9 @@
         "错题复盘"
       ],
       "sort": 60,
-      "status": "published"
+      "status": "published",
+      "createdAt": "2026-03-12T13:37:26.800Z",
+      "updatedAt": "2026-03-12T13:37:26.800Z"
     },
     {
       "_id": "material_medical_mock",
@@ -608,7 +656,9 @@
         "分值结构"
       ],
       "sort": 70,
-      "status": "published"
+      "status": "published",
+      "createdAt": "2026-03-12T13:37:26.800Z",
+      "updatedAt": "2026-03-12T13:37:26.800Z"
     },
     {
       "_id": "material_medical_final",
@@ -624,7 +674,9 @@
         "冲刺提示"
       ],
       "sort": 80,
-      "status": "published"
+      "status": "published",
+      "createdAt": "2026-03-12T13:37:26.800Z",
+      "updatedAt": "2026-03-12T13:37:26.800Z"
     }
   ]
 }
