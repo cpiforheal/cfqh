@@ -1,16 +1,16 @@
 {
   "site": {
     "_id": "default",
-    "siteName": "启航专转本",
-    "brandName": "淮安启航专转本",
+    "siteName": "乘帆启航专转本",
+    "brandName": "江苏乘帆启航专转本",
     "contactPhone": "400-000-0000",
     "contactWechat": "qihang-zhuanzhuanben",
     "contactQrcode": "",
-    "address": "江苏省淮安市",
+    "address": "江苏省南京市",
     "serviceHours": "09:00-21:00",
     "intro": "专注江苏专转本备考服务。",
     "_createdAt": "2026-03-12T13:37:26.800Z",
-    "_updatedAt": "2026-03-12T13:37:26.800Z"
+    "_updatedAt": "2026-03-13T13:20:39.701Z"
   },
   "pages": {
     "home": {
@@ -678,5 +678,6 @@
       "createdAt": "2026-03-12T13:37:26.800Z",
       "updatedAt": "2026-03-12T13:37:26.800Z"
     }
-  ]
+  ],
+  "mediaAssets": []
 }

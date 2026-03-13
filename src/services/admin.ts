@@ -7,6 +7,7 @@ function getFallbackList(collection) {
   if (collection === 'success_cases') return fallbackContent.successCases;
   if (collection === 'material_series') return fallbackContent.materialSeries;
   if (collection === 'material_items') return fallbackContent.materialItems;
+  if (collection === 'media_assets') return fallbackContent.mediaAssets;
   if (collection === 'admin_users') return [];
   return [];
 }
@@ -32,6 +33,10 @@ export async function getAdminPage(pageKey) {
     }
   } catch (error) {
     console.warn('[admin] fallback page:', pageKey, error && error.message ? error.message : error);
+  }
+
+  if (pageKey === 'site') {
+    return fallbackContent.site || null;
   }
 
   return fallbackContent.pages[pageKey] || null;
@@ -93,6 +98,10 @@ export async function deleteAdminItem(collection, id) {
 }
 
 export function getEmptyPageContent(pageKey) {
+  if (pageKey === 'site') {
+    return JSON.parse(JSON.stringify(fallbackContent.site || {}));
+  }
+
   return JSON.parse(JSON.stringify(fallbackContent.pages[pageKey] || {}));
 }
 
@@ -122,6 +131,7 @@ export function getEmptyItemTemplate(collection) {
       name: '',
       role: '',
       tag: '',
+      avatarUrl: '',
       avatarSeed: '',
       intro: '',
       specialties: [],
@@ -134,6 +144,7 @@ export function getEmptyItemTemplate(collection) {
     return {
       title: '',
       subtitle: '',
+      coverUrl: '',
       coverSeed: '',
       year: new Date().getFullYear(),
       category: '',
@@ -166,6 +177,20 @@ export function getEmptyItemTemplate(collection) {
       subtitle: '',
       desc: '',
       contents: [],
+      sort: 100,
+      status: 'draft'
+    };
+  }
+
+  if (collection === 'media_assets') {
+    return {
+      _id: '',
+      title: '',
+      category: '',
+      url: '',
+      thumbUrl: '',
+      alt: '',
+      tags: [],
       sort: 100,
       status: 'draft'
     };

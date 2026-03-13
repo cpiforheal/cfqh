@@ -1,67 +1,252 @@
 import { Image, Text, View } from '@tarojs/components';
+import { useCallback, useEffect, useState } from 'react';
+import PageCtaCard from '../../components/PageCtaCard';
+import PageHero from '../../components/PageHero';
+import PageIntroCard from '../../components/PageIntroCard';
+import PageSectionTitle from '../../components/PageSectionTitle';
+import fallbackContent from '../../data/contentFallback';
+import { useCmsAutoRefresh } from '../../hooks/useCmsAutoRefresh';
+import { getPublicContent } from '../../services/content';
+import { pageStyle, surfaceCardStyle, ui } from '../../styles/ui';
+import { resolveMediaUrl } from '../../utils/media';
+
+const defaultAboutPage = fallbackContent.pages.about;
+
+function getInitialAboutState() {
+  return {
+    site: fallbackContent.site,
+    page: defaultAboutPage
+  };
+}
 
 export default function AboutPage() {
+  const [content, setContent] = useState(getInitialAboutState());
+  const [loadState, setLoadState] = useState({ source: 'fallback', error: '' });
+
+  const loadContent = useCallback(() => {
+    let mounted = true;
+
+    getPublicContent('about')
+      .then((payload) => {
+        if (!mounted || !payload) return;
+        setContent({
+          site: payload.site || fallbackContent.site,
+          page: payload.page || defaultAboutPage
+        });
+        setLoadState({
+          source: payload.__meta?.source || 'cloud',
+          error: ''
+        });
+      })
+      .catch((error) => {
+        if (!mounted) return;
+        setLoadState({
+          source: 'error',
+          error: error && error.message ? error.message : '云端内容读取失败'
+        });
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const cleanup = loadContent();
+    return cleanup;
+  }, [loadContent]);
+
+  useCmsAutoRefresh(loadContent);
+
+  const hero = content.page?.hero || defaultAboutPage.hero;
+  const introCard = content.page?.introCard || defaultAboutPage.introCard;
+  const values = content.page?.values || defaultAboutPage.values;
+  const environmentImages = content.page?.environmentImages || defaultAboutPage.environmentImages;
+  const cta = content.page?.cta || defaultAboutPage.cta;
+  const site = content.site || fallbackContent.site;
+  const contactRows = [
+    { label: '联系电话', value: site.contactPhone },
+    { label: '微信咨询', value: site.contactWechat },
+    { label: '机构地址', value: site.address },
+    { label: '服务时间', value: site.serviceHours }
+  ].filter((item) => item.value);
+
   return (
-    <View className="page bg-slate-50">
-      <View className="relative overflow-hidden bg-slate-900 px-4 pb-12 pt-14">
-        <Image
-          src="https://picsum.photos/seed/campus/900/600"
-          className="absolute left-0 top-0 h-full w-full"
-          mode="aspectFill"
-          style={{ opacity: 0.24 }}
-        />
+    <View style={pageStyle}>
+      {loadState.error ? (
         <View
-          className="absolute left-0 top-·0 h-full w-full"
-          style={{ background: 'linear-gradient(180deg, rgba(15,23,42,0.2), rgba(15,23,42,0.9))' }}
-        />
-        <View className="relative z-10">
-          <Text className="mb-2 block text-2xl font-extrabold text-white">关于我们</Text>
-          <Text className="block text-xs text-slate-300">专注专转本备考服务，强调教研、管理与答疑的协同。</Text>
+          style={{
+            margin: '18rpx 24rpx 0',
+            padding: '16rpx 18rpx',
+            borderRadius: '18rpx',
+            backgroundColor: '#fff7ed',
+            border: '1rpx solid #fdba74'
+          }}
+        >
+          <Text style={{ fontSize: ui.type.meta, color: '#9a3412', fontWeight: 700 }}>
+            云端内容未加载成功：{loadState.error}
+          </Text>
+        </View>
+      ) : null}
+
+      <PageHero
+        chip={hero.chip}
+        title={hero.title}
+        desc={hero.desc}
+        background="linear-gradient(180deg, #31415f 0%, #17233f 56%, #0d1730 100%)"
+        imageUrl={hero.imageUrl}
+        imageSeed={hero.imageSeed}
+      />
+
+      <PageIntroCard title={introCard.title} desc={introCard.desc} />
+
+      <View style={{ margin: '20rpx 24rpx 0' }}>
+        <View
+          style={{
+            display: 'inline-flex',
+            padding: '8rpx 14rpx',
+            borderRadius: ui.radius.pill,
+            backgroundColor: '#eef2ff'
+          }}
+        >
+          <Text style={{ fontSize: ui.type.note, color: '#4f46e5', fontWeight: 700 }}>
+            {loadState.source === 'local-preview' ? '本地预览' : loadState.source === 'cloud' ? '云端内容' : '本地内容'}
+          </Text>
         </View>
       </View>
 
-      <View className="p-4">
-        <View
-          className="mb-4 border border-slate-100 bg-white p-5 shadow-sm"
-          style={{ borderRadius: '30rpx' }}
-        >
-          <Text className="mb-2 block text-sm font-bold text-slate-900">品牌理念</Text>
-          <Text className="block text-xs leading-5 text-slate-500">
-            以高标准教研与精细化服务为核心，帮助学员建立更稳定的备考节奏。
-          </Text>
-        </View>
+      <View style={{ margin: `${ui.spacing.section} ${ui.spacing.page} 0` }}>
+        <PageSectionTitle lineColor="#8a92ff">机构理念</PageSectionTitle>
+        {values.map((item, index) => (
+          <View
+            key={item.title}
+            style={{
+              ...surfaceCardStyle,
+              marginBottom: index === values.length - 1 ? '0' : ui.spacing.block,
+              padding: '28rpx 24rpx'
+            }}
+          >
+            <Text
+              style={{
+                display: 'block',
+                fontSize: ui.type.cardTitle,
+                color: ui.colors.text,
+                fontWeight: 800,
+                marginBottom: '10rpx'
+              }}
+            >
+              {item.title}
+            </Text>
+            <Text
+              style={{
+                display: 'block',
+                fontSize: ui.type.body,
+                color: ui.colors.textMuted,
+                lineHeight: 1.8
+              }}
+            >
+              {item.desc}
+            </Text>
+          </View>
+        ))}
+      </View>
 
+      <View style={{ margin: `${ui.spacing.section} ${ui.spacing.page} 0` }}>
+        <PageSectionTitle lineColor="#8a92ff">联系方式</PageSectionTitle>
         <View
-          className="mb-4 border border-slate-100 bg-white p-5 shadow-sm"
-          style={{ borderRadius: '30rpx' }}
+          style={{
+            ...surfaceCardStyle,
+            padding: '28rpx 24rpx',
+            borderRadius: ui.radius.lg
+          }}
         >
-          <Text className="mb-2 block text-sm font-bold text-slate-900">服务体系</Text>
-          <Text className="block text-xs leading-5 text-slate-500">
-            课程规划、阶段测评、专项提升和全程督学四个环节协同推进。
+          <Text
+            style={{
+              display: 'block',
+              fontSize: ui.type.section,
+              color: ui.colors.text,
+              fontWeight: 800,
+              marginBottom: '8rpx'
+            }}
+          >
+            {site.brandName || site.siteName}
           </Text>
+          <Text
+            style={{
+              display: 'block',
+              fontSize: ui.type.body,
+              color: ui.colors.textMuted,
+              lineHeight: 1.78,
+              marginBottom: '20rpx'
+            }}
+          >
+            {site.intro}
+          </Text>
+          {contactRows.map((item, index) => (
+            <View
+              key={item.label}
+              style={{
+                paddingBottom: index === contactRows.length - 1 ? '0' : '16rpx',
+                marginBottom: index === contactRows.length - 1 ? '0' : '16rpx',
+                borderBottom: index === contactRows.length - 1 ? 'none' : '1rpx solid rgba(226,232,240,0.9)'
+              }}
+            >
+              <Text style={{ display: 'block', fontSize: ui.type.note, color: ui.colors.textSoft, marginBottom: '6rpx' }}>{item.label}</Text>
+              <Text style={{ display: 'block', fontSize: ui.type.body, color: ui.colors.text, fontWeight: 700 }}>{item.value}</Text>
+            </View>
+          ))}
+          {site.contactQrcodeUrl || site.contactQrcode ? (
+            <View style={{ marginTop: '20rpx', alignItems: 'center', display: 'flex' }}>
+              <Image
+                src={site.contactQrcodeUrl || site.contactQrcode}
+                mode="aspectFill"
+                style={{
+                  width: '160rpx',
+                  height: '160rpx',
+                  borderRadius: ui.radius.sm,
+                  border: '1rpx solid rgba(226,232,240,0.95)'
+                }}
+              />
+            </View>
+          ) : null}
         </View>
+      </View>
 
-        <View className="bg-slate-900 p-5" style={{ borderRadius: '30rpx' }}>
-          <Text className="mb-2 block text-sm font-bold text-white">校区环境</Text>
-          <Text className="mb-4 block text-xs leading-5 text-slate-200">
-            沉浸式学习和生活配套，帮助学员把注意力集中在日常训练和复盘上。
-          </Text>
-          <View className="grid grid-cols-2 gap-2">
-            <Image
-              src="https://picsum.photos/seed/campus1/400/300"
-              className="h-24 w-full"
-              style={{ borderRadius: '20rpx' }}
-              mode="aspectFill"
-            />
-            <Image
-              src="https://picsum.photos/seed/campus2/400/300"
-              className="h-24 w-full"
-              style={{ borderRadius: '20rpx' }}
-              mode="aspectFill"
-            />
+      <View style={{ margin: `${ui.spacing.section} ${ui.spacing.page} 0` }}>
+        <PageSectionTitle lineColor="#8a92ff">校区环境</PageSectionTitle>
+        <View
+          style={{
+            ...surfaceCardStyle,
+            borderRadius: ui.radius.lg,
+            padding: '24rpx',
+            boxShadow: ui.shadow.cardRaised
+          }}
+        >
+          <View style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+            {environmentImages.map((item) => (
+              <View key={item.label} style={{ width: '48.2%', marginBottom: '16rpx' }}>
+                <Image
+                  src={resolveMediaUrl({
+                    url: item.imageUrl,
+                    seed: item.imageSeed || item.label,
+                    fallbackSize: '400/300'
+                  })}
+                  mode="aspectFill"
+                  style={{
+                    width: '100%',
+                    height: '180rpx',
+                    borderRadius: ui.radius.sm,
+                    marginBottom: '12rpx'
+                  }}
+                />
+                <Text style={{ display: 'block', fontSize: ui.type.body, color: ui.colors.text, fontWeight: 700 }}>{item.label}</Text>
+              </View>
+            ))}
           </View>
         </View>
       </View>
+
+      <PageCtaCard title={cta.title} desc={cta.desc} buttonText={cta.buttonText} footnote={cta.footnote} />
     </View>
   );
 }

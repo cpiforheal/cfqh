@@ -26,7 +26,8 @@ const LIST_COLLECTIONS = {
   teachers: 'teachers',
   successCases: 'success_cases',
   materialSeries: 'material_series',
-  materialItems: 'material_items'
+  materialItems: 'material_items',
+  mediaAssets: 'media_assets'
 };
 
 function stripId(payload) {

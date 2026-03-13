@@ -1,7 +1,9 @@
 import Taro, { getCurrentInstance } from '@tarojs/taro';
-import { Button, Text, Textarea, View } from '@tarojs/components';
+import { Button, Text, View } from '@tarojs/components';
 import { useEffect, useMemo, useState } from 'react';
 import { adminPageOptions } from '../../../config/content';
+import { getAdminPageFormSchema, validateAdminFormData } from '../../../config/adminFormSchemas';
+import ContentForm from '../../../components/admin/ContentForm';
 import { getAdminPage, getEmptyPageContent, saveAdminPage } from '../../../services/admin';
 import { pageStyle, surfaceCardStyle, ui } from '../../../styles/ui';
 
@@ -12,7 +14,8 @@ export default function AdminPageEditor() {
     const matched = adminPageOptions.find((item) => item.key === pageKey);
     return matched ? matched.label : pageKey;
   }, [pageKey]);
-  const [value, setValue] = useState('');
+  const schema = useMemo(() => getAdminPageFormSchema(pageKey), [pageKey]);
+  const [value, setValue] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -21,9 +24,9 @@ export default function AdminPageEditor() {
       setLoading(true);
       try {
         const data = await getAdminPage(pageKey);
-        setValue(JSON.stringify(data || getEmptyPageContent(pageKey), null, 2));
+        setValue(data || getEmptyPageContent(pageKey));
       } catch (error) {
-        setValue(JSON.stringify(getEmptyPageContent(pageKey), null, 2));
+        setValue(getEmptyPageContent(pageKey));
         Taro.showToast({ title: error.message || '读取失败', icon: 'none' });
       } finally {
         setLoading(false);
@@ -36,8 +39,11 @@ export default function AdminPageEditor() {
   async function handleSave() {
     try {
       setSaving(true);
-      const parsed = JSON.parse(value);
-      await saveAdminPage(pageKey, parsed);
+      const validationMessage = validateAdminFormData(schema, value);
+      if (validationMessage) {
+        throw new Error(validationMessage);
+      }
+      await saveAdminPage(pageKey, value);
       Taro.showToast({ title: '保存成功', icon: 'success' });
     } catch (error) {
       Taro.showToast({ title: error.message || '保存失败', icon: 'none' });
@@ -50,27 +56,12 @@ export default function AdminPageEditor() {
     <View style={{ ...pageStyle, padding: '28rpx 24rpx 48rpx' }}>
       <View style={{ ...surfaceCardStyle, padding: '28rpx', borderRadius: ui.radius.lg }}>
         <Text style={{ display: 'block', fontSize: ui.type.section, color: ui.colors.text, fontWeight: 900, marginBottom: '10rpx' }}>
-          {pageLabel} JSON 编辑
+          {pageLabel} 表单编辑
         </Text>
         <Text style={{ display: 'block', fontSize: ui.type.meta, color: ui.colors.textMuted, marginBottom: '18rpx' }}>
-          当前阶段先用原始 JSON 编辑，优先打通内容链路。
+          当前保持原有页面样式不变，仅将内容编辑方式升级为结构化表单。
         </Text>
-        <Textarea
-          value={value}
-          onInput={(event) => setValue(event.detail.value)}
-          maxlength={-1}
-          style={{
-            width: '100%',
-            minHeight: '980rpx',
-            backgroundColor: '#0f172a',
-            color: '#e2e8f0',
-            borderRadius: '24rpx',
-            padding: '24rpx',
-            boxSizing: 'border-box',
-            fontSize: '22rpx',
-            lineHeight: 1.7
-          }}
-        />
+        <ContentForm value={value} onChange={setValue} schema={schema} />
         <Button type="primary" loading={saving || loading} onClick={handleSave} style={{ marginTop: '20rpx' }}>
           保存页面内容
         </Button>

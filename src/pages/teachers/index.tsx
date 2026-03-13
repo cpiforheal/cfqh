@@ -1,38 +1,115 @@
 import { Image, Text, View } from '@tarojs/components';
+import { useCallback, useEffect, useState } from 'react';
 import PageCtaCard from '../../components/PageCtaCard';
 import PageHero from '../../components/PageHero';
 import PageIntroCard from '../../components/PageIntroCard';
 import PageSectionTitle from '../../components/PageSectionTitle';
+import fallbackContent from '../../data/contentFallback';
+import { useCmsAutoRefresh } from '../../hooks/useCmsAutoRefresh';
+import { getPublicContent } from '../../services/content';
 import { pageStyle, surfaceCardStyle, ui } from '../../styles/ui';
+import { resolveMediaUrl } from '../../utils/media';
 
-const teachers = [
-  { name: '张老师', role: '医护方向主讲', tag: '十年教研经验', seed: 'teacher-zhang' },
-  { name: '李老师', role: '高数专项讲师', tag: '体系化提分', seed: 'teacher-li' },
-  { name: '王老师', role: '公共课讲师', tag: '真题讲解', seed: 'teacher-wang' },
-  { name: '赵老师', role: '班主任督学', tag: '全程跟踪', seed: 'teacher-zhao' }
-];
+const defaultTeachersPage = fallbackContent.pages.teachers;
+const defaultTeachers = fallbackContent.teachers;
 
-const features = [
-  { title: '全职坐班答疑', desc: '课程推进、答疑复盘与阶段督学同步进行，不让学习管理与课程脱节。' },
-  { title: '专业课与公共课协同', desc: '不同方向老师共同参与课程规划，重点内容和训练节奏能互相对齐。' },
-  { title: '班主任全程跟踪', desc: '日常管理、测评反馈和节奏提醒并行，帮助学员保持持续执行。' }
-];
+function getInitialTeachersState() {
+  return {
+    site: fallbackContent.site,
+    page: defaultTeachersPage,
+    teachers: defaultTeachers
+  };
+}
 
 export default function TeachersPage() {
+  const [content, setContent] = useState(getInitialTeachersState());
+  const [loadState, setLoadState] = useState({ source: 'fallback', error: '' });
+
+  const loadContent = useCallback(() => {
+    let mounted = true;
+
+    getPublicContent('teachers')
+      .then((payload) => {
+        if (!mounted || !payload) return;
+        setContent({
+          site: payload.site || fallbackContent.site,
+          page: payload.page || defaultTeachersPage,
+          teachers: payload.teachers && payload.teachers.length ? payload.teachers : defaultTeachers
+        });
+        setLoadState({
+          source: payload.__meta?.source || 'cloud',
+          error: ''
+        });
+      })
+      .catch((error) => {
+        if (!mounted) return;
+        setLoadState({
+          source: 'error',
+          error: error && error.message ? error.message : '云端内容读取失败'
+        });
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const cleanup = loadContent();
+    return cleanup;
+  }, [loadContent]);
+
+  useCmsAutoRefresh(loadContent);
+
+  const hero = content.page?.hero || defaultTeachersPage.hero;
+  const introCard = content.page?.introCard || defaultTeachersPage.introCard;
+  const features = content.page?.features || defaultTeachersPage.features;
+  const teachers = content.teachers || defaultTeachers;
+  const cta = content.page?.cta || defaultTeachersPage.cta;
+
   return (
     <View style={pageStyle}>
+      {loadState.error ? (
+        <View
+          style={{
+            margin: '18rpx 24rpx 0',
+            padding: '16rpx 18rpx',
+            borderRadius: '18rpx',
+            backgroundColor: '#fff7ed',
+            border: '1rpx solid #fdba74'
+          }}
+        >
+          <Text style={{ fontSize: ui.type.meta, color: '#9a3412', fontWeight: 700 }}>
+            云端内容未加载成功：{loadState.error}
+          </Text>
+        </View>
+      ) : null}
+
       <PageHero
-        chip="师资阵容"
-        title="师资团队"
-        desc="核心教研、一线主讲与班主任督学联动，覆盖专业课、公共课和备考管理的完整协作。"
+        chip={hero.chip}
+        title={hero.title}
+        desc={hero.desc}
         background="linear-gradient(180deg, #31415f 0%, #17233f 56%, #0d1730 100%)"
-        imageSeed="lecture"
+        imageUrl={hero.imageUrl}
+        imageSeed={hero.imageSeed}
       />
 
-      <PageIntroCard
-        title="全职教研协同"
-        desc="教学、答疑、督学与复盘协同推进，让课程与管理形成统一执行标准。"
-      />
+      <PageIntroCard title={introCard.title} desc={introCard.desc} />
+
+      <View style={{ margin: '20rpx 24rpx 0' }}>
+        <View
+          style={{
+            display: 'inline-flex',
+            padding: '8rpx 14rpx',
+            borderRadius: ui.radius.pill,
+            backgroundColor: '#eef2ff'
+          }}
+        >
+          <Text style={{ fontSize: ui.type.note, color: '#4f46e5', fontWeight: 700 }}>
+            {loadState.source === 'local-preview' ? '本地预览' : loadState.source === 'cloud' ? '云端内容' : '本地内容'}
+          </Text>
+        </View>
+      </View>
 
       <View style={{ margin: '38rpx 24rpx 0' }}>
         <PageSectionTitle lineColor="#8a92ff">核心优势</PageSectionTitle>
@@ -75,7 +152,7 @@ export default function TeachersPage() {
         <View style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between' }}>
           {teachers.map((teacher) => (
             <View
-              key={teacher.name}
+              key={teacher._id || teacher.name}
               style={{
                 ...surfaceCardStyle,
                 width: '48.2%',
@@ -85,7 +162,11 @@ export default function TeachersPage() {
               }}
             >
               <Image
-                src={`https://picsum.photos/seed/${teacher.seed}/240/240`}
+                src={resolveMediaUrl({
+                  url: teacher.avatarUrl,
+                  seed: teacher.avatarSeed || teacher._id || teacher.name,
+                  fallbackSize: '240/240'
+                })}
                 mode="aspectFill"
                 style={{
                   width: '112rpx',
@@ -110,34 +191,44 @@ export default function TeachersPage() {
                   display: 'block',
                   fontSize: ui.type.body,
                   color: ui.colors.textMuted,
-                  marginBottom: '16rpx'
+                  marginBottom: teacher.intro ? '10rpx' : '16rpx'
                 }}
               >
                 {teacher.role}
               </Text>
-              <View
-                style={{
-                  display: 'inline-flex',
-                  padding: '10rpx 16rpx',
-                  borderRadius: ui.radius.pill,
-                  backgroundColor: ui.colors.accentSoft
-                }}
-              >
-                <Text style={{ fontSize: ui.type.meta, color: ui.colors.accent, fontWeight: 700 }}>
-                  {teacher.tag}
+              {teacher.intro ? (
+                <Text
+                  style={{
+                    display: 'block',
+                    fontSize: ui.type.meta,
+                    color: ui.colors.textSoft,
+                    lineHeight: 1.7,
+                    marginBottom: '16rpx'
+                  }}
+                >
+                  {teacher.intro}
                 </Text>
-              </View>
+              ) : null}
+              {teacher.tag ? (
+                <View
+                  style={{
+                    display: 'inline-flex',
+                    padding: '10rpx 16rpx',
+                    borderRadius: ui.radius.pill,
+                    backgroundColor: ui.colors.accentSoft
+                  }}
+                >
+                  <Text style={{ fontSize: ui.type.meta, color: ui.colors.accent, fontWeight: 700 }}>
+                    {teacher.tag}
+                  </Text>
+                </View>
+              ) : null}
             </View>
           ))}
         </View>
       </View>
 
-      <PageCtaCard
-        title="先了解适合你的老师配置"
-        desc="不同方向、不同基础的学员，适合的主讲与督学组合并不相同，先沟通再安排更稳。"
-        buttonText="预约老师咨询"
-        footnote="方向匹配 · 课程说明 · 督学方式"
-      />
+      <PageCtaCard title={cta.title} desc={cta.desc} buttonText={cta.buttonText} footnote={cta.footnote} />
     </View>
   );
 }

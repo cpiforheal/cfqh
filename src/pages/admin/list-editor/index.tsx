@@ -42,7 +42,7 @@ export default function AdminListEditor() {
           {label}
         </Text>
         <Text style={{ display: 'block', fontSize: ui.type.meta, color: ui.colors.textMuted, marginBottom: '18rpx' }}>
-          共 {items.length} 条，可直接进入单条 JSON 编辑。
+          共 {items.length} 条，可直接进入单条表单编辑。
         </Text>
         <Button
           type="primary"

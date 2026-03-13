@@ -1,10 +1,16 @@
+import Taro from '@tarojs/taro';
 import fallbackContent from '../data/contentFallback';
+import { CMS_PREVIEW_BASE_URL, CMS_PREVIEW_ENABLED } from '../config/cms';
 import { CLOUD_REQUIRE_REMOTE } from '../config/cloud';
 import { callCloudFunction } from './cloud';
 
+function isPublished(item) {
+  return !!item && (!item.status || item.status === 'published');
+}
+
 function sortPublished(items) {
   return (items || [])
-    .filter((item) => item && item.status !== 'deleted' && item.status !== 'archived')
+    .filter(isPublished)
     .sort((a, b) => (a.sort || 0) - (b.sort || 0));
 }
 
@@ -34,10 +40,39 @@ export function getFallbackPublicContent(pageKey) {
   return payload;
 }
 
+async function getLocalPreviewContent(pageKey) {
+  if (!CMS_PREVIEW_ENABLED) {
+    return null;
+  }
+
+  const response = await Taro.request({
+    url: `${CMS_PREVIEW_BASE_URL}/api/public/${pageKey}`,
+    method: 'GET',
+    timeout: 1500
+  });
+
+  const result = response.data;
+  if (result && result.ok && result.data) {
+    return {
+      ...result.data,
+      __meta: {
+        source: 'local-preview'
+      }
+    };
+  }
+
+  throw new Error('本地 CMS 预览接口返回空数据');
+}
+
 export async function getPublicContent(pageKey) {
   const fallback = getFallbackPublicContent(pageKey);
 
   try {
+    const localPreview = await getLocalPreviewContent(pageKey).catch(() => null);
+    if (localPreview) {
+      return localPreview;
+    }
+
     const result = await callCloudFunction('publicContent', { pageKey });
 
     if (result && result.ok && result.data) {

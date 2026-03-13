@@ -6,6 +6,7 @@
     contactPhone: '400-000-0000',
     contactWechat: 'qihang-zhuanzhuanben',
     contactQrcode: '',
+    contactQrcodeUrl: '',
     address: '江苏省淮安市',
     serviceHours: '09:00-21:00',
     intro: '专注江苏专转本备考服务。'
@@ -20,6 +21,7 @@
         tags: ['机构介绍', '开设方向', '师资团队'],
         primaryButton: { text: '了解机构实力', url: '/pages/about/index', openType: 'navigate' },
         secondaryNote: '集训管理 · 跟踪答疑',
+        backgroundImageUrl: '',
         backgroundImageSeed: 'university'
       },
       overviewStats: [
@@ -50,9 +52,9 @@
         title: '沉浸式学习环境',
         subtitle: '学习与生活空间',
         cards: [
-          { label: '多媒体教室', imageSeed: 'classroom1' },
-          { label: '标准化宿舍', imageSeed: 'dorm1' },
-          { label: '自习室与答疑区', imageSeed: 'library' }
+          { label: '多媒体教室', imageUrl: '', imageSeed: 'classroom1' },
+          { label: '标准化宿舍', imageUrl: '', imageSeed: 'dorm1' },
+          { label: '自习室与答疑区', imageUrl: '', imageSeed: 'library' }
         ]
       },
       cta: {
@@ -83,6 +85,7 @@
         chip: '师资阵容',
         title: '师资团队',
         desc: '核心教研、一线主讲与班主任督学联动，覆盖专业课、公共课和备考管理的完整协作。',
+        imageUrl: '',
         imageSeed: 'lecture'
       },
       introCard: {
@@ -124,6 +127,7 @@
         chip: '机构概览',
         title: '关于我们',
         desc: '专注专转本备考服务，以高标准教研、精细化管理和沉浸式学习环境作为机构的长期基础。',
+        imageUrl: '',
         imageSeed: 'campus'
       },
       introCard: {
@@ -135,8 +139,8 @@
         { title: '服务体系', desc: '围绕方向规划、课程辅导、阶段测评、专项提升和全程督学，形成完整的备考支持链路。' }
       ],
       environmentImages: [
-        { label: '多媒体教室', imageSeed: 'campus1' },
-        { label: '标准化宿舍', imageSeed: 'campus2' }
+        { label: '多媒体教室', imageUrl: '', imageSeed: 'campus1' },
+        { label: '标准化宿舍', imageUrl: '', imageSeed: 'campus2' }
       ],
       cta: {
         title: '先了解机构，再定备考路线',
@@ -150,6 +154,7 @@
         chip: '教材资料',
         title: '自编资料体系',
         desc: '围绕高数与医护两大方向，整理教材、习题集、模拟卷和考前冲刺卷，便于分阶段使用。',
+        imageUrl: '',
         imageSeed: 'materials'
       },
       tabs: ['全部资料', '高数系列', '医护系列', '考前冲刺'],
@@ -232,15 +237,15 @@
     }
   ],
   teachers: [
-    { _id: 'teacher_zhang', name: '张老师', role: '医护方向主讲', tag: '十年教研经验', avatarSeed: 'teacher-zhang', intro: '', specialties: [], sort: 10, status: 'published' },
-    { _id: 'teacher_li', name: '李老师', role: '高数专项讲师', tag: '体系化提分', avatarSeed: 'teacher-li', intro: '', specialties: [], sort: 20, status: 'published' },
-    { _id: 'teacher_wang', name: '王老师', role: '公共课讲师', tag: '真题讲解', avatarSeed: 'teacher-wang', intro: '', specialties: [], sort: 30, status: 'published' },
-    { _id: 'teacher_zhao', name: '赵老师', role: '班主任督学', tag: '全程跟踪', avatarSeed: 'teacher-zhao', intro: '', specialties: [], sort: 40, status: 'published' }
+    { _id: 'teacher_zhang', name: '张老师', role: '医护方向主讲', tag: '十年教研经验', avatarUrl: '', avatarSeed: 'teacher-zhang', intro: '', specialties: [], sort: 10, status: 'published' },
+    { _id: 'teacher_li', name: '李老师', role: '高数专项讲师', tag: '体系化提分', avatarUrl: '', avatarSeed: 'teacher-li', intro: '', specialties: [], sort: 20, status: 'published' },
+    { _id: 'teacher_wang', name: '王老师', role: '公共课讲师', tag: '真题讲解', avatarUrl: '', avatarSeed: 'teacher-wang', intro: '', specialties: [], sort: 30, status: 'published' },
+    { _id: 'teacher_zhao', name: '赵老师', role: '班主任督学', tag: '全程跟踪', avatarUrl: '', avatarSeed: 'teacher-zhao', intro: '', specialties: [], sort: 40, status: 'published' }
   ],
   successCases: [
-    { _id: 'success_2025', title: '2025 上岸分享', subtitle: '医护方向高分录取案例与备考复盘。', coverSeed: 'success-2025', year: 2025, category: '医护方向', sort: 10, status: 'published' },
-    { _id: 'success_2024', title: '2024 上岸分享', subtitle: '高数专项突破案例与单科提升路径。', coverSeed: 'success-2024', year: 2024, category: '高数专项', sort: 20, status: 'published' },
-    { _id: 'success_2023', title: '2023 上岸分享', subtitle: '跨考逆袭经验与阶段执行心得。', coverSeed: 'success-2023', year: 2023, category: '跨考案例', sort: 30, status: 'published' }
+    { _id: 'success_2025', title: '2025 上岸分享', subtitle: '医护方向高分录取案例与备考复盘。', coverUrl: '', coverSeed: 'success-2025', year: 2025, category: '医护方向', sort: 10, status: 'published' },
+    { _id: 'success_2024', title: '2024 上岸分享', subtitle: '高数专项突破案例与单科提升路径。', coverUrl: '', coverSeed: 'success-2024', year: 2024, category: '高数专项', sort: 20, status: 'published' },
+    { _id: 'success_2023', title: '2023 上岸分享', subtitle: '跨考逆袭经验与阶段执行心得。', coverUrl: '', coverSeed: 'success-2023', year: 2023, category: '跨考案例', sort: 30, status: 'published' }
   ],
   materialSeries: [
     { _id: 'series_math', name: '高数资料套系', slug: 'math', category: '高数系列', tag: '主推套装', accent: '#5b4dff', summary: '覆盖基础梳理、专项训练、整卷模拟和考前冲刺，适合完整备考周期使用。', shelfLabel: '高数资料书架', items: ['核心精讲', '题型训练', '全真模拟', '冲刺卷'], sort: 10, status: 'published' },
@@ -255,7 +260,8 @@
     { _id: 'material_medical_exercises', seriesId: 'series_medical', type: '习题集', title: '医护高频题型集', stage: '强化阶段', subtitle: '专项刷题 / 高频整理', desc: '把高频考点拆成专项训练，便于阶段刷题与错题复盘。', contents: ['专项习题', '高频考点', '错题复盘'], sort: 60, status: 'published' },
     { _id: 'material_medical_mock', seriesId: 'series_medical', type: '模拟卷', title: '医护全真模拟卷', stage: '冲刺阶段', subtitle: '整卷模考 / 结构训练', desc: '按真实考试结构组卷，适合整卷检测与答题节奏训练。', contents: ['整卷模考', '答案解析', '分值结构'], sort: 70, status: 'published' },
     { _id: 'material_medical_final', seriesId: 'series_medical', type: '冲刺卷', title: '医护考前冲刺卷', stage: '考前阶段', subtitle: '最后回看 / 高频压缩', desc: '聚焦考前高频考点压缩复习，方便最后阶段集中回看。', contents: ['考前压缩', '高频回顾', '冲刺提示'], sort: 80, status: 'published' }
-  ]
+  ],
+  mediaAssets: []
 };
 
 module.exports = seedData;

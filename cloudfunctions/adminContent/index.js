@@ -5,6 +5,7 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
 
 const PAGE_COLLECTIONS = {
+  site: 'site_settings',
   home: 'page_home',
   courses: 'page_courses',
   teachers: 'page_teachers',
@@ -14,6 +15,7 @@ const PAGE_COLLECTIONS = {
 };
 
 const PAGE_DOC_IDS = {
+  site: 'default',
   home: 'singleton',
   courses: 'singleton',
   teachers: 'singleton',
@@ -28,6 +30,7 @@ const ALLOWED_COLLECTIONS = new Set([
   'success_cases',
   'material_series',
   'material_items',
+  'media_assets',
   'admin_users'
 ]);
 

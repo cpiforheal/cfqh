@@ -1,11 +1,12 @@
 import { Image, Navigator, Text, View } from '@tarojs/components';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useDidShow } from '@tarojs/taro';
 import PageCtaCard from '../../components/PageCtaCard';
 import PageSectionTitle from '../../components/PageSectionTitle';
 import fallbackContent from '../../data/contentFallback';
+import { useCmsAutoRefresh } from '../../hooks/useCmsAutoRefresh';
 import { getPublicContent } from '../../services/content';
 import { pageStyle, surfaceCardStyle, ui } from '../../styles/ui';
+import { resolveMediaUrl } from '../../utils/media';
 
 const defaultHomePage = fallbackContent.pages.home;
 const defaultDirections = fallbackContent.directions;
@@ -751,9 +752,7 @@ export default function HomePage() {
     return cleanup;
   }, []);
 
-  useDidShow(() => {
-    loadContent();
-  });
+  useCmsAutoRefresh(loadContent);
 
   const hero = content.page?.hero || defaultHomePage.hero;
   const stats = content.page?.overviewStats || defaultHomePage.overviewStats;
@@ -794,7 +793,11 @@ export default function HomePage() {
         }}
       >
         <Image
-          src={`https://picsum.photos/seed/${hero.backgroundImageSeed || 'university'}/900/700`}
+          src={resolveMediaUrl({
+            url: hero.backgroundImageUrl,
+            seed: hero.backgroundImageSeed || 'university',
+            fallbackSize: '900/700'
+          })}
           mode="aspectFill"
           style={{
             position: 'absolute',
@@ -876,7 +879,7 @@ export default function HomePage() {
             }}
           >
             <Text style={{ fontSize: ui.type.note, color: '#d7def0', fontWeight: 700 }}>
-              {loadState.source === 'cloud' ? '云端内容' : '本地内容'}
+              {loadState.source === 'local-preview' ? '本地预览' : loadState.source === 'cloud' ? '云端内容' : '本地内容'}
             </Text>
           </View>
 
@@ -1193,7 +1196,11 @@ export default function HomePage() {
                 }}
               >
                 <Image
-                  src={`https://picsum.photos/seed/${item.imageSeed || item.seed}/400/320`}
+                  src={resolveMediaUrl({
+                    url: item.imageUrl,
+                    seed: item.imageSeed || item.seed,
+                    fallbackSize: '400/320'
+                  })}
                   mode="aspectFill"
                   style={{ width: '100%', height: '100%' }}
                 />
@@ -1222,7 +1229,11 @@ export default function HomePage() {
             }}
           >
             <Image
-              src={`https://picsum.photos/seed/${bottomEnvironmentCard.imageSeed || bottomEnvironmentCard.seed}/700/400`}
+              src={resolveMediaUrl({
+                url: bottomEnvironmentCard.imageUrl,
+                seed: bottomEnvironmentCard.imageSeed || bottomEnvironmentCard.seed,
+                fallbackSize: '700/400'
+              })}
               mode="aspectFill"
               style={{ width: '100%', height: '100%' }}
             />

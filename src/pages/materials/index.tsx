@@ -1,120 +1,63 @@
 import { ScrollView, Text, View } from '@tarojs/components';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import PageCtaCard from '../../components/PageCtaCard';
 import PageHero from '../../components/PageHero';
 import PageSectionTitle from '../../components/PageSectionTitle';
+import fallbackContent from '../../data/contentFallback';
+import { useCmsAutoRefresh } from '../../hooks/useCmsAutoRefresh';
+import { getPublicContent } from '../../services/content';
 import { pageStyle, surfaceCardStyle, ui } from '../../styles/ui';
 
-const tabs = ['全部资料', '高数系列', '医护系列', '考前冲刺'];
+const defaultMaterialsPage = fallbackContent.pages.materials;
+const defaultMaterialSeries = fallbackContent.materialSeries;
+const defaultMaterialItems = fallbackContent.materialItems;
 
-const overviewCards = [
-  { value: '8+', label: '在售资料', note: '教材 / 习题 / 模拟 / 冲刺' },
-  { value: '2', label: '核心方向', note: '高数 / 医护两大主线' },
-  { value: '4', label: '资料类型', note: '按备考阶段拆分组合' }
-];
+function getInitialMaterialsState() {
+  return {
+    site: fallbackContent.site,
+    page: defaultMaterialsPage,
+    materialSeries: defaultMaterialSeries,
+    materialItems: defaultMaterialItems
+  };
+}
 
-const featuredSets = [
-  {
-    title: '高数资料套系',
-    tag: '主推套装',
-    accent: '#5b4dff',
-    gradient: 'linear-gradient(135deg, #6658ff 0%, #29345f 100%)',
-    desc: '覆盖基础梳理、专项训练、整卷模拟和考前冲刺，适合完整备考周期使用。',
-    items: ['核心精讲', '题型训练', '全真模拟', '冲刺卷']
-  },
-  {
-    title: '医护资料套系',
-    tag: '方向资料',
-    accent: '#0f172a',
-    gradient: 'linear-gradient(135deg, #1f2f4f 0%, #0f172a 100%)',
-    desc: '围绕专业课与公共课协同整理，便于医护类学员按阶段推进复习节奏。',
-    items: ['核心讲义', '高频题型', '全真模拟', '冲刺卷']
+function getSeriesGradient(accent, index) {
+  const tone = accent || '#5b4dff';
+  if (index % 2 === 0) {
+    return `linear-gradient(135deg, ${tone} 0%, #29345f 100%)`;
   }
-];
 
-const groups = [
-  {
-    title: '高数系列',
-    desc: '面向理工、经管类专转本考生，覆盖基础梳理、题型训练到考前冲刺。',
-    accent: '#5b4dff',
-    background: '#f7f5ff',
-    shelfLabel: '高数资料书架',
-    items: [
-      {
-        type: '教材',
-        title: '高数核心精讲',
-        stage: '基础阶段',
-        subtitle: '公式体系 / 概念重建',
-        desc: '围绕公式体系、核心概念和高频考点搭建完整知识框架。',
-        contents: ['知识框架', '例题精讲', '阶段小结']
-      },
-      {
-        type: '习题集',
-        title: '高数题型训练',
-        stage: '强化阶段',
-        subtitle: '题型拆解 / 方法归纳',
-        desc: '针对典型题型做拆解训练，适合日常刷题和阶段巩固。',
-        contents: ['专项训练', '错题复盘', '解题方法']
-      },
-      {
-        type: '模拟卷',
-        title: '高数全真模拟卷',
-        stage: '冲刺阶段',
-        subtitle: '整卷训练 / 节奏校准',
-        desc: '按照考试节奏设计整卷训练，帮助学员建立答题时间感。',
-        contents: ['整卷练习', '答案解析', '时间分配']
-      },
-      {
-        type: '冲刺卷',
-        title: '高数考前冲刺卷',
-        stage: '考前阶段',
-        subtitle: '高频压缩 / 易错回看',
-        desc: '聚焦最后阶段的高频点、易错点和压轴题型回顾。',
-        contents: ['高频考点', '压轴回顾', '考前提示']
-      }
-    ]
-  },
-  {
-    title: '医护系列',
-    desc: '围绕护理、助产、临床等方向，覆盖专业课、公共课和阶段模考资料。',
-    accent: '#0f172a',
-    background: '#f8fafc',
-    shelfLabel: '医护资料书架',
-    items: [
-      {
-        type: '教材',
-        title: '医护核心知识讲义',
-        stage: '基础阶段',
-        subtitle: '框架梳理 / 核心课协同',
-        desc: '梳理解剖、生理、护理等核心课程框架，适合系统复习。',
-        contents: ['知识梳理', '核心笔记', '重点归纳']
-      },
-      {
-        type: '习题集',
-        title: '医护高频题型集',
-        stage: '强化阶段',
-        subtitle: '专项刷题 / 高频整理',
-        desc: '把高频考点拆成专项训练，便于阶段刷题与错题复盘。',
-        contents: ['专项习题', '高频考点', '错题复盘']
-      },
-      {
-        type: '模拟卷',
-        title: '医护全真模拟卷',
-        stage: '冲刺阶段',
-        subtitle: '整卷模考 / 结构训练',
-        desc: '按真实考试结构组卷，适合整卷检测与答题节奏训练。',
-        contents: ['整卷模考', '答案解析', '分值结构']
-      },
-      {
-        type: '冲刺卷',
-        title: '医护考前冲刺卷',
-        stage: '考前阶段',
-        subtitle: '最后回看 / 高频压缩',
-        desc: '聚焦考前高频考点压缩复习，方便最后阶段集中回看。',
-        contents: ['考前压缩', '高频回顾', '冲刺提示']
-      }
-    ]
-  }
-];
+  return `linear-gradient(135deg, #1f2f4f 0%, ${tone} 100%)`;
+}
+
+function buildFeaturedSets(page, seriesList) {
+  const featuredIds = page?.featuredSeriesIds || [];
+  const source = featuredIds.length
+    ? featuredIds.map((id) => (seriesList || []).find((item) => item._id === id)).filter(Boolean)
+    : (seriesList || []).slice(0, 2);
+
+  return source.map((item, index) => ({
+    title: item.name,
+    tag: item.tag || item.category || '资料套系',
+    accent: item.accent || '#5b4dff',
+    gradient: getSeriesGradient(item.accent, index),
+    desc: item.summary || '',
+    items: item.items || []
+  }));
+}
+
+function buildCatalogGroups(seriesList, itemList) {
+  return (seriesList || [])
+    .map((series) => ({
+      title: series.name,
+      desc: series.summary || '',
+      accent: series.accent || '#5b4dff',
+      background: series.accent ? `${series.accent}12` : '#f7f5ff',
+      shelfLabel: series.shelfLabel || `${series.name}书架`,
+      items: (itemList || []).filter((item) => item.seriesId === series._id)
+    }))
+    .filter((group) => group.items.length);
+}
 
 function StatCard(props) {
   return (
@@ -319,16 +262,87 @@ function CatalogGroup(props) {
 }
 
 export default function MaterialsPage() {
+  const [content, setContent] = useState(getInitialMaterialsState());
+  const [loadState, setLoadState] = useState({ source: 'fallback', error: '' });
+
+  const loadContent = useCallback(() => {
+    let mounted = true;
+
+    getPublicContent('materials')
+      .then((payload) => {
+        if (!mounted || !payload) return;
+        setContent({
+          site: payload.site || fallbackContent.site,
+          page: payload.page || defaultMaterialsPage,
+          materialSeries: payload.materialSeries && payload.materialSeries.length ? payload.materialSeries : defaultMaterialSeries,
+          materialItems: payload.materialItems && payload.materialItems.length ? payload.materialItems : defaultMaterialItems
+        });
+        setLoadState({
+          source: payload.__meta?.source || 'cloud',
+          error: ''
+        });
+      })
+      .catch((error) => {
+        if (!mounted) return;
+        setLoadState({
+          source: 'error',
+          error: error && error.message ? error.message : '云端内容读取失败'
+        });
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const cleanup = loadContent();
+    return cleanup;
+  }, [loadContent]);
+
+  useCmsAutoRefresh(loadContent);
+
+  const hero = content.page?.hero || defaultMaterialsPage.hero;
+  const tabs = content.page?.tabs || defaultMaterialsPage.tabs;
+  const overviewCards = content.page?.overviewStats || defaultMaterialsPage.overviewStats;
+  const featuredSets = useMemo(
+    () => buildFeaturedSets(content.page || defaultMaterialsPage, content.materialSeries || defaultMaterialSeries),
+    [content.page, content.materialSeries]
+  );
+  const groups = useMemo(
+    () => buildCatalogGroups(content.materialSeries || defaultMaterialSeries, content.materialItems || defaultMaterialItems),
+    [content.materialSeries, content.materialItems]
+  );
+  const cta = content.page?.cta || defaultMaterialsPage.cta;
+
   return (
     <View style={pageStyle}>
+      {loadState.error ? (
+        <View
+          style={{
+            margin: '18rpx 24rpx 0',
+            padding: '16rpx 18rpx',
+            borderRadius: '18rpx',
+            backgroundColor: '#fff7ed',
+            border: '1rpx solid #fdba74'
+          }}
+        >
+          <Text style={{ fontSize: ui.type.meta, color: '#9a3412', fontWeight: 700 }}>
+            云端内容未加载成功：{loadState.error}
+          </Text>
+        </View>
+      ) : null}
+
       <PageHero
-        chip="教材资料"
-        title="自编资料体系"
-        desc="围绕高数与医护两大方向，整理教材、习题集、模拟卷和考前冲刺卷，便于分阶段使用。"
+        chip={hero.chip}
+        title={hero.title}
+        desc={hero.desc}
         background="linear-gradient(180deg, #334266 0%, #17233f 56%, #0d1730 100%)"
         bubbleRight="-42rpx"
         bubbleTop="24rpx"
         bubbleSize="228rpx"
+        imageUrl={hero.imageUrl}
+        imageSeed={hero.imageSeed}
       />
 
       <View style={{ margin: `-54rpx ${ui.spacing.page} 0`, position: 'relative', zIndex: 4 }}>
@@ -361,6 +375,21 @@ export default function MaterialsPage() {
         </View>
       </View>
 
+      <View style={{ margin: '20rpx 24rpx 0' }}>
+        <View
+          style={{
+            display: 'inline-flex',
+            padding: '8rpx 14rpx',
+            borderRadius: ui.radius.pill,
+            backgroundColor: '#eef2ff'
+          }}
+        >
+          <Text style={{ fontSize: ui.type.note, color: '#4f46e5', fontWeight: 700 }}>
+            {loadState.source === 'local-preview' ? '本地预览' : loadState.source === 'cloud' ? '云端内容' : '本地内容'}
+          </Text>
+        </View>
+      </View>
+
       <View style={{ margin: '38rpx 24rpx 0' }}>
         <PageSectionTitle lineColor="#8a92ff">套系总览</PageSectionTitle>
         <View style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -387,10 +416,10 @@ export default function MaterialsPage() {
       </View>
 
       <PageCtaCard
-        title="先看资料目录，再选适合你的组合"
-        desc="如果你想知道每本教材适合哪个阶段、配套什么题目训练，先沟通后再安排会更清楚。"
-        buttonText="咨询资料详情"
-        footnote="资料目录 · 使用建议 · 阶段搭配"
+        title={cta.title}
+        desc={cta.desc}
+        buttonText={cta.buttonText}
+        footnote={cta.footnote}
       />
     </View>
   );

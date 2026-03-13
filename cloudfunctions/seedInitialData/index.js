@@ -19,7 +19,8 @@ const LIST_COLLECTIONS = {
   teachers: 'teachers',
   successCases: 'success_cases',
   materialSeries: 'material_series',
-  materialItems: 'material_items'
+  materialItems: 'material_items',
+  mediaAssets: 'media_assets'
 };
 
 async function upsertDoc(collection, id, payload) {
@@ -102,4 +103,3 @@ exports.main = async (event) => {
     openid: permission.openid
   };
 };
-

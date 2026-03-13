@@ -1,8 +1,8 @@
 import { ScrollView, Text, View } from '@tarojs/components';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useDidShow } from '@tarojs/taro';
 import PageSectionTitle from '../../components/PageSectionTitle';
 import fallbackContent from '../../data/contentFallback';
+import { useCmsAutoRefresh } from '../../hooks/useCmsAutoRefresh';
 import { getPublicContent } from '../../services/content';
 import { pageStyle, surfaceCardStyle, ui } from '../../styles/ui';
 
@@ -406,9 +406,7 @@ export default function CoursesPage() {
     return cleanup;
   }, []);
 
-  useDidShow(() => {
-    loadContent();
-  });
+  useCmsAutoRefresh(loadContent);
 
   const categories = content.page?.categories || defaultCoursesPage.categories;
   const suggestions = content.page?.suggestions || defaultCoursesPage.suggestions;
@@ -453,7 +451,7 @@ export default function CoursesPage() {
           }}
         >
           <Text style={{ fontSize: ui.type.note, color: '#4f46e5', fontWeight: 700 }}>
-            {loadState.source === 'cloud' ? '云端内容' : '本地内容'}
+            {loadState.source === 'local-preview' ? '本地预览' : loadState.source === 'cloud' ? '云端内容' : '本地内容'}
           </Text>
         </View>
         <Text style={{ display: 'block', fontSize: ui.type.hero, lineHeight: 1.12, color: ui.colors.text, fontWeight: 900, marginBottom: '10rpx' }}>

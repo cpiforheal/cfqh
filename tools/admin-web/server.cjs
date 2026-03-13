@@ -7,8 +7,63 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const PUBLIC_DIR = path.join(ROOT, 'admin-web');
 const DATA_FILE = path.join(ROOT, 'database', 'local-admin-data.json');
 const SEED_FILE = path.join(ROOT, 'database', 'seed-data.js');
+const CLOUD_CONFIG_FILE = path.join(ROOT, 'src', 'config', 'cloud.ts');
 const PORT = Number(process.env.ADMIN_WEB_PORT || 3200);
-const CLOUD_ENV_ID = process.env.CLOUDBASE_ENV_ID || '';
+
+function parseEnvFile(filePath) {
+  if (!fs.existsSync(filePath)) {
+    return {};
+  }
+
+  const text = fs.readFileSync(filePath, 'utf8');
+  const lines = text.split(/\r?\n/);
+  const output = {};
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) continue;
+    const index = line.indexOf('=');
+    if (index <= 0) continue;
+    const key = line.slice(0, index).trim();
+    let value = line.slice(index + 1).trim();
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1);
+    }
+    output[key] = value;
+  }
+
+  return output;
+}
+
+function readDefaultCloudEnvId() {
+  if (!fs.existsSync(CLOUD_CONFIG_FILE)) {
+    return '';
+  }
+
+  const source = fs.readFileSync(CLOUD_CONFIG_FILE, 'utf8');
+  const matched = source.match(/export const CLOUD_ENV_ID = ['"]([^'"]+)['"]/);
+  return matched ? matched[1] : '';
+}
+
+const localEnv = {
+  ...parseEnvFile(path.join(ROOT, '.env.admin-web')),
+  ...parseEnvFile(path.join(ROOT, '.env.local'))
+};
+
+const RUNTIME_ENV = {
+  CLOUDBASE_ENV_ID: process.env.CLOUDBASE_ENV_ID || localEnv.CLOUDBASE_ENV_ID || readDefaultCloudEnvId(),
+  CLOUDBASE_APIKEY: process.env.CLOUDBASE_APIKEY || localEnv.CLOUDBASE_APIKEY || '',
+  TENCENTCLOUD_SECRETID: process.env.TENCENTCLOUD_SECRETID || localEnv.TENCENTCLOUD_SECRETID || '',
+  TENCENTCLOUD_SECRETKEY: process.env.TENCENTCLOUD_SECRETKEY || localEnv.TENCENTCLOUD_SECRETKEY || ''
+};
+
+for (const [key, value] of Object.entries(RUNTIME_ENV)) {
+  if (value && !process.env[key]) {
+    process.env[key] = value;
+  }
+}
+
+const CLOUD_ENV_ID = RUNTIME_ENV.CLOUDBASE_ENV_ID;
 
 const pageOptions = [
   { key: 'site', label: '站点设置' },
@@ -25,7 +80,8 @@ const listOptions = [
   { key: 'teachers', label: '师资列表' },
   { key: 'successCases', label: '成果案例' },
   { key: 'materialSeries', label: '教材套系' },
-  { key: 'materialItems', label: '教材单品' }
+  { key: 'materialItems', label: '教材单品' },
+  { key: 'mediaAssets', label: '媒体资源' }
 ];
 
 const PAGE_COLLECTIONS = {
@@ -53,7 +109,8 @@ const LIST_COLLECTIONS = {
   teachers: 'teachers',
   successCases: 'success_cases',
   materialSeries: 'material_series',
-  materialItems: 'material_items'
+  materialItems: 'material_items',
+  mediaAssets: 'media_assets'
 };
 
 function loadSeed() {
@@ -266,6 +323,21 @@ function getEmptyTemplate(collectionKey) {
     };
   }
 
+  if (collectionKey === 'mediaAssets') {
+    return {
+      _id: '',
+      name: '',
+      module: '',
+      type: 'image',
+      url: '',
+      thumbUrl: '',
+      alt: '',
+      tags: [],
+      sort: 100,
+      status: 'draft'
+    };
+  }
+
   return {};
 }
 
@@ -275,6 +347,42 @@ function normalizeDocResult(result) {
     return result.data[0] || null;
   }
   return result.data || null;
+}
+
+function isPublished(item) {
+  return !!item && (!item.status || item.status === 'published');
+}
+
+function sortPublished(items) {
+  return (items || [])
+    .filter(isPublished)
+    .sort((a, b) => (a.sort || 0) - (b.sort || 0));
+}
+
+async function buildPublicPayload(pageKey) {
+  const payload = {
+    site: await store.getPage('site'),
+    page: await store.getPage(pageKey)
+  };
+
+  if (pageKey === 'home' || pageKey === 'courses') {
+    payload.directions = sortPublished(await store.listCollection('directions'));
+  }
+
+  if (pageKey === 'teachers') {
+    payload.teachers = sortPublished(await store.listCollection('teachers'));
+  }
+
+  if (pageKey === 'success') {
+    payload.successCases = sortPublished(await store.listCollection('successCases'));
+  }
+
+  if (pageKey === 'materials') {
+    payload.materialSeries = sortPublished(await store.listCollection('materialSeries'));
+    payload.materialItems = sortPublished(await store.listCollection('materialItems'));
+  }
+
+  return payload;
 }
 
 class LocalStore {
@@ -287,7 +395,11 @@ class LocalStore {
   }
 
   getConfigSummary() {
-    return { dataFile: DATA_FILE };
+    return {
+      dataFile: DATA_FILE,
+      expectedEnvId: CLOUD_ENV_ID || '',
+      hint: '如需直连云数据库，请在 cfqh/.env.admin-web 中配置 CLOUDBASE_APIKEY 或腾讯云密钥'
+    };
   }
 
   async getPage(pageKey) {
@@ -352,7 +464,9 @@ class CloudStore {
   constructor() {
     const cloudbase = require('@cloudbase/node-sdk');
     this.app = cloudbase.init({
-      env: CLOUD_ENV_ID
+      env: CLOUD_ENV_ID,
+      secretId: RUNTIME_ENV.TENCENTCLOUD_SECRETID || undefined,
+      secretKey: RUNTIME_ENV.TENCENTCLOUD_SECRETKEY || undefined
     });
     this.db = this.app.database();
   }
@@ -364,9 +478,9 @@ class CloudStore {
   getConfigSummary() {
     return {
       envId: CLOUD_ENV_ID,
-      authMode: process.env.CLOUDBASE_APIKEY
+      authMode: RUNTIME_ENV.CLOUDBASE_APIKEY
         ? 'apiKey'
-        : process.env.TENCENTCLOUD_SECRETID && process.env.TENCENTCLOUD_SECRETKEY
+        : RUNTIME_ENV.TENCENTCLOUD_SECRETID && RUNTIME_ENV.TENCENTCLOUD_SECRETKEY
           ? 'secret'
           : 'unknown'
     };
@@ -478,6 +592,10 @@ function createStore() {
     return new LocalStore();
   }
 
+  if (!RUNTIME_ENV.CLOUDBASE_APIKEY && !(RUNTIME_ENV.TENCENTCLOUD_SECRETID && RUNTIME_ENV.TENCENTCLOUD_SECRETKEY)) {
+    return new LocalStore();
+  }
+
   return new CloudStore();
 }
 
@@ -498,6 +616,18 @@ async function handleApi(req, res, pathname) {
 
   if (pathname === '/api/meta' && req.method === 'GET') {
     sendJson(res, 200, { ok: true, pageOptions, listOptions, mode: store.getMode() });
+    return;
+  }
+
+  if (parts[1] === 'public' && req.method === 'GET') {
+    const pageKey = parts[2] || 'home';
+    if (!PAGE_COLLECTIONS[pageKey]) {
+      sendJson(res, 400, { ok: false, message: '未知页面' });
+      return;
+    }
+
+    const payload = await buildPublicPayload(pageKey);
+    sendJson(res, 200, { ok: true, data: payload, mode: store.getMode() });
     return;
   }
 

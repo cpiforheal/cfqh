@@ -1,28 +1,92 @@
 import { Image, Text, View } from '@tarojs/components';
+import { useCallback, useEffect, useState } from 'react';
 import PageCtaCard from '../../components/PageCtaCard';
 import PageHero from '../../components/PageHero';
 import PageSectionTitle from '../../components/PageSectionTitle';
+import fallbackContent from '../../data/contentFallback';
+import { useCmsAutoRefresh } from '../../hooks/useCmsAutoRefresh';
+import { getPublicContent } from '../../services/content';
 import { pageStyle, surfaceCardStyle, ui } from '../../styles/ui';
+import { resolveMediaUrl } from '../../utils/media';
 
-const stats = [
-  { value: '高', label: '上岸率', note: '稳定表现' },
-  { value: '精', label: '小班制', note: '节奏清晰' },
-  { value: '强', label: '口碑力', note: '持续积累' }
-];
+const defaultSuccessPage = fallbackContent.pages.success;
+const defaultSuccessCases = fallbackContent.successCases;
 
-const stories = [
-  { title: '2025 上岸分享', desc: '医护方向高分录取案例与备考复盘。', seed: 'success-2025' },
-  { title: '2024 上岸分享', desc: '高数专项突破案例与单科提升路径。', seed: 'success-2024' },
-  { title: '2023 上岸分享', desc: '跨考逆袭经验与阶段执行心得。', seed: 'success-2023' }
-];
+function getInitialSuccessState() {
+  return {
+    site: fallbackContent.site,
+    page: defaultSuccessPage,
+    successCases: defaultSuccessCases
+  };
+}
 
 export default function SuccessPage() {
+  const [content, setContent] = useState(getInitialSuccessState());
+  const [loadState, setLoadState] = useState({ source: 'fallback', error: '' });
+
+  const loadContent = useCallback(() => {
+    let mounted = true;
+
+    getPublicContent('success')
+      .then((payload) => {
+        if (!mounted || !payload) return;
+        setContent({
+          site: payload.site || fallbackContent.site,
+          page: payload.page || defaultSuccessPage,
+          successCases: payload.successCases && payload.successCases.length ? payload.successCases : defaultSuccessCases
+        });
+        setLoadState({
+          source: payload.__meta?.source || 'cloud',
+          error: ''
+        });
+      })
+      .catch((error) => {
+        if (!mounted) return;
+        setLoadState({
+          source: 'error',
+          error: error && error.message ? error.message : '云端内容读取失败'
+        });
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const cleanup = loadContent();
+    return cleanup;
+  }, [loadContent]);
+
+  useCmsAutoRefresh(loadContent);
+
+  const hero = content.page?.hero || defaultSuccessPage.hero;
+  const stats = content.page?.stats || defaultSuccessPage.stats;
+  const stories = content.successCases || defaultSuccessCases;
+  const cta = content.page?.cta || defaultSuccessPage.cta;
+
   return (
     <View style={pageStyle}>
+      {loadState.error ? (
+        <View
+          style={{
+            margin: '18rpx 24rpx 0',
+            padding: '16rpx 18rpx',
+            borderRadius: '18rpx',
+            backgroundColor: '#fff7ed',
+            border: '1rpx solid #fdba74'
+          }}
+        >
+          <Text style={{ fontSize: ui.type.meta, color: '#9a3412', fontWeight: 700 }}>
+            云端内容未加载成功：{loadState.error}
+          </Text>
+        </View>
+      ) : null}
+
       <PageHero
-        chip="办学成果"
-        title="办学成果"
-        desc="历年上岸表现和学员反馈持续积累，逐步沉淀出更稳定的提分路径与复盘经验。"
+        chip={hero.chip}
+        title={hero.title}
+        desc={hero.desc}
         background="linear-gradient(180deg, #30415d 0%, #15203b 58%, #0b152d 100%)"
         bubbleRight="-30rpx"
         bubbleTop="20rpx"
@@ -95,11 +159,26 @@ export default function SuccessPage() {
         </View>
       </View>
 
+      <View style={{ margin: '20rpx 24rpx 0' }}>
+        <View
+          style={{
+            display: 'inline-flex',
+            padding: '8rpx 14rpx',
+            borderRadius: ui.radius.pill,
+            backgroundColor: '#eef2ff'
+          }}
+        >
+          <Text style={{ fontSize: ui.type.note, color: '#4f46e5', fontWeight: 700 }}>
+            {loadState.source === 'local-preview' ? '本地预览' : loadState.source === 'cloud' ? '云端内容' : '本地内容'}
+          </Text>
+        </View>
+      </View>
+
       <View style={{ margin: `${ui.spacing.section} ${ui.spacing.page} 0` }}>
         <PageSectionTitle lineColor="#8a92ff">上岸故事</PageSectionTitle>
         {stories.map((item, index) => (
           <View
-            key={item.title}
+            key={item._id || item.title}
             style={{
               ...surfaceCardStyle,
               marginBottom: index === stories.length - 1 ? '0' : ui.spacing.block,
@@ -109,7 +188,11 @@ export default function SuccessPage() {
             }}
           >
             <Image
-              src={`https://picsum.photos/seed/${item.seed}/200/200`}
+              src={resolveMediaUrl({
+                url: item.coverUrl,
+                seed: item.coverSeed || item._id || item.title,
+                fallbackSize: '200/200'
+              })}
               mode="aspectFill"
               style={{
                 width: '116rpx',
@@ -134,24 +217,30 @@ export default function SuccessPage() {
               <Text
                 style={{
                   display: 'block',
+                  fontSize: ui.type.meta,
+                  color: ui.colors.accent,
+                  fontWeight: 700,
+                  marginBottom: '6rpx'
+                }}
+              >
+                {[item.year, item.category].filter(Boolean).join(' · ')}
+              </Text>
+              <Text
+                style={{
+                  display: 'block',
                   fontSize: ui.type.body,
                   color: ui.colors.textMuted,
                   lineHeight: 1.8
                 }}
               >
-                {item.desc}
+                {item.subtitle}
               </Text>
             </View>
           </View>
         ))}
       </View>
 
-      <PageCtaCard
-        title="成果来自体系化执行"
-        desc="方向选择、课程安排、阶段测评、督学反馈与复盘执行持续协同，结果才会更稳定。"
-        buttonText="了解上岸规划"
-        footnote="路径规划 · 节奏管理 · 结果复盘"
-      />
+      <PageCtaCard title={cta.title} desc={cta.desc} buttonText={cta.buttonText} footnote={cta.footnote} />
     </View>
   );
 }

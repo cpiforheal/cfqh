@@ -5,6 +5,7 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
 
 const PAGE_COLLECTIONS = {
+  site: 'site_settings',
   home: 'page_home',
   courses: 'page_courses',
   teachers: 'page_teachers',
@@ -12,6 +13,10 @@ const PAGE_COLLECTIONS = {
   about: 'page_about',
   materials: 'page_materials'
 };
+
+function isPublished(item) {
+  return !!item && (!item.status || item.status === 'published');
+}
 
 async function getSingleton(collection, id) {
   try {
@@ -25,7 +30,7 @@ async function getSingleton(collection, id) {
 async function listCollection(collection) {
   try {
     const result = await db.collection(collection).orderBy('sort', 'asc').limit(100).get();
-    return (result.data || []).filter((item) => item.status !== 'deleted' && item.status !== 'archived');
+    return (result.data || []).filter(isPublished);
   } catch (error) {
     return [];
   }

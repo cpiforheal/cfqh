@@ -15,6 +15,7 @@
 - `success_cases`
 - `material_series`
 - `material_items`
+- `media_assets`
 - `admin_users`
 
 ## 通用字段
@@ -25,6 +26,16 @@
 - `updatedAt`: 更新时间
 
 ## 页面集合建议字段
+### `site_settings`
+- `siteName`
+- `brandName`
+- `contactPhone`
+- `contactWechat`
+- `contactQrcode`
+- `address`
+- `serviceHours`
+- `intro`
+
 ### `page_home`
 - `hero`
 - `overviewStats[]`
@@ -118,6 +129,14 @@
 - `subtitle`
 - `desc`
 - `contents[]`
+
+### `media_assets`
+- `title`
+- `category`
+- `url`
+- `thumbUrl`
+- `alt`
+- `tags[]`
 
 ### `admin_users`
 - `_id`: 建议直接使用管理员 openid

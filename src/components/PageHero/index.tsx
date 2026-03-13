@@ -1,7 +1,14 @@
 import { Image, Text, View } from '@tarojs/components';
 import { ui } from '../../styles/ui';
+import { resolveMediaUrl } from '../../utils/media';
 
 export default function PageHero(props) {
+  const imageUrl = resolveMediaUrl({
+    url: props.imageUrl,
+    seed: props.imageSeed,
+    fallbackSize: '900/600'
+  });
+
   return (
     <View
       style={{
@@ -13,9 +20,9 @@ export default function PageHero(props) {
         padding: `34rpx ${ui.spacing.page} 108rpx`
       }}
     >
-      {props.imageSeed ? (
+      {imageUrl ? (
         <Image
-          src={`https://picsum.photos/seed/${props.imageSeed}/900/600`}
+          src={imageUrl}
           mode="aspectFill"
           style={{
             position: 'absolute',
