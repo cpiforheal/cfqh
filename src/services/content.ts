@@ -14,6 +14,18 @@ function sortPublished(items) {
     .sort((a, b) => (a.sort || 0) - (b.sort || 0));
 }
 
+function withMeta(payload, source, extras = {}) {
+  const baseMeta = payload?.__meta || {};
+  return {
+    ...payload,
+    __meta: {
+      ...baseMeta,
+      ...extras,
+      source
+    }
+  };
+}
+
 export function getFallbackPublicContent(pageKey) {
   const payload = {
     site: fallbackContent.site,
@@ -53,12 +65,9 @@ async function getLocalPreviewContent(pageKey) {
 
   const result = response.data;
   if (result && result.ok && result.data) {
-    return {
-      ...result.data,
-      __meta: {
-        source: 'local-preview'
-      }
-    };
+    return withMeta(result.data, 'local-preview', {
+      transport: 'http-preview'
+    });
   }
 
   throw new Error('本地 CMS 预览接口返回空数据');
@@ -76,12 +85,9 @@ export async function getPublicContent(pageKey) {
     const result = await callCloudFunction('publicContent', { pageKey });
 
     if (result && result.ok && result.data) {
-      return {
-        ...result.data,
-        __meta: {
-          source: 'cloud'
-        }
-      };
+      return withMeta(result.data, 'cloud', {
+        transport: 'cloud-function'
+      });
     }
 
     if (CLOUD_REQUIRE_REMOTE) {
@@ -98,7 +104,12 @@ export async function getPublicContent(pageKey) {
   return {
     ...fallback,
     __meta: {
-      source: 'fallback'
+      pageKey,
+      source: 'fallback',
+      transport: 'local-fallback',
+      revision: `${pageKey}:fallback`,
+      updatedAt: '',
+      generatedAt: new Date().toISOString()
     }
   };
 }

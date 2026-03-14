@@ -103,6 +103,9 @@ const ICONS = {
   search: '<circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path>',
   bell: '<path d="M15 17h5l-1.3-1.3a2 2 0 0 1-.7-1.5V11a6 6 0 0 0-12 0v3.2a2 2 0 0 1-.7 1.5L4 17h5"></path><path d="M10 17a2 2 0 0 0 4 0"></path>',
   refresh: '<path d="M20 11a8 8 0 0 0-14.9-4"></path><path d="M4 4v4h4"></path><path d="M4 13a8 8 0 0 0 14.9 4"></path><path d="M20 20v-4h-4"></path>',
+  chevronLeft: '<path d="m15 18-6-6 6-6"></path>',
+  chevronRight: '<path d="m9 18 6-6-6-6"></path>',
+  close: '<path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>',
   sun: '<circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path>',
   moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"></path>'
 };
@@ -111,6 +114,7 @@ const state = {
   theme: 'light',
   activeView: 'overview',
   loading: false,
+  sidebarCollapsed: false,
   meta: null,
   health: null,
   currentData: null,
@@ -119,11 +123,13 @@ const state = {
 };
 
 const refs = {
+  app: document.getElementById('app'),
   nav: document.getElementById('sidebar-nav'),
   topbarKicker: document.getElementById('topbar-kicker'),
   topbarBreadcrumb: document.getElementById('topbar-breadcrumb'),
   viewTitle: document.getElementById('view-title'),
   statusPill: document.getElementById('status-pill'),
+  sidebarCollapse: document.getElementById('sidebar-collapse'),
   themeToggle: document.getElementById('theme-toggle'),
   topbarSearch: document.getElementById('topbar-search'),
   topbarAlerts: document.getElementById('topbar-alerts'),
@@ -151,6 +157,10 @@ function preferredTheme() {
   return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
+function preferredSidebarCollapsed() {
+  return localStorage.getItem('admin-web-sidebar') === 'collapsed';
+}
+
 function applyTheme(theme) {
   state.theme = theme;
   document.documentElement.setAttribute('data-theme', theme);
@@ -158,6 +168,24 @@ function applyTheme(theme) {
   refs.themeToggle.title = theme === 'dark' ? '切换为亮色主题' : '切换为暗色主题';
   refs.themeToggle.setAttribute('aria-label', refs.themeToggle.title);
   localStorage.setItem('admin-web-theme', theme);
+}
+
+function applySidebarCollapsed(collapsed) {
+  state.sidebarCollapsed = collapsed;
+  refs.app.dataset.sidebar = collapsed ? 'collapsed' : 'expanded';
+  refs.sidebarCollapse.innerHTML = icon(collapsed ? 'chevronRight' : 'chevronLeft');
+  refs.sidebarCollapse.title = collapsed ? '展开侧边栏' : '收起侧边栏';
+  refs.sidebarCollapse.setAttribute('aria-label', refs.sidebarCollapse.title);
+  localStorage.setItem('admin-web-sidebar', collapsed ? 'collapsed' : 'expanded');
+}
+
+function finishBootAnimation() {
+  if (refs.app.dataset.boot === 'ready') return;
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      refs.app.dataset.boot = 'ready';
+    });
+  });
 }
 
 function formatDateTime(value) {
@@ -213,7 +241,10 @@ function getViewUi(viewKey = state.activeView) {
   if (!state.viewUi[viewKey]) {
     state.viewUi[viewKey] = {
       selectedIds: {},
-      drafts: {}
+      drafts: {},
+      filters: {},
+      statusFilters: {},
+      openEditors: {}
     };
   }
   return state.viewUi[viewKey];
@@ -324,6 +355,13 @@ const FIELD_LABELS = {
   status: '状态',
   role: '角色',
   tag: '标签',
+  tagColor: '标签颜色',
+  tagBackground: '标签背景色',
+  headerBackground: '头部背景色',
+  iconColor: '图标颜色',
+  background: '背景',
+  iconBg: '图标背景',
+  style: '样式',
   avatarUrl: '头像 URL',
   avatarSeed: '头像 Seed',
   specialties: '擅长',
@@ -343,6 +381,18 @@ const FIELD_LABELS = {
 };
 
 const TEXTAREA_FIELDS = new Set(['desc', 'intro', 'summary', 'subtitle', 'audience', 'footnote']);
+const LINE_LIST_FIELDS = new Set([
+  'tags',
+  'chips',
+  'categories',
+  'suggestions',
+  'features',
+  'featuredDirectionIds',
+  'featuredSeriesIds',
+  'tabs',
+  'specialties',
+  'contents'
+]);
 const OBJECT_ARRAY_FIELDS = new Set([
   'overviewStats',
   'quickLinks',
@@ -394,6 +444,74 @@ const SELECT_FIELD_OPTIONS = {
   ]
 };
 
+const COMPANION_FIELDS = {
+  backgroundImageSeed: 'backgroundImageUrl',
+  imageSeed: 'imageUrl',
+  avatarSeed: 'avatarUrl',
+  coverSeed: 'coverUrl'
+};
+
+const EDITOR_LAYOUTS = {
+  'collection:directions': {
+    hero: {
+      title: '方向核心信息',
+      desc: '先处理名称、分类、状态和摘要，这些是最影响展示与定位的字段。'
+    },
+    sections: [
+      {
+        title: '核心字段',
+        keys: ['name', 'category', 'status', 'sort', 'isFeatured', 'summary']
+      },
+      {
+        title: '内容表达',
+        keys: ['audience']
+      }
+    ],
+    jsonFields: ['features', 'chips', 'slug', 'tags', 'featuredTag', 'homeTag', 'homeCard', 'coursesCard'],
+    jsonLabel: '补充字段 JSON',
+    foldLabel: '补充字段（JSON）'
+  },
+  'collection:teachers': {
+    hero: {
+      title: '师资核心信息',
+      desc: '先改姓名、角色、擅长与简介，次要资源字段先收起来，避免编辑时分散注意力。'
+    },
+    sections: [
+      {
+        title: '核心字段',
+        keys: ['name', 'role', 'tag', 'status', 'sort', 'specialties']
+      },
+      {
+        title: '内容表达',
+        keys: ['summary', 'desc', 'subtitle']
+      },
+      {
+        title: '展示资源',
+        keys: ['avatarUrl', 'avatarSeed']
+      }
+    ]
+  },
+  'page:courses': {
+    hero: {
+      title: '方向页核心配置',
+      desc: '这里维护的是方向列表页本身的标题、筛选项与引导内容，建议先改这些总配置。'
+    },
+    sections: [
+      {
+        title: '页面主信息',
+        keys: ['title', 'subtitle', 'categories', 'suggestions', 'featuredDirectionIds']
+      }
+    ],
+    secondarySections: [
+      {
+        title: '更多方向区块',
+        keys: ['moreSection']
+      }
+    ],
+    foldLabel: '页面补充区块'
+  }
+};
+
 function cloneValue(value) {
   return JSON.parse(JSON.stringify(value));
 }
@@ -406,6 +524,30 @@ function blankLike(value) {
   if (typeof value === 'number') return 0;
   if (typeof value === 'boolean') return false;
   return '';
+}
+
+function isIndexedObject(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const keys = Object.keys(value);
+  return keys.length > 0 && keys.every((key) => /^\d+$/.test(key));
+}
+
+function normalizeCmsValue(value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => normalizeCmsValue(item));
+  }
+
+  if (isIndexedObject(value)) {
+    return Object.keys(value)
+      .sort((left, right) => Number(left) - Number(right))
+      .map((key) => normalizeCmsValue(value[key]));
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([key, itemValue]) => [key, normalizeCmsValue(itemValue)]));
+  }
+
+  return value;
 }
 
 function humanizeLabel(key) {
@@ -452,12 +594,39 @@ function getSelectOptions(fieldKey) {
   return SELECT_FIELD_OPTIONS[fieldKey] || null;
 }
 
+function getEditorLayout(scope) {
+  return EDITOR_LAYOUTS[scope] || null;
+}
+
+function getCompanionFieldKeys(value) {
+  return Object.keys(COMPANION_FIELDS).flatMap((seedKey) => {
+    const urlKey = COMPANION_FIELDS[seedKey];
+    if (Object.prototype.hasOwnProperty.call(value || {}, seedKey) && !Object.prototype.hasOwnProperty.call(value || {}, urlKey)) {
+      return [urlKey];
+    }
+    return [];
+  });
+}
+
 function isTextareaField(fieldKey, value) {
   return TEXTAREA_FIELDS.has(fieldKey) || (typeof value === 'string' && value.length > 60);
 }
 
+function isHexColor(value) {
+  return typeof value === 'string' && /^#(?:[0-9a-fA-F]{3}){1,2}$/.test(value.trim());
+}
+
+function normalizeHexColor(value) {
+  if (!isHexColor(value)) return '#4f46e5';
+  const normalized = value.trim();
+  if (normalized.length === 4) {
+    return `#${normalized[1]}${normalized[1]}${normalized[2]}${normalized[2]}${normalized[3]}${normalized[3]}`;
+  }
+  return normalized;
+}
+
 function isManagedField(fieldKey) {
-  return ['createdAt', 'updatedAt', '_createdAt', '_updatedAt'].includes(fieldKey);
+  return ['_id', 'createdAt', 'updatedAt', '_createdAt', '_updatedAt'].includes(fieldKey);
 }
 
 function getFormSource(scope) {
@@ -505,6 +674,30 @@ function updateFormSource(scope, path, nextValue) {
   setFormSource(scope, updated);
 }
 
+function updateJsonSubset(scope, keys, rawText) {
+  let parsed;
+  try {
+    parsed = JSON.parse(rawText);
+  } catch (error) {
+    throw new Error('JSON 格式不正确');
+  }
+
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('JSON 内容必须是对象');
+  }
+
+  const source = { ...(getFormSource(scope) || {}) };
+  for (const key of keys) {
+    delete source[key];
+  }
+  for (const key of keys) {
+    if (Object.prototype.hasOwnProperty.call(parsed, key)) {
+      source[key] = parsed[key];
+    }
+  }
+  setFormSource(scope, source);
+}
+
 function guessArrayItemTemplate(path, items) {
   const fieldKey = String(path[path.length - 1] || '');
   if (Object.prototype.hasOwnProperty.call(ARRAY_TEMPLATES, fieldKey)) {
@@ -517,13 +710,40 @@ function guessArrayItemTemplate(path, items) {
   return OBJECT_ARRAY_FIELDS.has(fieldKey) ? {} : '';
 }
 
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function getTextareaRows(fieldKey, value) {
+  if (Array.isArray(value)) {
+    return clamp((value || []).length + 2, 5, 12);
+  }
+
+  const text = String(value ?? '');
+  const estimatedRows = Math.ceil(text.length / 22);
+  if (LINE_LIST_FIELDS.has(fieldKey)) {
+    return clamp(estimatedRows + 1, 5, 12);
+  }
+  return clamp(estimatedRows + 1, 4, 10);
+}
+
+function getFriendlyEditorClass(scope) {
+  if (scope === 'collection:directions') return ' friendly-editor-directions';
+  if (scope === 'page:courses') return ' friendly-editor-courses';
+  return '';
+}
+
 function renderPrimitiveInput(scope, path, fieldKey, value) {
   const label = humanizeLabel(fieldKey);
   const pathText = path.join('.');
   const selectOptions = getSelectOptions(fieldKey);
+  const isImageUrlField = /(?:image|background|avatar|cover|thumb)Url$/i.test(fieldKey);
+  const inputPlaceholder = isImageUrlField ? '直接粘贴图床链接' : '';
+  const isDirectionScope = scope === 'collection:directions' || scope === 'page:courses';
+  const useWideField = isImageUrlField || isDirectionScope;
 
   if (selectOptions) {
-    return `<label class="form-field">
+    return `<label class="form-field${useWideField ? ' form-field-wide' : ''}">
       <span class="form-label">${escapeHtml(label)}</span>
       <select class="form-select" data-form-scope="${escapeHtml(scope)}" data-form-path="${escapeHtml(pathText)}" data-form-kind="${fieldKey === 'sort' ? 'number' : typeof value}">
         ${selectOptions.map((option) => `<option value="${escapeHtml(option.value)}"${String(value ?? '') === String(option.value) ? ' selected' : ''}>${escapeHtml(option.label)}</option>`).join('')}
@@ -532,7 +752,7 @@ function renderPrimitiveInput(scope, path, fieldKey, value) {
   }
 
   if (typeof value === 'boolean') {
-    return `<label class="form-field">
+    return `<label class="form-field${useWideField ? ' form-field-wide' : ''}">
       <span class="form-label">${escapeHtml(label)}</span>
       <select class="form-select" data-form-scope="${escapeHtml(scope)}" data-form-path="${escapeHtml(pathText)}" data-form-kind="boolean">
         <option value="true"${value ? ' selected' : ''}>是</option>
@@ -542,30 +762,61 @@ function renderPrimitiveInput(scope, path, fieldKey, value) {
   }
 
   if (typeof value === 'number') {
-    return `<label class="form-field">
+    return `<label class="form-field${useWideField ? ' form-field-wide' : ''}">
       <span class="form-label">${escapeHtml(label)}</span>
       <input class="form-input" type="number" value="${escapeHtml(String(value))}" data-form-scope="${escapeHtml(scope)}" data-form-path="${escapeHtml(pathText)}" data-form-kind="number" />
+    </label>`;
+  }
+
+  if (isHexColor(value)) {
+    return `<label class="form-field${useWideField ? ' form-field-wide' : ''}">
+      <span class="form-label">${escapeHtml(label)}</span>
+      <div class="color-field">
+        <input class="color-swatch" type="color" value="${escapeHtml(normalizeHexColor(value))}" data-form-scope="${escapeHtml(scope)}" data-form-path="${escapeHtml(pathText)}" data-form-kind="text" />
+        <input class="form-input" type="text" value="${escapeHtml(String(value))}" data-form-scope="${escapeHtml(scope)}" data-form-path="${escapeHtml(pathText)}" data-form-kind="text" />
+      </div>
     </label>`;
   }
 
   if (isTextareaField(fieldKey, value)) {
     return `<label class="form-field form-field-wide">
       <span class="form-label">${escapeHtml(label)}</span>
-      <textarea class="form-textarea" data-form-scope="${escapeHtml(scope)}" data-form-path="${escapeHtml(pathText)}" data-form-kind="text">${escapeHtml(String(value ?? ''))}</textarea>
+      <textarea class="form-textarea" rows="${getTextareaRows(fieldKey, value)}" data-form-scope="${escapeHtml(scope)}" data-form-path="${escapeHtml(pathText)}" data-form-kind="text">${escapeHtml(String(value ?? ''))}</textarea>
     </label>`;
   }
 
-  return `<label class="form-field">
+  return `<label class="form-field${useWideField ? ' form-field-wide' : ''}">
     <span class="form-label">${escapeHtml(label)}</span>
-    <input class="form-input" type="text" value="${escapeHtml(String(value ?? ''))}" data-form-scope="${escapeHtml(scope)}" data-form-path="${escapeHtml(pathText)}" data-form-kind="text" />
+    ${isImageUrlField ? '<span class="form-hint">支持直接粘贴图床链接。</span>' : ''}
+    <input class="form-input" type="text" value="${escapeHtml(String(value ?? ''))}" placeholder="${escapeHtml(inputPlaceholder)}" data-form-scope="${escapeHtml(scope)}" data-form-path="${escapeHtml(pathText)}" data-form-kind="text" />
+  </label>`;
+}
+
+function renderLineListInput(scope, path, fieldKey, value) {
+  const label = humanizeLabel(fieldKey);
+  const pathText = path.join('.');
+  return `<label class="form-field form-field-wide">
+    <span class="form-label">${escapeHtml(label)}</span>
+    <span class="form-hint">一行一项，适合成组文案、标签或目录。</span>
+    <textarea class="form-textarea form-textarea-compact" rows="${getTextareaRows(fieldKey, value)}" data-form-scope="${escapeHtml(scope)}" data-form-path="${escapeHtml(pathText)}" data-form-kind="line-list">${escapeHtml((value || []).join('\n'))}</textarea>
   </label>`;
 }
 
 function renderFormNode(scope, value, path = [], fieldKey = '') {
+  if (isIndexedObject(value)) {
+    return renderFormNode(scope, normalizeCmsValue(value), path, fieldKey);
+  }
+
   if (Array.isArray(value)) {
     const label = humanizeLabel(fieldKey);
     const pathText = path.join('.');
     const objectItems = value.some((item) => item && typeof item === 'object' && !Array.isArray(item)) || OBJECT_ARRAY_FIELDS.has(fieldKey);
+    const stringItems = value.every((item) => item == null || typeof item === 'string');
+
+    if (!objectItems && (LINE_LIST_FIELDS.has(fieldKey) || stringItems)) {
+      return renderLineListInput(scope, path, fieldKey, value);
+    }
+
     return `<section class="form-block">
       <div class="form-block-head">
         <div>
@@ -600,7 +851,8 @@ function renderFormNode(scope, value, path = [], fieldKey = '') {
 
   if (value && typeof value === 'object') {
     const label = fieldKey ? humanizeLabel(fieldKey) : '内容配置';
-    const fields = Object.keys(value).filter((key) => !isManagedField(key)).map((key) => renderFormNode(scope, value[key], [...path, key], key)).join('');
+    const objectKeys = [...new Set([...Object.keys(value), ...getCompanionFieldKeys(value)])];
+    const fields = objectKeys.filter((key) => !isManagedField(key)).map((key) => renderFormNode(scope, value[key] ?? '', [...path, key], key)).join('');
     return `<section class="form-block">
       ${fieldKey ? `<div class="form-block-head"><div><h4>${escapeHtml(label)}</h4></div></div>` : ''}
       <div class="form-grid">${fields || '<div class="empty-state">当前对象还没有可编辑字段。</div>'}</div>
@@ -610,12 +862,94 @@ function renderFormNode(scope, value, path = [], fieldKey = '') {
   return renderPrimitiveInput(scope, path, fieldKey, value);
 }
 
+function renderFieldsForKeys(scope, value, keys) {
+  return keys
+    .filter((key) => Object.prototype.hasOwnProperty.call(value || {}, key) && !isManagedField(key))
+    .map((key) => renderFormNode(scope, value[key], [key], key))
+    .join('');
+}
+
+function pickKeys(source, keys) {
+  return Object.fromEntries(keys.filter((key) => Object.prototype.hasOwnProperty.call(source || {}, key)).map((key) => [key, source[key]]));
+}
+
+function renderJsonSubsetEditor(scope, value, keys, label) {
+  const subset = pickKeys(value, keys);
+  if (!Object.keys(subset).length) return '';
+  return `<section class="form-section form-section-secondary">
+    <div class="form-section-head">
+      <h4>${escapeHtml(label)}</h4>
+    </div>
+    <textarea class="json-editor" data-json-scope="${escapeHtml(scope)}" data-json-keys="${escapeHtml(keys.join(','))}">${escapeHtml(JSON.stringify(subset, null, 2))}</textarea>
+  </section>`;
+}
+
+function renderStructuredEditor(scope, value, layout) {
+  const primaryKeys = new Set(layout.sections.flatMap((section) => section.keys));
+  const secondarySections = layout.secondarySections || [];
+  const secondaryKeys = new Set(secondarySections.flatMap((section) => section.keys));
+  const jsonKeys = new Set(layout.jsonFields || []);
+  const renderedKeys = new Set([...primaryKeys, ...secondaryKeys, ...jsonKeys]);
+  const remainderKeys = Object.keys(value || {}).filter((key) => !isManagedField(key) && !renderedKeys.has(key));
+  const secondaryMarkup = secondarySections.map((section) => {
+    const fields = renderFieldsForKeys(scope, value, section.keys);
+    if (!fields) return '';
+    return `<section class="form-section form-section-secondary">
+      <div class="form-section-head">
+        <h4>${escapeHtml(section.title)}</h4>
+      </div>
+      <div class="form-grid">${fields}</div>
+    </section>`;
+  }).join('');
+  const jsonMarkup = layout.jsonFields?.length
+    ? renderJsonSubsetEditor(scope, value, layout.jsonFields, layout.jsonLabel || '原始 JSON')
+    : '';
+  const remainderMarkup = remainderKeys.length
+    ? `<section class="form-section form-section-secondary">
+      <div class="form-section-head">
+        <h4>补充字段</h4>
+      </div>
+      <div class="form-grid">${remainderKeys.map((key) => renderFormNode(scope, value[key], [key], key)).join('')}</div>
+    </section>`
+    : '';
+
+  return `<div class="friendly-editor${getFriendlyEditorClass(scope)}">
+    <section class="editor-focus-hero">
+      <strong>${escapeHtml(layout.hero.title)}</strong>
+      <p>${escapeHtml(layout.hero.desc)}</p>
+    </section>
+    ${layout.sections.map((section) => {
+      const fields = renderFieldsForKeys(scope, value, section.keys);
+      if (!fields) return '';
+      return `<section class="form-section">
+        <div class="form-section-head">
+          <h4>${escapeHtml(section.title)}</h4>
+        </div>
+        <div class="form-grid">${fields}</div>
+      </section>`;
+    }).join('')}
+    ${secondaryMarkup || jsonMarkup || remainderMarkup ? `<details class="form-fold">
+      <summary class="form-fold-toggle">${escapeHtml(layout.foldLabel || '更多字段')}</summary>
+      <div class="form-fold-body">
+        ${secondaryMarkup}
+        ${jsonMarkup}
+        ${remainderMarkup}
+      </div>
+    </details>` : ''}
+  </div>`;
+}
+
 function renderFriendlyEditor(scope, value) {
   if (!value) {
     return '<div class="empty-state">暂无可编辑内容。</div>';
   }
 
-  return `<div class="friendly-editor">${renderFormNode(scope, value)}</div>`;
+  const layout = getEditorLayout(scope);
+  if (layout && value && typeof value === 'object' && !Array.isArray(value)) {
+    return renderStructuredEditor(scope, value, layout);
+  }
+
+  return `<div class="friendly-editor${getFriendlyEditorClass(scope)}">${renderFormNode(scope, value)}</div>`;
 }
 
 function getSelectedCollectionState(collectionKey, items) {
@@ -638,6 +972,593 @@ function getSelectedCollectionState(collectionKey, items) {
   return { item, isDraft: false, itemId: item._id || '' };
 }
 
+const TABLE_COLLECTIONS = new Set([
+  'directions',
+  'teachers',
+  'successCases',
+  'mediaAssets',
+  'materialSeries',
+  'materialItems'
+]);
+
+const TABLE_COLUMNS = {
+  directions: [
+    {
+      key: 'name',
+      label: '方向名称',
+      render: (item) => `<strong class="data-table-title">${escapeHtml(item.name || '未命名方向')}</strong><span class="data-table-sub">${escapeHtml(item.slug || item._id || '')}</span>`
+    },
+    { key: 'category', label: '分类', render: (item) => escapeHtml(item.category || '-') },
+    {
+      key: 'featured',
+      label: '首页精选',
+      render: (item) => `<span class="record-pill${item.isFeatured ? ' success' : ''}">${escapeHtml(item.isFeatured ? '是' : '否')}</span>`
+    },
+    {
+      key: 'status',
+      label: '状态',
+      render: (item) => `<span class="record-pill${item.status === 'published' ? ' success' : ''}">${escapeHtml(item.status || 'draft')}</span>`
+    },
+    { key: 'sort', label: '排序', render: (item) => escapeHtml(String(item.sort ?? '-')) },
+    { key: 'updatedAt', label: '更新时间', render: (item) => escapeHtml(formatDateTime(getUpdatedAt(item))) },
+    {
+      key: 'action',
+      label: '操作',
+      render: (item) => `<button class="row-action" type="button" data-action="select-item" data-collection-key="directions" data-item-id="${escapeHtml(item._id || '')}">编辑</button>`
+    }
+  ],
+  teachers: [
+    {
+      key: 'name',
+      label: '姓名',
+      render: (item) => `<strong class="data-table-title">${escapeHtml(item.name || '未命名老师')}</strong><span class="data-table-sub">${escapeHtml(item.tag || item._id || '')}</span>`
+    },
+    { key: 'role', label: '角色', render: (item) => escapeHtml(item.role || '-') },
+    { key: 'specialties', label: '擅长', render: (item) => escapeHtml((item.specialties || []).slice(0, 2).join(' / ') || '-') },
+    {
+      key: 'status',
+      label: '状态',
+      render: (item) => `<span class="record-pill${item.status === 'published' ? ' success' : ''}">${escapeHtml(item.status || 'draft')}</span>`
+    },
+    { key: 'sort', label: '排序', render: (item) => escapeHtml(String(item.sort ?? '-')) },
+    { key: 'updatedAt', label: '更新时间', render: (item) => escapeHtml(formatDateTime(getUpdatedAt(item))) },
+    {
+      key: 'action',
+      label: '操作',
+      render: (item) => `<button class="row-action" type="button" data-action="select-item" data-collection-key="teachers" data-item-id="${escapeHtml(item._id || '')}">编辑</button>`
+    }
+  ],
+  successCases: [
+    {
+      key: 'title',
+      label: '案例标题',
+      render: (item) => `<strong class="data-table-title">${escapeHtml(item.title || '未命名案例')}</strong><span class="data-table-sub">${escapeHtml(item.subtitle || item._id || '')}</span>`
+    },
+    { key: 'category', label: '分类', render: (item) => escapeHtml(item.category || '-') },
+    { key: 'year', label: '年份', render: (item) => escapeHtml(String(item.year ?? '-')) },
+    {
+      key: 'status',
+      label: '状态',
+      render: (item) => `<span class="record-pill${item.status === 'published' ? ' success' : ''}">${escapeHtml(item.status || 'draft')}</span>`
+    },
+    { key: 'sort', label: '排序', render: (item) => escapeHtml(String(item.sort ?? '-')) },
+    { key: 'updatedAt', label: '更新时间', render: (item) => escapeHtml(formatDateTime(getUpdatedAt(item))) },
+    {
+      key: 'action',
+      label: '操作',
+      render: (item) => `<button class="row-action" type="button" data-action="select-item" data-collection-key="successCases" data-item-id="${escapeHtml(item._id || '')}">编辑</button>`
+    }
+  ],
+  mediaAssets: [
+    {
+      key: 'name',
+      label: '资源名称',
+      render: (item) => `<strong class="data-table-title">${escapeHtml(item.name || item.alt || '未命名资源')}</strong><span class="data-table-sub">${escapeHtml(item.url || item.thumbUrl || item._id || '')}</span>`
+    },
+    { key: 'module', label: '模块', render: (item) => escapeHtml(item.module || '-') },
+    { key: 'type', label: '类型', render: (item) => escapeHtml(item.type || '-') },
+    {
+      key: 'status',
+      label: '状态',
+      render: (item) => `<span class="record-pill${item.status === 'published' ? ' success' : ''}">${escapeHtml(item.status || 'draft')}</span>`
+    },
+    { key: 'sort', label: '排序', render: (item) => escapeHtml(String(item.sort ?? '-')) },
+    { key: 'updatedAt', label: '更新时间', render: (item) => escapeHtml(formatDateTime(getUpdatedAt(item))) },
+    {
+      key: 'action',
+      label: '操作',
+      render: (item) => `<button class="row-action" type="button" data-action="select-item" data-collection-key="mediaAssets" data-item-id="${escapeHtml(item._id || '')}">编辑</button>`
+    }
+  ],
+  materialSeries: [
+    {
+      key: 'name',
+      label: '套系名称',
+      render: (item) => `<strong class="data-table-title">${escapeHtml(item.name || '未命名套系')}</strong><span class="data-table-sub">${escapeHtml(item.shelfLabel || item.slug || item._id || '')}</span>`
+    },
+    { key: 'category', label: '分类', render: (item) => escapeHtml(item.category || '-') },
+    { key: 'tag', label: '标签', render: (item) => escapeHtml(item.tag || '-') },
+    {
+      key: 'status',
+      label: '状态',
+      render: (item) => `<span class="record-pill${item.status === 'published' ? ' success' : ''}">${escapeHtml(item.status || 'draft')}</span>`
+    },
+    { key: 'sort', label: '排序', render: (item) => escapeHtml(String(item.sort ?? '-')) },
+    { key: 'updatedAt', label: '更新时间', render: (item) => escapeHtml(formatDateTime(getUpdatedAt(item))) },
+    {
+      key: 'action',
+      label: '操作',
+      render: (item) => `<button class="row-action" type="button" data-action="select-item" data-collection-key="materialSeries" data-item-id="${escapeHtml(item._id || '')}">编辑</button>`
+    }
+  ],
+  materialItems: [
+    {
+      key: 'title',
+      label: '单品标题',
+      render: (item) => `<strong class="data-table-title">${escapeHtml(item.title || '未命名单品')}</strong><span class="data-table-sub">${escapeHtml(item.subtitle || item.seriesId || item._id || '')}</span>`
+    },
+    { key: 'type', label: '类型', render: (item) => escapeHtml(item.type || '-') },
+    { key: 'stage', label: '阶段', render: (item) => escapeHtml(item.stage || '-') },
+    {
+      key: 'status',
+      label: '状态',
+      render: (item) => `<span class="record-pill${item.status === 'published' ? ' success' : ''}">${escapeHtml(item.status || 'draft')}</span>`
+    },
+    { key: 'sort', label: '排序', render: (item) => escapeHtml(String(item.sort ?? '-')) },
+    { key: 'updatedAt', label: '更新时间', render: (item) => escapeHtml(formatDateTime(getUpdatedAt(item))) },
+    {
+      key: 'action',
+      label: '操作',
+      render: (item) => `<button class="row-action" type="button" data-action="select-item" data-collection-key="materialItems" data-item-id="${escapeHtml(item._id || '')}">编辑</button>`
+    }
+  ]
+};
+
+const STATUS_FILTER_OPTIONS = [
+  { key: 'all', label: '全部' },
+  { key: 'published', label: '已发布' },
+  { key: 'draft', label: '草稿' }
+];
+
+function getCollectionFilterState(collectionKey) {
+  const ui = getViewUi();
+  return {
+    keyword: ui.filters[collectionKey] || '',
+    status: ui.statusFilters[collectionKey] || 'all'
+  };
+}
+
+function getFilteredCollectionItems(collectionKey, items) {
+  const filterState = getCollectionFilterState(collectionKey);
+  const keyword = filterState.keyword.trim().toLowerCase();
+
+  return (items || []).filter((item) => {
+    const statusMatched = filterState.status === 'all' ? true : (item.status || 'draft') === filterState.status;
+    if (!statusMatched) return false;
+    if (!keyword) return true;
+
+    const stringLists = [
+      ...(Array.isArray(item.specialties) ? item.specialties : []),
+      ...(Array.isArray(item.tags) ? item.tags : []),
+      ...(Array.isArray(item.chips) ? item.chips : []),
+      ...(Array.isArray(item.contents) ? item.contents : [])
+    ];
+    const haystack = [
+      item._id,
+      item.name,
+      item.title,
+      item.subtitle,
+      item.slug,
+      item.category,
+      item.role,
+      item.tag,
+      item.summary,
+      item.audience,
+      item.module,
+      item.type,
+      item.stage,
+      item.alt,
+      item.url,
+      item.thumbUrl,
+      item.seriesId,
+      item.shelfLabel,
+      item.year,
+      ...stringLists
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+
+    return haystack.includes(keyword);
+  });
+}
+
+function renderCollectionEditor(collectionKey, selected, collectionMeta) {
+  const ui = getViewUi();
+  const isOpen = Boolean(ui.openEditors[collectionKey]);
+  if (!isOpen || !selected.item) {
+    return '';
+  }
+
+  const editorLabel = selected.isDraft ? '新建条目' : selected.item ? `编辑 ${getPrimaryLabel(selected.item, collectionKey)}` : '暂无条目';
+
+  return `<div class="editor-overlay is-visible directions-editor-overlay" data-editor-collection="${escapeHtml(collectionKey)}">
+    <button class="editor-overlay-backdrop" type="button" aria-label="关闭编辑弹层" data-action="close-editor" data-collection-key="${escapeHtml(collectionKey)}"></button>
+    <article class="panel editor-panel editor-modal-shell editor-modal-shell-directions directions-enter-modal">
+      <div class="panel-head editor-modal-head directions-enter-modal-item" style="--enter-delay: 0ms;">
+        <div>
+          <h3>${escapeHtml(editorLabel)}</h3>
+          <p>${selected.item ? '主区保持不动，重点字段会在这个浮层里集中编辑。' : '先从主区表格选中一条 row，再在这里改细节。'}</p>
+        </div>
+        <div class="panel-actions">
+          <button class="system-action" type="button" data-action="save-item" data-collection-key="${escapeHtml(collectionKey)}">保存条目</button>
+          ${selected.item && !selected.isDraft ? `<button class="system-action danger-action" type="button" data-action="delete-item" data-collection-key="${escapeHtml(collectionKey)}" data-item-id="${escapeHtml(selected.itemId)}">删除</button>` : ''}
+          <button class="topbar-icon-button editor-close-button" type="button" aria-label="关闭编辑弹层" data-action="close-editor" data-collection-key="${escapeHtml(collectionKey)}">${icon('close')}</button>
+        </div>
+      </div>
+      <div class="editor-modal-body">
+        <div class="editor-meta directions-enter-modal-item" style="--enter-delay: 60ms;">
+          <span class="meta-chip">ID ${escapeHtml(selected.itemId || '新建中')}</span>
+          <span class="meta-chip">更新时间 ${escapeHtml(formatDateTime(getUpdatedAt(selected.item)))}</span>
+          <span class="meta-chip">集合 ${escapeHtml(collectionMeta.label)}</span>
+        </div>
+        ${collectionKey === 'directions' ? renderEditorInsightCards(getDirectionEditorInsightCards(selected.item)) : ''}
+        <div class="drawer-focus-bar directions-enter-modal-item" style="--enter-delay: 120ms;">
+          <strong>${escapeHtml(getPrimaryLabel(selected.item, collectionKey))}</strong>
+          <span>${escapeHtml(getSecondaryLabel(selected.item, collectionKey) || '已进入明细编辑')}</span>
+        </div>
+        ${renderFriendlyEditor(`collection:${collectionKey}`, selected.item)}
+        <div class="editor-actions directions-enter-modal-item" style="--enter-delay: 320ms;">
+          <button class="system-action" type="button" data-action="save-item" data-collection-key="${escapeHtml(collectionKey)}">保存条目</button>
+          <button class="system-action" type="button" data-action="reload-view">重新拉取</button>
+        </div>
+      </div>
+    </article>
+  </div>`;
+}
+
+function renderPageEditorOverlay(pageKey, pageLabel, page) {
+  const ui = getViewUi();
+  const scopeKey = `page:${pageKey}`;
+  if (!ui.openEditors[scopeKey] || !page) {
+    return '';
+  }
+
+  return `<div class="editor-overlay is-visible directions-editor-overlay" data-editor-page="${escapeHtml(pageKey)}">
+    <button class="editor-overlay-backdrop" type="button" aria-label="关闭编辑弹层" data-action="close-page-editor" data-page-key="${escapeHtml(pageKey)}"></button>
+    <article class="panel editor-panel editor-modal-shell editor-modal-shell-directions directions-enter-modal">
+      <div class="panel-head editor-modal-head directions-enter-modal-item" style="--enter-delay: 0ms;">
+        <div>
+          <h3>${escapeHtml(pageLabel)}</h3>
+          <p>页面总配置会保持在当前工作区之上，用浮层集中修改，不打断主控区浏览。</p>
+        </div>
+        <div class="panel-actions">
+          <button class="system-action" type="button" data-action="save-page" data-page-key="${escapeHtml(pageKey)}">保存页面</button>
+          <button class="topbar-icon-button editor-close-button" type="button" aria-label="关闭编辑弹层" data-action="close-page-editor" data-page-key="${escapeHtml(pageKey)}">${icon('close')}</button>
+        </div>
+      </div>
+      <div class="editor-modal-body">
+        <div class="editor-meta directions-enter-modal-item" style="--enter-delay: 60ms;">
+          <span class="meta-chip">文档 ID ${escapeHtml(pageKey === 'site' ? 'default' : 'singleton')}</span>
+          <span class="meta-chip">更新时间 ${escapeHtml(formatDateTime(getUpdatedAt(page)))}</span>
+          <span class="meta-chip">页面配置</span>
+        </div>
+        ${pageKey === 'courses' ? renderEditorInsightCards(getCoursesPageInsightCards(page)) : ''}
+        <div class="drawer-focus-bar directions-enter-modal-item" style="--enter-delay: 120ms;">
+          <strong>${escapeHtml(page.title || pageLabel)}</strong>
+          <span>${escapeHtml(page.subtitle || `正在编辑${pageLabel}`)}</span>
+        </div>
+        ${renderFriendlyEditor(`page:${pageKey}`, page)}
+        <div class="editor-actions directions-enter-modal-item" style="--enter-delay: 320ms;">
+          <button class="system-action" type="button" data-action="save-page" data-page-key="${escapeHtml(pageKey)}">保存页面</button>
+          <button class="system-action" type="button" data-action="reload-view">重新拉取</button>
+        </div>
+      </div>
+    </article>
+  </div>`;
+}
+
+function renderWorkspaceMetricStack(primary, secondary, tone = 'neutral') {
+  return `<div class="metric-stack tone-${escapeHtml(tone)}">
+    <strong>${escapeHtml(primary || '-')}</strong>
+    <span>${escapeHtml(secondary || '')}</span>
+  </div>`;
+}
+
+function getSortedDirections(items = state.currentData?.collections?.directions || []) {
+  return [...items].sort((left, right) => Number(left.sort || 0) - Number(right.sort || 0));
+}
+
+function getDirectionNameMap(items = state.currentData?.collections?.directions || []) {
+  return Object.fromEntries(getSortedDirections(items).map((item) => [item._id, item.name || item._id]));
+}
+
+function getFeaturedDirectionNames(page = state.currentData?.page || {}, items = state.currentData?.collections?.directions || []) {
+  const directionNameMap = getDirectionNameMap(items);
+  return (page.featuredDirectionIds || []).map((id) => directionNameMap[id]).filter(Boolean);
+}
+
+function renderWorkspaceStatCards(cards = []) {
+  return `<div class="workspace-stat-grid">${cards.map((card) => `<article class="workspace-stat-card">
+    <span>${escapeHtml(card.label)}</span>
+    <strong>${escapeHtml(card.value)}</strong>
+    <em>${escapeHtml(card.note)}</em>
+  </article>`).join('')}</div>`;
+}
+
+function renderEditorInsightCards(cards = []) {
+  return cards.length ? `<div class="editor-insight-grid">${cards.map((card) => `<article class="editor-insight-card">
+    <span>${escapeHtml(card.label)}</span>
+    <strong>${escapeHtml(card.value)}</strong>
+    <em>${escapeHtml(card.note || '')}</em>
+  </article>`).join('')}</div>` : '';
+}
+
+function getDirectionEditorInsightCards(item) {
+  const directions = [...(state.currentData?.collections?.directions || [])].sort((left, right) => Number(left.sort || 0) - Number(right.sort || 0));
+  const page = state.currentData?.page || {};
+  const sortRank = directions.findIndex((entry) => entry._id === item._id) + 1;
+  const featuredRank = (page.featuredDirectionIds || []).indexOf(item._id) + 1;
+
+  return [
+    {
+      label: '当前状态',
+      value: item.status || 'draft',
+      note: item.isFeatured ? '已进入首页推荐池' : '当前不在首页推荐池'
+    },
+    {
+      label: '列表顺位',
+      value: sortRank > 0 ? String(sortRank) : '-',
+      note: `排序值 ${item.sort ?? '-'}`
+    },
+    {
+      label: '推荐顺位',
+      value: featuredRank > 0 ? `第 ${featuredRank} 位` : '未推荐',
+      note: item.category || '未设置分类'
+    }
+  ];
+}
+
+function getCoursesPageInsightCards(page) {
+  const directions = state.currentData?.collections?.directions || [];
+  const featuredNames = (page.featuredDirectionIds || [])
+    .map((id) => directions.find((item) => item._id === id)?.name)
+    .filter(Boolean);
+
+  return [
+    {
+      label: '分类入口',
+      value: String((page.categories || []).length),
+      note: (page.categories || []).slice(0, 2).join(' / ') || '尚未设置'
+    },
+    {
+      label: '报考建议',
+      value: String((page.suggestions || []).length),
+      note: page.suggestions?.[0] || '尚未设置'
+    },
+    {
+      label: '首页推荐',
+      value: String((page.featuredDirectionIds || []).length),
+      note: featuredNames.slice(0, 2).join(' / ') || '尚未设置'
+    }
+  ];
+}
+
+function getDirectionsWorkspaceRows(view, data) {
+  const page = data.page || {};
+  const items = [...(data.collections.directions || [])].sort((left, right) => Number(left.sort || 0) - Number(right.sort || 0));
+  const directionNameMap = Object.fromEntries(items.map((item) => [item._id, item.name || item._id]));
+  const featuredNames = (page.featuredDirectionIds || []).map((id) => directionNameMap[id]).filter(Boolean);
+  return [
+    {
+      kind: 'page',
+      rowId: `page:${view.pageKey}`,
+      title: page.title || view.pageLabel,
+      sub: page.subtitle || '方向页标题、分类与引导文案',
+      metaPrimary: `${(page.categories || []).length} 个分类`,
+      metaSecondary: `${(page.featuredDirectionIds || []).length} 个精选方向 · ${(page.suggestions || []).length} 条建议`,
+      placementPrimary: `${(page.featuredDirectionIds || []).length} 个首页推荐`,
+      placementSecondary: featuredNames.slice(0, 2).join(' / ') || '尚未设置推荐方向',
+      priorityLabel: '总控台',
+      priorityTone: 'page',
+      status: '页面配置',
+      updatedAt: getUpdatedAt(page),
+      pageKey: view.pageKey
+    },
+    ...items.map((item, index) => {
+      const featuredRank = (page.featuredDirectionIds || []).indexOf(item._id);
+      const sortRank = index + 1;
+      return {
+        kind: 'item',
+        rowId: item._id || '',
+        item,
+        title: item.name || '未命名方向',
+        sub: item.summary || item.slug || '',
+        metaPrimary: item.category || '-',
+        metaSecondary: `${item.isFeatured ? `首页精选 · 第 ${featuredRank + 1} 位` : '普通条目'} · 排序 ${item.sort ?? '-'}`,
+        placementPrimary: item.isFeatured ? `首页第 ${featuredRank + 1} 位` : '未上首页',
+        placementSecondary: `列表第 ${sortRank} 位 · 排序 ${item.sort ?? '-'}`,
+        priorityLabel: item.isFeatured ? '高优先级' : sortRank <= 2 ? '前排' : '常规',
+        priorityTone: item.isFeatured ? 'featured' : sortRank <= 2 ? 'top' : 'normal',
+        sortRank,
+        featuredRank,
+        status: item.status || 'draft',
+        updatedAt: getUpdatedAt(item)
+      };
+    })
+  ];
+}
+
+function getDirectionsWorkspaceState(view, data) {
+  const ui = getViewUi();
+  const filterState = getCollectionFilterState('directions');
+  const rows = getDirectionsWorkspaceRows(view, data);
+  const keyword = filterState.keyword.trim().toLowerCase();
+  const filteredRows = rows.filter((row) => {
+    if (row.kind === 'page') {
+      if (!keyword) return true;
+      return [row.title, row.sub, row.metaPrimary, row.metaSecondary].filter(Boolean).join(' ').toLowerCase().includes(keyword);
+    }
+
+    const statusMatched = filterState.status === 'all' ? true : row.status === filterState.status;
+    if (!statusMatched) return false;
+    if (!keyword) return true;
+    return [row.title, row.sub, row.metaPrimary, row.metaSecondary, row.item?.slug].filter(Boolean).join(' ').toLowerCase().includes(keyword);
+  });
+  const pageOpen = Boolean(ui.openEditors[`page:${view.pageKey}`]);
+  const selectedItem = getSelectedCollectionState('directions', data.collections.directions || []);
+
+  return {
+    filterState,
+    rows,
+    filteredRows,
+    pageOpen,
+    selectedItem,
+    activeRow: pageOpen
+      ? rows.find((row) => row.kind === 'page') || null
+      : rows.find((row) => row.kind === 'item' && row.rowId === selectedItem.itemId) || null
+  };
+}
+
+function renderDirectionsWorkspace(view, data) {
+  const { filterState, rows, filteredRows, pageOpen, selectedItem, activeRow } = getDirectionsWorkspaceState(view, data);
+  const directions = data.collections.directions || [];
+  const publishedCount = directions.filter((item) => item.status === 'published').length;
+  const featuredCount = directions.filter((item) => item.isFeatured).length;
+  const nextSort = directions.length ? Math.max(...directions.map((item) => Number(item.sort || 0))) + 10 : 10;
+  const categoryCount = (data.page?.categories || []).length;
+  const activeSummary = activeRow
+    ? (activeRow.kind === 'page'
+      ? `页面总控，含 ${categoryCount} 个分类入口和 ${featuredCount} 条首页推荐。`
+      : `${activeRow.item?.category || '未分组'}，排序 ${activeRow.item?.sort || '-'}，${activeRow.item?.isFeatured ? '已推荐到首页。' : '未推荐到首页。'}`)
+    : `共 ${rows.length} 行，已发布 ${publishedCount} 条，首页推荐 ${featuredCount} 条。`;
+
+  return `<section class="module-page workspace-motion-scope directions-motion-scope">
+    <section class="collection-section">
+      <div class="table-layout table-layout-single">
+        <article class="panel table-panel table-panel-focus directions-panel-enter">
+          <div class="panel-head workspace-enter directions-enter" style="--enter-delay: 0ms;">
+            <div>
+              <h3>方向工作区</h3>
+              <p>页面配置和方向条目在同一张表里，先定位 row，再点编辑。</p>
+            </div>
+            <div class="panel-actions">
+              <button class="system-action" type="button" data-action="reload-view">刷新</button>
+              <button class="system-action" type="button" data-action="new-item" data-collection-key="directions">新建方向</button>
+            </div>
+          </div>
+          <div class="table-toolbar workspace-enter directions-enter" style="--enter-delay: 60ms;">
+            <label class="table-search">
+              ${icon('search')}
+              <input type="text" value="${escapeHtml(filterState.keyword)}" placeholder="搜索页面配置或方向条目" data-list-filter="directions" />
+            </label>
+            <div class="table-filters">
+              ${STATUS_FILTER_OPTIONS.map((option) => `<button class="segment${filterState.status === option.key ? ' active' : ''}" type="button" data-action="set-status-filter" data-collection-key="directions" data-status-key="${escapeHtml(option.key)}">${escapeHtml(option.label)}</button>`).join('')}
+            </div>
+          </div>
+          <div class="workspace-compact-summary workspace-enter directions-enter" style="--enter-delay: 120ms;">
+            <strong>${escapeHtml(activeRow ? `当前焦点：${activeRow.kind === 'page' ? '页面配置' : activeRow.title}` : '方向总览')}</strong>
+            <span>${escapeHtml(activeSummary)}</span>
+            <em>当前展示 ${escapeHtml(String(filteredRows.length))} / ${escapeHtml(String(rows.length))} 行，建议新排序 ${escapeHtml(String(nextSort))}</em>
+          </div>
+          <div class="table-shell workspace-enter directions-enter" style="--enter-delay: 180ms;">
+            ${filteredRows.length ? `<table class="data-table data-table-compact">
+              <thead>
+                <tr>
+                  <th>类型</th>
+                  <th>关键信息</th>
+                  <th>位置 / 推荐</th>
+                  <th>状态</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${filteredRows.map((row, index) => {
+                  const isActive = row.kind === 'page'
+                    ? pageOpen
+                    : (!selectedItem.isDraft && selectedItem.itemId === row.rowId && Boolean(getViewUi().openEditors.directions));
+                  return `<tr class="workspace-row-enter directions-row-enter ${isActive ? ' active' : ''}${row.kind === 'page' ? ' row-page-config' : ''}${row.priorityTone === 'featured' ? ' row-featured' : ''}${row.priorityTone === 'top' ? ' row-top' : ''}" style="--enter-delay: ${220 + index * 34}ms;">
+                    <td><span class="row-kind-badge${row.kind === 'page' ? ' page' : ''}">${escapeHtml(row.kind === 'page' ? '页面配置' : '方向条目')}</span></td>
+                    <td>
+                      <strong class="data-table-title">${escapeHtml(row.title)}</strong>
+                      <span class="data-table-sub">${escapeHtml(row.sub || '')}</span>
+                      <span class="data-table-minor">${escapeHtml(row.metaPrimary || '')}</span>
+                    </td>
+                    <td>
+                      <strong class="data-table-title">${escapeHtml(row.placementPrimary || row.priorityLabel || '-')}</strong>
+                      <span class="data-table-sub">${escapeHtml(row.placementSecondary || row.metaSecondary || '')}</span>
+                    </td>
+                    <td><span class="record-pill${row.status === 'published' ? ' success' : ''}">${escapeHtml(row.status)}</span></td>
+                    <td>${row.kind === 'page'
+                      ? `<button class="row-action" type="button" data-action="open-page-editor" data-page-key="${escapeHtml(row.pageKey)}">编辑</button>`
+                      : `<button class="row-action" type="button" data-action="select-item" data-collection-key="directions" data-item-id="${escapeHtml(row.rowId)}">编辑</button>`}</td>
+                  </tr>`;
+                }).join('')}
+              </tbody>
+            </table>` : '<div class="empty-state">当前筛选下没有数据，试试切换状态或新建一条内容。</div>'}
+          </div>
+        </article>
+        ${renderCollectionEditor('directions', selectedItem, getCollectionMeta('directions'))}
+        ${renderPageEditorOverlay(view.pageKey, view.pageLabel, data.page)}
+      </div>
+    </section>
+  </section>`;
+}
+
+function renderTableCollectionSection(collectionKey, items) {
+  const collectionMeta = getCollectionMeta(collectionKey);
+  const filteredItems = getFilteredCollectionItems(collectionKey, items);
+  const selected = getSelectedCollectionState(collectionKey, filteredItems.length ? filteredItems : items);
+  const filterState = getCollectionFilterState(collectionKey);
+  const ui = getViewUi();
+  const isEditorOpen = Boolean(ui.openEditors[collectionKey]);
+  const columns = TABLE_COLUMNS[collectionKey] || [];
+  const publishedCount = (items || []).filter((item) => item.status === 'published').length;
+
+  return `<section class="collection-section workspace-motion-scope">
+    <div class="table-layout table-layout-single">
+      <article class="panel table-panel table-panel-focus workspace-panel-enter">
+        <div class="panel-head workspace-enter" style="--enter-delay: 0ms;">
+          <div>
+            <h3>${escapeHtml(collectionMeta.label)}</h3>
+            <p>主区只保留 row 和关键列，先找到记录，再去右侧改细节。</p>
+          </div>
+          <div class="panel-actions">
+            <button class="system-action" type="button" data-action="new-item" data-collection-key="${escapeHtml(collectionKey)}">新建</button>
+          </div>
+        </div>
+        <div class="table-toolbar workspace-enter" style="--enter-delay: 60ms;">
+          <label class="table-search">
+            ${icon('search')}
+            <input type="text" value="${escapeHtml(filterState.keyword)}" placeholder="搜索重点字段" data-list-filter="${escapeHtml(collectionKey)}" />
+          </label>
+          <div class="table-filters">
+            ${STATUS_FILTER_OPTIONS.map((option) => `<button class="segment${filterState.status === option.key ? ' active' : ''}" type="button" data-action="set-status-filter" data-collection-key="${escapeHtml(collectionKey)}" data-status-key="${escapeHtml(option.key)}">${escapeHtml(option.label)}</button>`).join('')}
+          </div>
+        </div>
+        <div class="editor-meta workspace-enter" style="--enter-delay: 120ms;">
+          <span class="meta-chip">共 ${escapeHtml(String(items.length))} 条</span>
+          <span class="meta-chip">已发布 ${escapeHtml(String(publishedCount))}</span>
+          <span class="meta-chip">当前展示 ${escapeHtml(String(filteredItems.length))}</span>
+        </div>
+        <div class="table-shell workspace-enter" style="--enter-delay: 180ms;">
+          ${filteredItems.length ? `<table class="data-table">
+            <thead>
+              <tr>${columns.map((column) => `<th>${escapeHtml(column.label)}</th>`).join('')}</tr>
+            </thead>
+            <tbody>
+              ${filteredItems.map((item, index) => `<tr class="workspace-row-enter${isEditorOpen && selected.itemId === item._id && !selected.isDraft ? ' active' : ''}" style="--enter-delay: ${220 + index * 28}ms;">
+                ${columns.map((column) => `<td>${column.render(item)}</td>`).join('')}
+              </tr>`).join('')}
+            </tbody>
+          </table>` : '<div class="empty-state">当前筛选下没有数据，试试切换状态或新建一条内容。</div>'}
+        </div>
+      </article>
+      ${renderCollectionEditor(collectionKey, selected, collectionMeta)}
+    </div>
+  </section>`;
+}
+
 function renderSidebar() {
   refs.nav.innerHTML = NAV_ITEMS.map((item) => `<button class="nav-item${state.activeView === item.key ? ' active' : ''}" type="button" data-nav="${escapeHtml(item.key)}" aria-label="${escapeHtml(item.label)}">
     <span class="nav-icon">${icon(item.icon)}</span>
@@ -656,12 +1577,28 @@ function setStatus(message, tone = 'ok') {
   refs.statusPill.dataset.tone = tone;
 }
 
+function getSaveSuccessMessage(label = '内容') {
+  const target = state.health?.mode === 'cloud' ? '云端' : '本地';
+  return `${label}已保存并同步到${target}`;
+}
+
+function hasOpenEditor(viewKey = state.activeView) {
+  const ui = getViewUi(viewKey);
+  return Object.values(ui.openEditors || {}).some(Boolean);
+}
+
+function syncModalState() {
+  document.body.classList.toggle('modal-open', hasOpenEditor());
+}
+
 function renderLoading() {
   refs.content.innerHTML = `<section class="module-page"><article class="panel empty-panel"><div class="empty-state">正在加载当前模块数据...</div></article></section>`;
+  syncModalState();
 }
 
 function renderError(message) {
   refs.content.innerHTML = `<section class="module-page"><article class="panel empty-panel"><div class="empty-state">${escapeHtml(message)}</div></article></section>`;
+  syncModalState();
 }
 
 function renderOverview(data) {
@@ -672,24 +1609,24 @@ function renderOverview(data) {
   const todayUpdates = data.recentUpdates.filter((item) => isToday(item.updatedAt)).length;
   const mediaCount = (data.collections.mediaAssets || []).length;
 
-  refs.content.innerHTML = `<section class="dashboard-page">
+  refs.content.innerHTML = `<section class="dashboard-page workspace-motion-scope">
     <div class="stats-grid">
-      <article class="stat-card tone-indigo">
+      <article class="stat-card tone-indigo workspace-enter" style="--enter-delay: 0ms;">
         <div class="stat-card-head"><h2>页面配置</h2><span class="stat-card-icon">${icon('grid')}</span></div>
         <div class="stat-card-value">${escapeHtml(totalPages)}</div>
         <div class="stat-card-foot"><strong class="positive">已接入</strong><span>单页内容</span></div>
       </article>
-      <article class="stat-card tone-green">
+      <article class="stat-card tone-green workspace-enter" style="--enter-delay: 50ms;">
         <div class="stat-card-head"><h2>内容条目</h2><span class="stat-card-icon">${icon('compass')}</span></div>
         <div class="stat-card-value">${escapeHtml(totalItems)}</div>
         <div class="stat-card-foot"><strong class="positive">${escapeHtml(String(published))}</strong><span>已发布</span></div>
       </article>
-      <article class="stat-card tone-sky">
+      <article class="stat-card tone-sky workspace-enter" style="--enter-delay: 100ms;">
         <div class="stat-card-head"><h2>媒体资源</h2><span class="stat-card-icon">${icon('image')}</span></div>
         <div class="stat-card-value">${escapeHtml(mediaCount)}</div>
         <div class="stat-card-foot"><strong>${escapeHtml(String(drafts))}</strong><span>待完善内容</span></div>
       </article>
-      <article class="stat-card tone-violet">
+      <article class="stat-card tone-violet workspace-enter" style="--enter-delay: 150ms;">
         <div class="stat-card-head"><h2>今日更新</h2><span class="stat-card-icon">${icon('refresh')}</span></div>
         <div class="stat-card-value">${escapeHtml(todayUpdates)}</div>
         <div class="stat-card-foot"><strong class="positive">实时</strong><span>来自当前数据源</span></div>
@@ -697,7 +1634,7 @@ function renderOverview(data) {
     </div>
 
     <div class="dashboard-main">
-      <article class="panel trend-panel">
+      <article class="panel trend-panel workspace-panel-enter" style="--enter-delay: 180ms;">
         <div class="panel-head">
           <div>
             <h3>页面配置状态</h3>
@@ -705,7 +1642,7 @@ function renderOverview(data) {
           </div>
         </div>
         <div class="record-list compact-list overview-list">
-          ${Object.entries(data.pages).map(([pageKey, pageData]) => `<button class="record-row" type="button" data-action="open-view" data-target-view="${escapeHtml(resolveViewFromPageKey(pageKey))}">
+          ${Object.entries(data.pages).map(([pageKey, pageData], index) => `<button class="record-row workspace-row-enter" style="--enter-delay: ${230 + index * 26}ms;" type="button" data-action="open-view" data-target-view="${escapeHtml(resolveViewFromPageKey(pageKey))}">
             <span class="record-row-main">
               <strong class="record-row-title">${escapeHtml(data.pageLabels[pageKey] || pageKey)}</strong>
               <span class="record-row-meta">最后更新 ${escapeHtml(formatDateTime(getUpdatedAt(pageData)))}</span>
@@ -715,7 +1652,7 @@ function renderOverview(data) {
         </div>
       </article>
 
-      <article class="panel health-panel">
+      <article class="panel health-panel workspace-panel-enter" style="--enter-delay: 240ms;">
         <div class="panel-head">
           <div>
             <h3>模块健康度</h3>
@@ -733,7 +1670,7 @@ function renderOverview(data) {
     </div>
 
     <div class="dashboard-bottom">
-      <article class="panel updates-panel">
+      <article class="panel updates-panel workspace-panel-enter" style="--enter-delay: 300ms;">
         <div class="panel-head">
           <div>
             <h3>最近更新</h3>
@@ -755,7 +1692,7 @@ function renderOverview(data) {
         </div>
       </article>
 
-      <article class="panel system-panel">
+      <article class="panel system-panel workspace-panel-enter" style="--enter-delay: 360ms;">
         <div class="panel-head">
           <div>
             <h3>运行概况</h3>
@@ -780,6 +1717,7 @@ function renderOverview(data) {
       </article>
     </div>
   </section>`;
+  syncModalState();
 }
 
 function renderModuleSummary(view, data) {
@@ -799,11 +1737,11 @@ function renderModuleSummary(view, data) {
 
 function renderPageEditor(view, page) {
   if (!view.pageKey) return '';
-  return `<article class="panel editor-panel">
+  return `<article class="panel editor-panel editor-panel-focus page-editor-card">
     <div class="panel-head">
       <div>
         <h3>${escapeHtml(view.pageLabel)}</h3>
-        <p>这里保存的是单页配置文档，保存后小程序端会重新读取。</p>
+        <p>这里维护的是当前模块的单页配置，保存后前台会重新读取最新内容。</p>
       </div>
       <div class="panel-actions">
         <button class="system-action" type="button" data-action="save-page" data-page-key="${escapeHtml(view.pageKey)}">保存页面</button>
@@ -822,25 +1760,53 @@ function renderPageEditor(view, page) {
   </article>`;
 }
 
+function renderTableFirstModule(view, data) {
+  return `<section class="module-page workspace-motion-scope">
+    <article class="panel module-hero-panel module-hero-compact workspace-panel-enter">
+      <div class="panel-head workspace-enter" style="--enter-delay: 0ms;">
+        <div>
+          <h3>${escapeHtml(view.title)}</h3>
+          <p>${escapeHtml('主控区先聚焦 row 和关键列，表单在浮层里处理细节，避免焦点分散。')}</p>
+        </div>
+        <div class="panel-actions">
+          <button class="system-action" type="button" data-action="reload-view">刷新模块</button>
+        </div>
+      </div>
+      ${renderModuleSummary(view, data)}
+    </article>
+    ${(view.collections || []).map((collection) => renderCollectionSection(collection.key, data.collections[collection.key] || [])).join('')}
+    ${view.pageKey ? `<details class="page-config-fold workspace-enter" style="--enter-delay: 120ms;">
+      <summary class="page-config-toggle">${escapeHtml(view.pageLabel || '页面配置')}</summary>
+      <div class="page-config-body">
+        ${renderPageEditor(view, data.page)}
+      </div>
+    </details>` : ''}
+  </section>`;
+}
+
 function renderCollectionSection(collectionKey, items) {
+  if (TABLE_COLLECTIONS.has(collectionKey)) {
+    return renderTableCollectionSection(collectionKey, items);
+  }
+
   const collectionMeta = getCollectionMeta(collectionKey);
   const selected = getSelectedCollectionState(collectionKey, items);
   const editorLabel = selected.isDraft ? '新建条目' : selected.item ? `编辑 ${getPrimaryLabel(selected.item, collectionKey)}` : '暂无条目';
 
-  return `<section class="collection-section">
+  return `<section class="collection-section workspace-motion-scope">
     <div class="collection-grid">
-      <article class="panel list-panel">
-        <div class="panel-head">
+      <article class="panel list-panel workspace-panel-enter">
+        <div class="panel-head workspace-enter" style="--enter-delay: 0ms;">
           <div>
             <h3>${escapeHtml(collectionMeta.label)}</h3>
-            <p>当前共 ${escapeHtml(String(items.length))} 条，可直接选中后编辑。</p>
+            <p>主区只保留清晰 row 和重点信息，编辑时再用浮层聚焦单条记录。</p>
           </div>
           <div class="panel-actions">
             <button class="system-action" type="button" data-action="new-item" data-collection-key="${escapeHtml(collectionKey)}">新建</button>
           </div>
         </div>
         <div class="record-list">
-          ${items.length ? items.map((item) => `<button class="record-row${selected.itemId === item._id && !selected.isDraft ? ' active' : ''}" type="button" data-action="select-item" data-collection-key="${escapeHtml(collectionKey)}" data-item-id="${escapeHtml(item._id || '')}">
+          ${items.length ? items.map((item, index) => `<button class="record-row workspace-row-enter${selected.itemId === item._id && !selected.isDraft ? ' active' : ''}" style="--enter-delay: ${120 + index * 26}ms;" type="button" data-action="select-item" data-collection-key="${escapeHtml(collectionKey)}" data-item-id="${escapeHtml(item._id || '')}">
             <span class="record-row-main">
               <strong class="record-row-title">${escapeHtml(getPrimaryLabel(item, collectionKey))}</strong>
               <span class="record-row-meta">${escapeHtml(getSecondaryLabel(item, collectionKey) || '暂无补充说明')}</span>
@@ -850,11 +1816,11 @@ function renderCollectionSection(collectionKey, items) {
         </div>
       </article>
 
-      <article class="panel editor-panel">
-        <div class="panel-head">
+      <article class="panel editor-panel workspace-panel-enter">
+        <div class="panel-head workspace-enter" style="--enter-delay: 40ms;">
           <div>
             <h3>${escapeHtml(editorLabel)}</h3>
-            <p>${selected.item ? '支持直接编辑 JSON 后保存，适合先快速打通内容链路。' : '先从左侧选择条目，或者新建一个内容条目。'}</p>
+            <p>${selected.item ? '保持主列表不动，在这里集中修改当前条目的重点字段。' : '先从左侧选择条目，或者新建一个内容条目。'}</p>
           </div>
           <div class="panel-actions">
             <button class="system-action" type="button" data-action="save-item" data-collection-key="${escapeHtml(collectionKey)}">保存条目</button>
@@ -877,9 +1843,41 @@ function renderCollectionSection(collectionKey, items) {
 }
 
 function renderModule(view, data) {
-  refs.content.innerHTML = `<section class="module-page">
-    <article class="panel module-hero-panel">
-      <div class="panel-head">
+  if (view.key === 'directions') {
+    refs.content.innerHTML = renderDirectionsWorkspace(view, data);
+    syncModalState();
+    return;
+  }
+
+  if (view.collections?.length && view.collections.every((collection) => TABLE_COLLECTIONS.has(collection.key))) {
+    refs.content.innerHTML = renderTableFirstModule(view, data);
+    syncModalState();
+    return;
+  }
+
+  if (!view.collections?.length) {
+    refs.content.innerHTML = `<section class="module-page module-page-single workspace-motion-scope">
+      <article class="panel module-hero-panel module-hero-compact workspace-panel-enter">
+        <div class="panel-head workspace-enter" style="--enter-delay: 0ms;">
+          <div>
+            <h3>${escapeHtml(view.title)}</h3>
+            <p>${escapeHtml(view.subtitle)}</p>
+          </div>
+          <div class="panel-actions">
+            <button class="system-action" type="button" data-action="reload-view">刷新模块</button>
+          </div>
+        </div>
+        ${renderModuleSummary(view, data)}
+      </article>
+      ${renderPageEditor(view, data.page)}
+    </section>`;
+    syncModalState();
+    return;
+  }
+
+  refs.content.innerHTML = `<section class="module-page workspace-motion-scope">
+    <article class="panel module-hero-panel workspace-panel-enter">
+      <div class="panel-head workspace-enter" style="--enter-delay: 0ms;">
         <div>
           <h3>${escapeHtml(view.title)}</h3>
           <p>${escapeHtml(view.subtitle)}</p>
@@ -893,6 +1891,7 @@ function renderModule(view, data) {
     ${renderPageEditor(view, data.page)}
     ${(view.collections || []).map((collection) => renderCollectionSection(collection.key, data.collections[collection.key] || [])).join('')}
   </section>`;
+  syncModalState();
 }
 
 async function loadOverviewData() {
@@ -901,12 +1900,12 @@ async function loadOverviewData() {
 
   const pageEntries = await Promise.all(pageOptions.map(async (page) => {
     const result = await request(`/api/page/${page.key}`);
-    return [page.key, result.data || null];
+    return [page.key, normalizeCmsValue(result.data || null)];
   }));
 
   const collectionEntries = await Promise.all(listOptions.map(async (collection) => {
     const result = await request(`/api/collection/${collection.key}`);
-    return [collection.key, Array.isArray(result.data) ? result.data : []];
+    return [collection.key, Array.isArray(result.data) ? result.data.map((item) => normalizeCmsValue(item)) : []];
   }));
 
   const pages = Object.fromEntries(pageEntries);
@@ -958,12 +1957,12 @@ async function loadModuleData(view) {
 
   if (view.pageKey) {
     const pageResult = await request(`/api/page/${view.pageKey}`);
-    data.page = pageResult.data || {};
+    data.page = normalizeCmsValue(pageResult.data || {});
   }
 
   for (const collection of view.collections || []) {
     const result = await request(`/api/collection/${collection.key}`);
-    data.collections[collection.key] = Array.isArray(result.data) ? result.data : [];
+    data.collections[collection.key] = Array.isArray(result.data) ? result.data.map((item) => normalizeCmsValue(item)) : [];
   }
 
   return data;
@@ -1058,6 +2057,18 @@ async function switchView(viewKey) {
   await renderActiveView(true);
 }
 
+function closeCurrentEditor() {
+  const ui = getViewUi();
+  const openCollectionKey = Object.entries(ui.openEditors || {}).find(([, open]) => open)?.[0];
+  if (!openCollectionKey) return false;
+  ui.openEditors[openCollectionKey] = false;
+  if (!openCollectionKey.startsWith('page:')) {
+    delete ui.drafts[openCollectionKey];
+  }
+  renderModule(VIEW_CONFIG[state.activeView], state.currentData);
+  return true;
+}
+
 function bindGlobalActions() {
   refs.nav.addEventListener('click', async (event) => {
     const button = event.target.closest('[data-nav]');
@@ -1085,12 +2096,26 @@ function bindGlobalActions() {
         setStatus('正在保存页面...', 'loading');
         await savePage(pageKey);
         await renderActiveView(true);
+        setStatus(getSaveSuccessMessage('页面'));
+        return;
+      }
+
+      if (action === 'open-page-editor' && pageKey) {
+        const ui = getViewUi();
+        ui.openEditors[`page:${pageKey}`] = true;
+        ui.openEditors.directions = false;
+        renderModule(VIEW_CONFIG[state.activeView], state.currentData);
         return;
       }
 
       if (action === 'select-item' && collectionKey) {
         const ui = getViewUi();
         ui.selectedIds[collectionKey] = itemId || '';
+        ui.openEditors[collectionKey] = true;
+        const activeView = VIEW_CONFIG[state.activeView];
+        if (activeView?.pageKey) {
+          ui.openEditors[`page:${activeView.pageKey}`] = false;
+        }
         delete ui.drafts[collectionKey];
         renderModule(VIEW_CONFIG[state.activeView], state.currentData);
         return;
@@ -1099,8 +2124,36 @@ function bindGlobalActions() {
       if (action === 'new-item' && collectionKey) {
         setStatus('正在准备新条目...', 'loading');
         await createCollectionDraft(collectionKey);
+        const ui = getViewUi();
+        ui.openEditors[collectionKey] = true;
+        const activeView = VIEW_CONFIG[state.activeView];
+        if (activeView?.pageKey) {
+          ui.openEditors[`page:${activeView.pageKey}`] = false;
+        }
         renderModule(VIEW_CONFIG[state.activeView], state.currentData);
         setStatus('已生成新条目模板');
+        return;
+      }
+
+      if (action === 'close-editor' && collectionKey) {
+        const ui = getViewUi();
+        ui.openEditors[collectionKey] = false;
+        delete ui.drafts[collectionKey];
+        renderModule(VIEW_CONFIG[state.activeView], state.currentData);
+        return;
+      }
+
+      if (action === 'close-page-editor' && pageKey) {
+        const ui = getViewUi();
+        ui.openEditors[`page:${pageKey}`] = false;
+        renderModule(VIEW_CONFIG[state.activeView], state.currentData);
+        return;
+      }
+
+      if (action === 'set-status-filter' && collectionKey) {
+        const ui = getViewUi();
+        ui.statusFilters[collectionKey] = button.dataset.statusKey || 'all';
+        renderModule(VIEW_CONFIG[state.activeView], state.currentData);
         return;
       }
 
@@ -1129,6 +2182,7 @@ function bindGlobalActions() {
         setStatus('正在保存条目...', 'loading');
         await saveCollectionItem(collectionKey);
         await renderActiveView(true);
+        setStatus(getSaveSuccessMessage('条目'));
         return;
       }
 
@@ -1138,6 +2192,7 @@ function bindGlobalActions() {
         setStatus('正在删除条目...', 'loading');
         await deleteCollectionItem(collectionKey, itemId);
         await renderActiveView(true);
+        setStatus(state.health?.mode === 'cloud' ? '条目已从云端删除' : '条目已删除');
       }
     } catch (error) {
       setStatus(error.message || '操作失败', 'error');
@@ -1146,6 +2201,29 @@ function bindGlobalActions() {
   });
 
   function handleFormMutation(event) {
+    const jsonEditor = event.target.closest('[data-json-scope]');
+    if (jsonEditor) {
+      try {
+        updateJsonSubset(
+          jsonEditor.dataset.jsonScope,
+          (jsonEditor.dataset.jsonKeys || '').split(',').filter(Boolean),
+          jsonEditor.value
+        );
+      } catch (error) {
+        setStatus(error.message || 'JSON 更新失败', 'error');
+      }
+      return;
+    }
+
+    const listFilter = event.target.closest('[data-list-filter]');
+    if (listFilter) {
+      const ui = getViewUi();
+      const collectionKey = listFilter.dataset.listFilter;
+      ui.filters[collectionKey] = listFilter.value || '';
+      renderModule(VIEW_CONFIG[state.activeView], state.currentData);
+      return;
+    }
+
     const input = event.target.closest('[data-form-path]');
     if (!input) return;
 
@@ -1158,6 +2236,11 @@ function bindGlobalActions() {
       nextValue = nextValue === '' ? '' : Number(nextValue);
     } else if (kind === 'boolean') {
       nextValue = nextValue === 'true';
+    } else if (kind === 'line-list') {
+      nextValue = nextValue
+        .split('\n')
+        .map((item) => item.trim())
+        .filter(Boolean);
     }
 
     updateFormSource(scope, path, nextValue);
@@ -1166,8 +2249,21 @@ function bindGlobalActions() {
   refs.content.addEventListener('input', handleFormMutation);
   refs.content.addEventListener('change', handleFormMutation);
 
+  window.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    if (!hasOpenEditor()) return;
+    const closed = closeCurrentEditor();
+    if (closed) {
+      event.preventDefault();
+    }
+  });
+
   refs.themeToggle.addEventListener('click', () => {
     applyTheme(state.theme === 'dark' ? 'light' : 'dark');
+  });
+
+  refs.sidebarCollapse.addEventListener('click', () => {
+    applySidebarCollapsed(!state.sidebarCollapsed);
   });
 
   refs.refreshView.addEventListener('click', async () => {
@@ -1188,16 +2284,19 @@ async function bootstrap() {
   refs.topbarAlerts.innerHTML = `${icon('bell')}<span class="topbar-dot" aria-hidden="true"></span>`;
   refs.refreshView.innerHTML = icon('refresh');
   applyTheme(preferredTheme());
+  applySidebarCollapsed(preferredSidebarCollapsed());
   renderSidebar();
   bindGlobalActions();
 
   try {
     await hydrateMeta();
     await renderActiveView(true);
+    finishBootAnimation();
   } catch (error) {
     setTopbar(VIEW_CONFIG.overview);
     setStatus('CMS 服务不可用', 'error');
     renderError(error.message || '初始化失败');
+    finishBootAnimation();
   }
 }
 

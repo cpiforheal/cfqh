@@ -1,5 +1,6 @@
 const http = require('http');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { URL } = require('url');
 
@@ -9,6 +10,25 @@ const DATA_FILE = path.join(ROOT, 'database', 'local-admin-data.json');
 const SEED_FILE = path.join(ROOT, 'database', 'seed-data.js');
 const CLOUD_CONFIG_FILE = path.join(ROOT, 'src', 'config', 'cloud.ts');
 const PORT = Number(process.env.ADMIN_WEB_PORT || 3200);
+
+function getNetworkHosts() {
+  const hosts = new Set(['127.0.0.1']);
+  const interfaces = os.networkInterfaces();
+
+  for (const addresses of Object.values(interfaces)) {
+    for (const address of addresses || []) {
+      if (address && address.family === 'IPv4' && !address.internal) {
+        hosts.add(address.address);
+      }
+    }
+  }
+
+  return [...hosts];
+}
+
+function getServiceUrls() {
+  return getNetworkHosts().map((host) => `http://${host}:${PORT}`);
+}
 
 function parseEnvFile(filePath) {
   if (!fs.existsSync(filePath)) {
@@ -359,6 +379,42 @@ function sortPublished(items) {
     .sort((a, b) => (a.sort || 0) - (b.sort || 0));
 }
 
+function collectPublicEntries(payload) {
+  return [
+    payload.site,
+    payload.page,
+    ...(payload.directions || []),
+    ...(payload.teachers || []),
+    ...(payload.successCases || []),
+    ...(payload.materialSeries || []),
+    ...(payload.materialItems || []),
+    ...(payload.mediaAssets || [])
+  ].filter(Boolean);
+}
+
+function getUpdatedAt(entry) {
+  return entry?.updatedAt || entry?._updatedAt || entry?.createdAt || entry?._createdAt || '';
+}
+
+function buildPublicMeta(pageKey, payload) {
+  const entries = collectPublicEntries(payload);
+  const timestamps = entries
+    .map((entry) => getUpdatedAt(entry))
+    .filter(Boolean)
+    .map((value) => new Date(value).getTime())
+    .filter((value) => Number.isFinite(value));
+  const latestTimestamp = timestamps.length ? Math.max(...timestamps) : Date.now();
+  const updatedAt = new Date(latestTimestamp).toISOString();
+
+  return {
+    pageKey,
+    mode: store.getMode(),
+    updatedAt,
+    revision: `${pageKey}:${latestTimestamp}`,
+    generatedAt: new Date().toISOString()
+  };
+}
+
 async function buildPublicPayload(pageKey) {
   const payload = {
     site: await store.getPage('site'),
@@ -382,6 +438,7 @@ async function buildPublicPayload(pageKey) {
     payload.materialItems = sortPublished(await store.listCollection('materialItems'));
   }
 
+  payload.__meta = buildPublicMeta(pageKey, payload);
   return payload;
 }
 
@@ -609,13 +666,20 @@ async function handleApi(req, res, pathname) {
       ok: true,
       port: PORT,
       mode: store.getMode(),
+      urls: getServiceUrls(),
       config: store.getConfigSummary()
     });
     return;
   }
 
   if (pathname === '/api/meta' && req.method === 'GET') {
-    sendJson(res, 200, { ok: true, pageOptions, listOptions, mode: store.getMode() });
+    sendJson(res, 200, {
+      ok: true,
+      pageOptions,
+      listOptions,
+      mode: store.getMode(),
+      previewUrls: getServiceUrls().map((url) => `${url}/api/public/home`)
+    });
     return;
   }
 
@@ -730,6 +794,6 @@ if (store.getMode() === 'local') {
   ensureDataFile();
 }
 
-server.listen(PORT, () => {
-  console.log(`[admin-web] mode=${store.getMode()} http://localhost:${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`[admin-web] mode=${store.getMode()} ${getServiceUrls().join(' ')}`);
 });

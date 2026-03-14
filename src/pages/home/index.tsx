@@ -1,5 +1,6 @@
 import { Image, Navigator, Text, View } from '@tarojs/components';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import CmsSyncBadge from '../../components/CmsSyncBadge';
 import PageCtaCard from '../../components/PageCtaCard';
 import PageSectionTitle from '../../components/PageSectionTitle';
 import fallbackContent from '../../data/contentFallback';
@@ -716,7 +717,7 @@ function DirectionIcon(props) {
 
 export default function HomePage() {
   const [content, setContent] = useState(getInitialHomeState());
-  const [loadState, setLoadState] = useState({ source: 'fallback', error: '' });
+  const [loadState, setLoadState] = useState({ source: 'fallback', error: '', updatedAt: '', revision: '' });
 
   const loadContent = useCallback(() => {
     let mounted = true;
@@ -731,14 +732,18 @@ export default function HomePage() {
         });
         setLoadState({
           source: payload.__meta?.source || 'cloud',
-          error: ''
+          error: '',
+          updatedAt: payload.__meta?.updatedAt || '',
+          revision: payload.__meta?.revision || ''
         });
       })
       .catch((error) => {
         if (!mounted) return;
         setLoadState({
           source: 'error',
-          error: error && error.message ? error.message : '云端内容读取失败'
+          error: error && error.message ? error.message : '云端内容读取失败',
+          updatedAt: '',
+          revision: ''
         });
       });
 
@@ -867,22 +872,6 @@ export default function HomePage() {
             <Text style={{ fontSize: ui.type.chip, color: '#e2e8f0', fontWeight: 600 }}>{hero.chip}</Text>
           </View>
 
-          <View
-            style={{
-              position: 'absolute',
-              right: '10rpx',
-              top: '24rpx',
-              padding: '8rpx 14rpx',
-              borderRadius: '999rpx',
-              backgroundColor: 'rgba(255,255,255,0.1)',
-              border: '1rpx solid rgba(255,255,255,0.14)'
-            }}
-          >
-            <Text style={{ fontSize: ui.type.note, color: '#d7def0', fontWeight: 700 }}>
-              {loadState.source === 'local-preview' ? '本地预览' : loadState.source === 'cloud' ? '云端内容' : '本地内容'}
-            </Text>
-          </View>
-
           <View style={{ marginBottom: '18rpx' }}>
             <Text
               style={{
@@ -977,6 +966,8 @@ export default function HomePage() {
           </View>
         </View>
       </View>
+
+      <CmsSyncBadge source={loadState.source} updatedAt={loadState.updatedAt} revision={loadState.revision} />
 
       <View style={{ margin: '-60rpx 24rpx 0', position: 'relative', zIndex: 3 }}>
         <View

@@ -1,5 +1,6 @@
 import { Image, Text, View } from '@tarojs/components';
 import { useCallback, useEffect, useState } from 'react';
+import CmsSyncBadge from '../../components/CmsSyncBadge';
 import PageCtaCard from '../../components/PageCtaCard';
 import PageHero from '../../components/PageHero';
 import PageIntroCard from '../../components/PageIntroCard';
@@ -21,7 +22,7 @@ function getInitialAboutState() {
 
 export default function AboutPage() {
   const [content, setContent] = useState(getInitialAboutState());
-  const [loadState, setLoadState] = useState({ source: 'fallback', error: '' });
+  const [loadState, setLoadState] = useState({ source: 'fallback', error: '', updatedAt: '', revision: '' });
 
   const loadContent = useCallback(() => {
     let mounted = true;
@@ -35,14 +36,18 @@ export default function AboutPage() {
         });
         setLoadState({
           source: payload.__meta?.source || 'cloud',
-          error: ''
+          error: '',
+          updatedAt: payload.__meta?.updatedAt || '',
+          revision: payload.__meta?.revision || ''
         });
       })
       .catch((error) => {
         if (!mounted) return;
         setLoadState({
           source: 'error',
-          error: error && error.message ? error.message : '云端内容读取失败'
+          error: error && error.message ? error.message : '云端内容读取失败',
+          updatedAt: '',
+          revision: ''
         });
       });
 
@@ -100,20 +105,7 @@ export default function AboutPage() {
 
       <PageIntroCard title={introCard.title} desc={introCard.desc} />
 
-      <View style={{ margin: '20rpx 24rpx 0' }}>
-        <View
-          style={{
-            display: 'inline-flex',
-            padding: '8rpx 14rpx',
-            borderRadius: ui.radius.pill,
-            backgroundColor: '#eef2ff'
-          }}
-        >
-          <Text style={{ fontSize: ui.type.note, color: '#4f46e5', fontWeight: 700 }}>
-            {loadState.source === 'local-preview' ? '本地预览' : loadState.source === 'cloud' ? '云端内容' : '本地内容'}
-          </Text>
-        </View>
-      </View>
+      <CmsSyncBadge source={loadState.source} updatedAt={loadState.updatedAt} revision={loadState.revision} />
 
       <View style={{ margin: `${ui.spacing.section} ${ui.spacing.page} 0` }}>
         <PageSectionTitle lineColor="#8a92ff">机构理念</PageSectionTitle>

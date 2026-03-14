@@ -18,6 +18,38 @@ function isPublished(item) {
   return !!item && (!item.status || item.status === 'published');
 }
 
+function getUpdatedAt(entry) {
+  return entry?.updatedAt || entry?._updatedAt || entry?.createdAt || entry?._createdAt || '';
+}
+
+function buildPublicMeta(pageKey, payload) {
+  const entries = [
+    payload.site,
+    payload.page,
+    ...(payload.directions || []),
+    ...(payload.teachers || []),
+    ...(payload.successCases || []),
+    ...(payload.materialSeries || []),
+    ...(payload.materialItems || [])
+  ].filter(Boolean);
+
+  const timestamps = entries
+    .map((entry) => getUpdatedAt(entry))
+    .filter(Boolean)
+    .map((value) => new Date(value).getTime())
+    .filter((value) => Number.isFinite(value));
+
+  const latestTimestamp = timestamps.length ? Math.max(...timestamps) : Date.now();
+
+  return {
+    pageKey,
+    mode: 'cloud-function',
+    updatedAt: new Date(latestTimestamp).toISOString(),
+    revision: `${pageKey}:${latestTimestamp}`,
+    generatedAt: new Date().toISOString()
+  };
+}
+
 async function getSingleton(collection, id) {
   try {
     const result = await db.collection(collection).doc(id).get();
@@ -59,6 +91,8 @@ exports.main = async (event) => {
     payload.materialSeries = await listCollection('material_series');
     payload.materialItems = await listCollection('material_items');
   }
+
+  payload.__meta = buildPublicMeta(pageKey, payload);
 
   return {
     ok: true,

@@ -1,5 +1,6 @@
 import { ScrollView, Text, View } from '@tarojs/components';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import CmsSyncBadge from '../../components/CmsSyncBadge';
 import PageSectionTitle from '../../components/PageSectionTitle';
 import fallbackContent from '../../data/contentFallback';
 import { useCmsAutoRefresh } from '../../hooks/useCmsAutoRefresh';
@@ -371,7 +372,7 @@ function DetailCard(props) {
 
 export default function CoursesPage() {
   const [content, setContent] = useState(getInitialCoursesState());
-  const [loadState, setLoadState] = useState({ source: 'fallback', error: '' });
+  const [loadState, setLoadState] = useState({ source: 'fallback', error: '', updatedAt: '', revision: '' });
 
   const loadContent = useCallback(() => {
     let mounted = true;
@@ -385,14 +386,18 @@ export default function CoursesPage() {
         });
         setLoadState({
           source: payload.__meta?.source || 'cloud',
-          error: ''
+          error: '',
+          updatedAt: payload.__meta?.updatedAt || '',
+          revision: payload.__meta?.revision || ''
         });
       })
       .catch((error) => {
         if (!mounted) return;
         setLoadState({
           source: 'error',
-          error: error && error.message ? error.message : '云端内容读取失败'
+          error: error && error.message ? error.message : '云端内容读取失败',
+          updatedAt: '',
+          revision: ''
         });
       });
 
@@ -441,19 +446,6 @@ export default function CoursesPage() {
       ) : null}
 
       <View style={{ padding: `28rpx ${ui.spacing.page} 0` }}>
-        <View
-          style={{
-            display: 'inline-flex',
-            padding: '8rpx 14rpx',
-            borderRadius: '999rpx',
-            backgroundColor: '#eef2ff',
-            marginBottom: '14rpx'
-          }}
-        >
-          <Text style={{ fontSize: ui.type.note, color: '#4f46e5', fontWeight: 700 }}>
-            {loadState.source === 'local-preview' ? '本地预览' : loadState.source === 'cloud' ? '云端内容' : '本地内容'}
-          </Text>
-        </View>
         <Text style={{ display: 'block', fontSize: ui.type.hero, lineHeight: 1.12, color: ui.colors.text, fontWeight: 900, marginBottom: '10rpx' }}>
           {content.page?.title || defaultCoursesPage.title}
         </Text>
@@ -461,6 +453,8 @@ export default function CoursesPage() {
           {content.page?.subtitle || defaultCoursesPage.subtitle}
         </Text>
       </View>
+
+      <CmsSyncBadge source={loadState.source} updatedAt={loadState.updatedAt} revision={loadState.revision} />
 
       <View style={{ margin: `26rpx ${ui.spacing.page} 0` }}>
         <FilterScroller categories={categories} />
