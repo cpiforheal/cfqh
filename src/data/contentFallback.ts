@@ -14,54 +14,51 @@
   pages: {
     home: {
       hero: {
-        chip: '江苏省专转本权威培训品牌',
-        title: '专注江苏专转本',
-        highlightTitle: '医护与高数精细化教研',
-        desc: '以医护大类与高数专项为核心，提供更稳、更清晰的专转本备考支持。',
-        tags: ['机构介绍', '开设方向', '师资团队'],
-        primaryButton: { text: '了解机构实力', url: '/pages/about/index', openType: 'navigate' },
-        secondaryNote: '集训管理 · 跟踪答疑',
+        chip: '江苏省专转本专业辅导',
+        title: '专转本，一次就上岸',
+        highlightTitle: '医护大类 & 高数专项 · 精细化教研体系',
+        desc: '医护大类 + 高数专项双主线，让备考更稳、更清晰',
+        tags: ['92%+ 上岸率', '全职答疑', '独立校区'],
+        primaryButton: { text: '查看上岸学员案例', url: '/pages/success/index', openType: 'switchTab' },
+        secondaryNote: '真实数据 · 可验证',
         backgroundImageUrl: '',
         backgroundImageSeed: 'university'
       },
       overviewStats: [
-        { value: '核心', label: '教研团队', note: '全职答疑' },
-        { value: '精品', label: '小班督学', note: '全程跟进' },
-        { value: '高', label: '上岸率', note: '双主线教研' }
+        { value: '92.3%', label: '上岸率', note: '2025届实际数据' },
+        { value: '1:8', label: '师生比', note: '小班精细化' },
+        { value: '365天', label: '全年答疑', note: '全职坐班' }
       ],
       quickLinks: [
-        { label: '机构介绍', desc: '看品牌介绍', url: '/pages/about/index', openType: 'navigate', icon: 'building' },
-        { label: '开设方向', desc: '看方向配置', url: '/pages/courses/index', openType: 'switchTab', icon: 'compass' },
-        { label: '师资团队', desc: '看老师阵容', url: '/pages/teachers/index', openType: 'switchTab', icon: 'team' },
-        { label: '办学成果', desc: '看上岸案例', url: '/pages/success/index', openType: 'switchTab', icon: 'trophy' }
+        { label: '热门方向', desc: '查看课程方向', url: '/pages/courses/index', openType: 'switchTab', icon: 'compass' },
+        { label: '每日一题', desc: '每天练 1 题', url: '/pages/question-bank/daily-question/index', openType: 'navigate', icon: 'daily' },
+        { label: '模拟冲刺', desc: '考前整卷训练', url: '/pages/question-bank/past-papers/index', openType: 'navigate', icon: 'paper' },
+        { label: '错题本', desc: '回看错题记录', url: '/pages/question-bank/wrong-book/index', openType: 'navigate', icon: 'wrongbook' }
       ],
       advantages: [
         { icon: 'team', title: '全职教研团队', desc: '老师全职坐班，答疑更及时' },
-        { icon: 'building', title: '独立封闭校区', desc: '吃住学一体化，节奏更稳定' },
-        { icon: 'book', title: '自编内部教材', desc: '紧跟考纲更新，自编配套资料' },
-        { icon: 'shield', title: '严格督学体系', desc: '日清周测月考，全程督学' }
+        { icon: 'building', title: '独立校区管理', desc: '吃住学一体化，备考节奏更稳定' }
       ],
-      directionsIntro: '两条成熟教研主线，对应不同基础与目标。',
+      directionsIntro: '',
       featuredDirectionIds: ['direction_medical', 'direction_math'],
       moreDirectionCard: {
-        title: '更多专业方向',
-        tag: '筹备中',
-        desc: '经管、计算机等更多方向教研团队正在组建中，敬请期待。'
+        title: '',
+        tag: '',
+        desc: ''
       },
       environmentSection: {
-        title: '沉浸式学习环境',
-        subtitle: '学习与生活空间',
+        title: '',
+        subtitle: '',
         cards: [
           { label: '多媒体教室', imageUrl: '', imageSeed: 'classroom1' },
-          { label: '标准化宿舍', imageUrl: '', imageSeed: 'dorm1' },
-          { label: '自习室与答疑区', imageUrl: '', imageSeed: 'library' }
+          { label: '标准化宿舍', imageUrl: '', imageSeed: 'dorm1' }
         ]
       },
       cta: {
-        title: '免费学情评估',
-        desc: '不确定适合哪个方向时，可以先做一次简要评估。',
-        buttonText: '预约咨询',
-        footnote: '方向建议 · 学情诊断'
+        title: '预约咨询',
+        desc: '',
+        buttonText: '立即咨询',
+        footnote: ''
       }
     },
     courses: {

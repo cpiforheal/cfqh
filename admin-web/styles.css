@@ -2032,10 +2032,14 @@ img {
   inset: 0;
   z-index: 80;
   display: none;
+  align-items: center;
+  justify-items: center;
+  padding: 24px 20px;
+  box-sizing: border-box;
 }
 
 .editor-overlay.is-visible {
-  display: block;
+  display: grid;
 }
 
 @keyframes apple-fade-up {
@@ -2174,11 +2178,9 @@ img {
 }
 
 .editor-modal-shell {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  bottom: 20px;
-  width: min(760px, calc(100vw - 40px));
+  position: relative;
+  width: min(720px, calc(100vw - 40px));
+  max-height: calc(100vh - 48px);
   overflow: hidden;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
@@ -2190,7 +2192,7 @@ img {
 }
 
 .editor-modal-shell-directions {
-  width: min(860px, calc(100vw - 40px));
+  width: min(800px, calc(100vw - 40px));
 }
 
 .editor-modal-head {
@@ -2214,7 +2216,7 @@ img {
   scrollbar-gutter: stable both-edges;
   scrollbar-width: thin;
   scrollbar-color: rgba(107, 125, 150, 0.68) rgba(226, 232, 240, 0.72);
-  padding: 0 22px 22px;
+  padding: 0 18px 18px;
 }
 
 .editor-modal-body .editor-actions {
@@ -3416,12 +3418,13 @@ img {
     grid-template-columns: 1fr;
   }
 
+  .editor-overlay {
+    padding: 12px;
+  }
+
   .editor-modal-shell {
-    top: 12px;
-    right: 12px;
-    bottom: 12px;
-    left: 12px;
-    width: auto;
+    width: min(100%, 100%);
+    max-height: calc(100vh - 24px);
   }
 
   .toolbar-actions,

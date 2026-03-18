@@ -146,6 +146,9 @@ function renderField(field, path, formData, setFormData, depth = 0) {
 
   if (field.type === 'objectArray') {
     const items = Array.isArray(value) ? value : [];
+    const visibleCount = typeof field.visibleItems === 'number' ? field.visibleItems : items.length;
+    const visibleItems = items.slice(0, visibleCount);
+    const canAppend = typeof field.maxItems !== 'number' || items.length < field.maxItems;
     return (
       <View
         key={fieldPath.join('.')}
@@ -168,7 +171,7 @@ function renderField(field, path, formData, setFormData, depth = 0) {
         >
           {field.label}
         </Text>
-        {items.map((item, index) => (
+        {visibleItems.map((item, index) => (
           <View
             key={`${fieldPath.join('.')}.${index}`}
             style={{
@@ -197,12 +200,14 @@ function renderField(field, path, formData, setFormData, depth = 0) {
             {(field.fields || []).map((child) => renderField(child, [...fieldPath, index], formData, setFormData, depth + 1))}
           </View>
         ))}
-        <Button
-          onClick={() => setFormData((current) => appendArrayItem(current, fieldPath, field.defaultItem || {}))}
-          style={{ marginTop: items.length ? '6rpx' : '0' }}
-        >
-          新增{field.itemLabel || field.label}
-        </Button>
+        {canAppend ? (
+          <Button
+            onClick={() => setFormData((current) => appendArrayItem(current, fieldPath, field.defaultItem || {}))}
+            style={{ marginTop: visibleItems.length ? '6rpx' : '0' }}
+          >
+            新增{field.itemLabel || field.label}
+          </Button>
+        ) : null}
       </View>
     );
   }

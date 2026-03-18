@@ -13,53 +13,50 @@
   pages: {
     home: {
       hero: {
-        chip: '江苏省专转本权威培训品牌',
-        title: '专注江苏专转本',
-        highlightTitle: '医护与高数精细化教研',
-        desc: '以医护大类与高数专项为核心，提供更稳、更清晰的专转本备考支持。',
-        tags: ['机构介绍', '开设方向', '师资团队'],
-        primaryButton: { text: '了解机构实力', url: '/pages/about/index', openType: 'navigate' },
-        secondaryNote: '集训管理 · 跟踪答疑',
+        chip: '江苏省专转本专业辅导',
+        title: '专转本，一次就上岸',
+        highlightTitle: '医护大类 & 高数专项 · 精细化教研体系',
+        desc: '医护大类 + 高数专项双主线，让备考更稳、更清晰',
+        tags: ['92%+ 上岸率', '全职答疑', '独立校区'],
+        primaryButton: { text: '查看上岸学员案例', url: '/pages/success/index', openType: 'switchTab' },
+        secondaryNote: '真实数据 · 可验证',
         backgroundImageSeed: 'university'
       },
       overviewStats: [
-        { value: '核心', label: '教研团队', note: '全职答疑' },
-        { value: '精品', label: '小班督学', note: '全程跟进' },
-        { value: '高', label: '上岸率', note: '双主线教研' }
+        { value: '92.3%', label: '上岸率', note: '2025届实际数据' },
+        { value: '1:8', label: '师生比', note: '小班精细化' },
+        { value: '365天', label: '全年答疑', note: '全职坐班' }
       ],
       quickLinks: [
-        { label: '机构介绍', desc: '看品牌介绍', url: '/pages/about/index', openType: 'navigate', icon: 'building' },
-        { label: '开设方向', desc: '看方向配置', url: '/pages/courses/index', openType: 'switchTab', icon: 'compass' },
-        { label: '师资团队', desc: '看老师阵容', url: '/pages/teachers/index', openType: 'switchTab', icon: 'team' },
-        { label: '办学成果', desc: '看上岸案例', url: '/pages/success/index', openType: 'switchTab', icon: 'trophy' }
+        { label: '热门方向', desc: '查看课程方向', url: '/pages/courses/index', openType: 'switchTab', icon: 'compass' },
+        { label: '每日一题', desc: '每天练 1 题', url: '/pages/question-bank/daily-question/index', openType: 'navigate', icon: 'daily' },
+        { label: '模拟冲刺', desc: '考前整卷训练', url: '/pages/question-bank/past-papers/index', openType: 'navigate', icon: 'paper' },
+        { label: '错题本', desc: '回看错题记录', url: '/pages/question-bank/wrong-book/index', openType: 'navigate', icon: 'wrongbook' }
       ],
       advantages: [
         { icon: 'team', title: '全职教研团队', desc: '老师全职坐班，答疑更及时' },
-        { icon: 'building', title: '独立封闭校区', desc: '吃住学一体化，节奏更稳定' },
-        { icon: 'book', title: '自编内部教材', desc: '紧跟考纲更新，自编配套资料' },
-        { icon: 'shield', title: '严格督学体系', desc: '日清周测月考，全程督学' }
+        { icon: 'building', title: '独立校区管理', desc: '吃住学一体化，备考节奏更稳定' }
       ],
-      directionsIntro: '两条成熟教研主线，对应不同基础与目标。',
+      directionsIntro: '',
       featuredDirectionIds: ['direction_medical', 'direction_math'],
       moreDirectionCard: {
-        title: '更多专业方向',
-        tag: '筹备中',
-        desc: '经管、计算机等更多方向教研团队正在组建中，敬请期待。'
+        title: '',
+        tag: '',
+        desc: ''
       },
       environmentSection: {
-        title: '沉浸式学习环境',
-        subtitle: '学习与生活空间',
+        title: '',
+        subtitle: '',
         cards: [
           { label: '多媒体教室', imageSeed: 'classroom1' },
-          { label: '标准化宿舍', imageSeed: 'dorm1' },
-          { label: '自习室与答疑区', imageSeed: 'library' }
+          { label: '标准化宿舍', imageSeed: 'dorm1' }
         ]
       },
       cta: {
-        title: '免费学情评估',
-        desc: '不确定适合哪个方向时，可以先做一次简要评估。',
-        buttonText: '预约咨询',
-        footnote: '方向建议 · 学情诊断'
+        title: '预约咨询',
+        desc: '',
+        buttonText: '立即咨询',
+        footnote: ''
       }
     },
     courses: {
@@ -170,19 +167,19 @@
       hero: {
         chip: '医护轻题库',
         title: '题库入口配置',
-        desc: '这里集中维护每日一题、历年真题与错题本的入口摘要，以及纯文本导入说明。'
+        desc: '这里集中维护每日一题、模拟冲刺与错题本的入口摘要，以及纯文本导入说明。'
       },
       dailyQuestionCard: {
         title: '每日一题',
-        desc: '每天推送一道医护方向高频题，保持做题节奏。',
+        desc: '固定练习题组，适合每天保持手感与做题节奏。',
         buttonText: '进入每日一题',
-        note: '当前仅开放医护方向'
+        note: '当前使用固定题源'
       },
       pastPapersCard: {
-        title: '历年真题',
-        desc: '按年份整理医护真题卷，先做列表与预览。',
-        buttonText: '查看真题卷',
-        note: '适合后续继续导入整卷数据'
+        title: '模拟冲刺',
+        desc: '按套整理冲刺卷，支持通过 CSV 持续更新题目内容。',
+        buttonText: '查看模拟卷',
+        note: '题目热更新入口'
       },
       wrongBookCard: {
         title: '错题本',
@@ -291,8 +288,8 @@
     { _id: 'medical_question_2024_001', questionId: 'medical_q_2024_001', direction: 'medical', questionType: 'single_choice', stem: '患者静脉输液过程中突发寒战、高热，应首先考虑的常见输液反应是？', options: [{ id: 'A', text: '发热反应' }, { id: 'B', text: '空气栓塞' }, { id: 'C', text: '静脉炎' }, { id: 'D', text: '肺水肿' }], answer: 'A', explanation: '输液中出现寒战、高热等症状时，应优先考虑发热反应并按规范立即处理。', year: 2024, paperId: 'medical_paper_2024_a', tags: ['静脉输液', '护理基础'], sort: 20, status: 'published' }
   ],
   pastPapers: [
-    { _id: 'medical_paper_2025_a', paperId: 'medical_paper_2025_a', title: '2025 医护方向真题卷', year: 2025, direction: 'medical', description: '覆盖基础护理与高频操作题型，适合考前结构回看。', questionIds: ['medical_question_2025_001'], sort: 10, status: 'published' },
-    { _id: 'medical_paper_2024_a', paperId: 'medical_paper_2024_a', title: '2024 医护方向真题卷', year: 2024, direction: 'medical', description: '偏重护理基础与输液相关题型，适合阶段性复盘。', questionIds: ['medical_question_2024_001'], sort: 20, status: 'published' }
+    { _id: 'medical_paper_2025_a', paperId: 'medical_paper_2025_a', title: '2025 医护模拟冲刺卷 A', year: 2025, direction: 'medical', description: '覆盖基础护理与高频操作题型，适合考前结构回看。', questionIds: ['medical_question_2025_001'], sort: 10, status: 'published' },
+    { _id: 'medical_paper_2024_a', paperId: 'medical_paper_2024_a', title: '2024 医护模拟冲刺卷 B', year: 2024, direction: 'medical', description: '偏重护理基础与输液相关题型，适合阶段性复盘。', questionIds: ['medical_question_2024_001'], sort: 20, status: 'published' }
   ],
   questionImports: [
     { _id: 'question_import_001', title: '2025 医护真题原文', direction: 'medical', sourceType: 'paper', rawText: '【年份】2025\\n【方向】医护\\n【题型】单选题\\n【题干】成人心肺复苏按压时，胸外按压频率应为？\\n【选项】A. 60-80 次/分\\nB. 80-90 次/分\\nC. 100-120 次/分\\nD. 130-150 次/分\\n【答案】C', note: '示例原文，后续可做结构化拆分。', sort: 10, status: 'draft' }

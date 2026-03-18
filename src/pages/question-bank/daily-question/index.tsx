@@ -154,7 +154,7 @@ export default function DailyQuestionPage() {
       return selectedOption ? '待提交' : '未作答';
     }
     if (!hasOfficialAnswer) {
-      return '待补答';
+      return '已记录';
     }
     return isCorrect ? '答对' : '答错';
   }, [submitted, selectedOption, hasOfficialAnswer, isCorrect]);
@@ -253,7 +253,7 @@ export default function DailyQuestionPage() {
       >
         {hasOfficialAnswer
           ? `${isCorrect ? '回答正确' : '回答错误'} · 正确答案 ${currentQuestion?.answer}`
-          : '标准答案待补充 · 当前已记录你的选择'}
+          : '答案暂未开放 · 当前已记录你的选择'}
       </Text>
       <Text
         style={{
@@ -270,7 +270,7 @@ export default function DailyQuestionPage() {
       >
         {hasOfficialAnswer
           ? currentQuestion?.explanation || '当前题目尚未补充解析。'
-          : '这 10 道题来自你之前上传的 CSV，但该 CSV 当前没有 answer 和 explanation 字段内容，所以这里只能先记录作答，等你补齐答案后再开启真实判题。'}
+          : '这组每日练习当前使用固定题源，页面会先记录你的作答情况，后续如开放判题会直接在这里展示答案与解析。'}
       </Text>
     </View>
   ) : null;
@@ -322,10 +322,10 @@ export default function DailyQuestionPage() {
         >
           <View>
             <Text style={{ display: 'block', fontSize: ui.type.note, color: '#0f766e', fontWeight: 800, marginBottom: '6rpx' }}>
-              已上传 CSV 题组 · 10 道题
+              固定练习题组 · 10 道题
             </Text>
             <Text style={{ display: 'block', fontSize: ui.type.meta, color: ui.colors.textMuted }}>
-              {currentQuestion?.tags?.join(' / ') || '医护方向'} · 标准答案待补充
+              {currentQuestion?.tags?.join(' / ') || '医护方向'} · 当前先记录练习进度
             </Text>
           </View>
           <Text style={{ fontSize: ui.type.note, color: '#0f766e', fontWeight: 800 }}>

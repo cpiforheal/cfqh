@@ -98,8 +98,8 @@ const pageOptions = [
 
 const listOptions = [
   { key: 'directions', label: '方向列表' },
-  { key: 'medicalQuestions', label: '医护题目' },
-  { key: 'pastPapers', label: '真题试卷' },
+  { key: 'medicalQuestions', label: '模拟卷题目' },
+  { key: 'pastPapers', label: '模拟冲刺卷' },
   { key: 'questionImports', label: '纯文本导入' },
   { key: 'teachers', label: '师资列表' },
   { key: 'successCases', label: '成果案例' },
@@ -287,6 +287,8 @@ const QUESTION_BANK_CSV_HEADERS = [
   'explanation',
   'year',
   'paperId',
+  'paperTitle',
+  'paperDescription',
   'tags',
   'status'
 ];
@@ -375,6 +377,38 @@ function splitPipeValues(value) {
     .filter(Boolean);
 }
 
+function buildPaperSummaryFromQuestions(questionRows = []) {
+  const paperMap = new Map();
+
+  questionRows.forEach(({ question }) => {
+    const paperId = normalizeCsvCell(question.paperId);
+    if (!paperId) {
+      return;
+    }
+
+    const existing = paperMap.get(paperId) || {
+      paperId,
+      title: '',
+      description: '',
+      year: Number(question.year) || new Date().getFullYear(),
+      questionIds: []
+    };
+
+    existing.title = normalizeCsvCell(question.paperTitle || existing.title);
+    existing.description = normalizeCsvCell(question.paperDescription || existing.description);
+    existing.year = Math.max(existing.year || 0, Number(question.year) || 0) || new Date().getFullYear();
+    existing.questionIds.push(question.questionId);
+    paperMap.set(paperId, existing);
+  });
+
+  return Array.from(paperMap.values()).map((paper, index) => ({
+    ...paper,
+    title: paper.title || `${paper.year} 医护模拟冲刺卷 ${String.fromCharCode(65 + index)}`,
+    description: paper.description || '由 CSV 自动整理，适合按套热身与冲刺练习。',
+    questionIds: Array.from(new Set(paper.questionIds))
+  }));
+}
+
 function parseQuestionBankCsv(csvText = '') {
   const rows = parseCsv(csvText);
   const headerRow = (rows[0] || []).map((value) => normalizeCsvCell(value));
@@ -409,6 +443,7 @@ function parseQuestionBankCsv(csvText = '') {
     const answer = normalizeCsvCell(record.answer).toUpperCase();
     const status = normalizeCsvCell(record.status || 'published') || 'published';
     const yearRaw = normalizeCsvCell(record.year);
+    const paperId = normalizeCsvCell(record.paperId);
     const options = ['A', 'B', 'C', 'D', 'E', 'F']
       .map((label) => ({
         id: label,
@@ -434,6 +469,10 @@ function parseQuestionBankCsv(csvText = '') {
 
     if (!stem) {
       rowErrors.push('stem 不能为空');
+    }
+
+    if (!paperId) {
+      rowErrors.push('paperId 不能为空');
     }
 
     if (!['published', 'draft'].includes(status)) {
@@ -506,7 +545,9 @@ function parseQuestionBankCsv(csvText = '') {
         answer,
         explanation: normalizeCsvCell(record.explanation),
         year: yearRaw ? Number(yearRaw) : new Date().getFullYear(),
-        paperId: normalizeCsvCell(record.paperId),
+        paperId,
+        paperTitle: normalizeCsvCell(record.paperTitle),
+        paperDescription: normalizeCsvCell(record.paperDescription),
         tags: splitPipeValues(record.tags),
         status
       }
@@ -532,6 +573,7 @@ function buildQuestionBankCsvPreview(csvText = '', fileName = '') {
     previewRows: parsed.validRows.slice(0, 6).map(({ lineNumber, question }) => ({
       lineNumber,
       questionId: question.questionId,
+      paperId: question.paperId,
       questionType: question.questionType,
       stem: question.stem,
       optionsCount: question.options.length,
@@ -550,11 +592,17 @@ async function importQuestionBankCsv(csvText = '', fileName = '') {
   }
 
   const existingQuestions = await store.listCollection('medicalQuestions');
+  const existingPapers = await store.listCollection('pastPapers');
   const existingMap = new Map(existingQuestions.map((item) => [item.questionId, item]));
+  const existingPaperMap = new Map(existingPapers.map((item) => [item.paperId, item]));
   const maxSort = existingQuestions.reduce((max, item) => Math.max(max, Number(item.sort || 0)), 0);
+  const maxPaperSort = existingPapers.reduce((max, item) => Math.max(max, Number(item.sort || 0)), 0);
   let createdCount = 0;
   let updatedCount = 0;
+  let paperCreatedCount = 0;
+  let paperUpdatedCount = 0;
   let nextSort = maxSort + 10;
+  let nextPaperSort = maxPaperSort + 10;
 
   for (const { question } of parsed.validRows) {
     const existing = existingMap.get(question.questionId);
@@ -574,13 +622,38 @@ async function importQuestionBankCsv(csvText = '', fileName = '') {
     createdCount += 1;
   }
 
+  const paperSummaries = buildPaperSummaryFromQuestions(parsed.validRows);
+  for (const paper of paperSummaries) {
+    const existing = existingPaperMap.get(paper.paperId);
+    const payload = {
+      paperId: paper.paperId,
+      title: paper.title,
+      year: paper.year,
+      direction: 'medical',
+      description: paper.description,
+      questionIds: paper.questionIds,
+      sort: existing?.sort || nextPaperSort,
+      status: 'published'
+    };
+
+    if (existing) {
+      await store.updateItem('pastPapers', existing._id, payload);
+      paperUpdatedCount += 1;
+      continue;
+    }
+
+    await store.createItem('pastPapers', payload);
+    nextPaperSort += 10;
+    paperCreatedCount += 1;
+  }
+
   const excerpt = csvText.length > 2400 ? `${csvText.slice(0, 2400)}\n...` : csvText;
   await store.createItem('questionImports', {
     title: fileName || `csv_import_${new Date().toISOString().slice(0, 10)}`,
     direction: 'medical',
     sourceType: 'file',
     rawText: excerpt,
-    note: `CSV 导入完成：共 ${parsed.totalRows} 行，新增 ${createdCount} 题，更新 ${updatedCount} 题。`,
+    note: `CSV 导入完成：共 ${parsed.totalRows} 行，新增 ${createdCount} 题，更新 ${updatedCount} 题；同步 ${paperSummaries.length} 套模拟卷，新增 ${paperCreatedCount} 套，更新 ${paperUpdatedCount} 套。`,
     sort: Date.now(),
     status: 'published'
   });
@@ -590,6 +663,9 @@ async function importQuestionBankCsv(csvText = '', fileName = '') {
     totalRows: parsed.totalRows,
     createdCount,
     updatedCount,
+    paperCount: paperSummaries.length,
+    paperCreatedCount,
+    paperUpdatedCount,
     importedCount: parsed.validRows.length
   };
 }

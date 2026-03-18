@@ -88,14 +88,21 @@ function getDirectionMiniLabel(item) {
   return compactText(source.replace(/^适合/, ''), 10);
 }
 
-function getPrimaryPortalLink(quickLinks) {
-  const items = quickLinks || [];
+function getQuickLinkTone(icon, index) {
+  const toneMap = {
+    compass: { accent: '#0369a1', background: '#e0f2fe' },
+    daily: { accent: '#0f766e', background: '#ecfeff' },
+    paper: { accent: '#115e59', background: '#ccfbf1' },
+    wrongbook: { accent: '#0f766e', background: '#ecfeff' },
+    building: { accent: '#7c3aed', background: '#f3e8ff' },
+    team: { accent: '#be185d', background: '#fce7f3' },
+    trophy: { accent: '#b45309', background: '#fef3c7' }
+  };
 
   return (
-    items.find((item) => item?.url === '/pages/courses/index' || item?.label?.includes('方向')) ||
-    items.find((item) => item?.url !== '/pages/about/index') ||
-    items[0] ||
-    defaultHomePage.quickLinks[0]
+    toneMap[icon] ||
+    [toneMap.compass, toneMap.daily, toneMap.paper, toneMap.wrongbook][index] ||
+    toneMap.compass
   );
 }
 
@@ -994,43 +1001,18 @@ export default function HomePage() {
   const advantages = normalizedPage.advantages || defaultHomePage.advantages;
   const environmentCards = normalizedPage.environmentSection?.cards || defaultHomePage.environmentSection.cards;
   const cta = normalizedPage.cta || defaultHomePage.cta;
-  const primaryPortalLink = getPrimaryPortalLink(quickLinks);
   const heroDesc = heroHasBackgroundImage ? compactText(hero.desc, 20) : '医护 + 高数双主线';
   const heroTags = (hero.tags || []).slice(0, 2);
   const featuredAdvantages = advantages.slice(0, 2);
   const visibleEnvironmentCards = environmentCards.slice(0, 2);
-  const portalQuickLinks = [
-    {
-      ...primaryPortalLink,
-      icon: primaryPortalLink?.icon || 'compass',
-      accent: '#0369a1',
-      background: '#e0f2fe'
-    },
-    {
-      label: '每日一题',
-      url: '/pages/question-bank/daily-question/index',
-      openType: 'navigate',
-      icon: 'daily',
-      accent: '#0f766e',
-      background: '#ecfeff'
-    },
-    {
-      label: '模拟冲刺',
-      url: '/pages/question-bank/past-papers/index',
-      openType: 'navigate',
-      icon: 'paper',
-      accent: '#115e59',
-      background: '#ccfbf1'
-    },
-    {
-      label: '错题本',
-      url: '/pages/question-bank/wrong-book/index',
-      openType: 'navigate',
-      icon: 'wrongbook',
-      accent: '#0f766e',
-      background: '#ecfeff'
-    }
-  ];
+  const portalQuickLinks = Array.from({ length: 4 }, (_, index) => quickLinks[index] || defaultHomePage.quickLinks[index])
+    .filter(Boolean)
+    .map((item, index) => ({
+      ...item,
+      openType: item?.openType || 'navigate',
+      icon: item?.icon || 'compass',
+      ...getQuickLinkTone(item?.icon, index)
+    }));
   const homeTone = {
     accent: '#0284c7',
     accentStrong: '#0369a1',
@@ -1159,19 +1141,9 @@ export default function HomePage() {
                   fontWeight: 800
                 }}
               >
-                {hero.primaryButton?.text || '了解机构实力'}
+                {hero.primaryButton?.text || '查看详情'}
               </Text>
             </Navigator>
-            <Text
-              style={{
-                marginLeft: heroHasBackgroundImage ? '14rpx' : '18rpx',
-                fontSize: ui.type.note,
-                color: heroHasBackgroundImage ? homeTone.note : '#cbd5e1',
-                marginTop: '8rpx'
-              }}
-            >
-              真实可查
-            </Text>
           </View>
 
           <View style={{ display: 'flex', flexWrap: 'wrap' }}>
@@ -1296,7 +1268,7 @@ export default function HomePage() {
       </View>
 
       <View style={{ margin: '36rpx 20rpx 0' }}>
-        <PageSectionTitle lineColor={homeTone.accentLine}>先看方向</PageSectionTitle>
+        <PageSectionTitle lineColor={homeTone.accentLine}>热门方向</PageSectionTitle>
         {directions.map((item, index) => (
           <Navigator
             key={item.title}
@@ -1416,7 +1388,7 @@ export default function HomePage() {
                   }}
                 >
                   <Text style={{ fontSize: ui.type.note, color: index === 0 ? '#ffffff' : homeTone.accentStrong, fontWeight: 800 }}>
-                    去看看
+                    查看详情
                   </Text>
                 </View>
               </View>
@@ -1427,7 +1399,7 @@ export default function HomePage() {
       </View>
 
       <View style={{ margin: '36rpx 24rpx 0' }}>
-        <PageSectionTitle lineColor={homeTone.accentLine}>为什么更稳</PageSectionTitle>
+        <PageSectionTitle lineColor={homeTone.accentLine}>学习支持</PageSectionTitle>
         <View style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between' }}>
           {featuredAdvantages.map((item) => (
             <View
@@ -1487,7 +1459,7 @@ export default function HomePage() {
 
       <View style={{ margin: '34rpx 24rpx 0' }}>
         <View style={{ marginBottom: '14rpx' }}>
-          <PageSectionTitle marginBottom="0" lineColor={homeTone.accentLine}>校区环境</PageSectionTitle>
+          <PageSectionTitle marginBottom="0" lineColor={homeTone.accentLine}>学习环境</PageSectionTitle>
         </View>
 
         <View

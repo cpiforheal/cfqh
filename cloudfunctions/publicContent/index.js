@@ -15,6 +15,7 @@ const CACHE_TTL = 60000; // 1分钟缓存
 const PAGE_COLLECTIONS = {
   site: 'site_settings',
   home: 'page_home',
+  questionBank: 'page_question_bank',
   courses: 'page_courses',
   teachers: 'page_teachers',
   success: 'page_success',
@@ -159,6 +160,14 @@ exports.main = async (event) => {
       queries.push(
         listCollection('material_series').then(data => ({ key: 'materialSeries', data })),
         listCollection('material_items').then(data => ({ key: 'materialItems', data }))
+      );
+    }
+
+    if (pageKey === 'questionBank') {
+      queries.push(
+        listCollection('medical_questions').then(data => ({ key: 'medicalQuestions', data })),
+        listCollection('past_papers').then(data => ({ key: 'pastPapers', data })),
+        listCollection('question_imports').then(data => ({ key: 'questionImports', data }))
       );
     }
 

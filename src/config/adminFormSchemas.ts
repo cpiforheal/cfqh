@@ -87,7 +87,6 @@ export function getAdminPageFormSchema(pageKey) {
       objectField('hero', '首屏', [
         ...pageHeroBasicFields,
         { key: 'highlightTitle', label: '高亮标题', type: 'text', required: true },
-        { key: 'secondaryNote', label: '补充说明', type: 'text' },
         { key: 'backgroundImageUrl', label: '背景图 URL', type: 'text', validate: 'media-url' },
         { key: 'backgroundImageSeed', label: '背景图 Seed', type: 'text' },
         { key: 'tags', label: '标签组', type: 'stringArray', defaultItem: '' },
@@ -97,39 +96,40 @@ export function getAdminPageFormSchema(pageKey) {
           { key: 'openType', label: '跳转方式', type: 'select', options: openTypeOptions }
         ])
       ]),
-      objectArrayField('overviewStats', '总览统计', statFields, { value: '', label: '', note: '' }),
+      objectArrayField(
+        'overviewStats',
+        '总览统计',
+        [
+          { key: 'value', label: '数值', type: 'text', required: true },
+          { key: 'label', label: '标签', type: 'text', required: true }
+        ],
+        { value: '', label: '' },
+        { maxItems: 3, visibleItems: 3 }
+      ),
       objectArrayField(
         'quickLinks',
         '快捷入口',
         [
           { key: 'label', label: '标题', type: 'text' },
-          { key: 'desc', label: '描述', type: 'text' },
           { key: 'url', label: '跳转地址', type: 'text' },
           { key: 'openType', label: '跳转方式', type: 'select', options: openTypeOptions },
           { key: 'icon', label: '图标标识', type: 'text' }
         ],
-        { label: '', desc: '', url: '', openType: 'navigate', icon: '' }
+        { label: '', url: '', openType: 'navigate', icon: '' },
+        { maxItems: 4, visibleItems: 4 }
       ),
       objectArrayField(
         'advantages',
         '核心优势',
         [
           { key: 'icon', label: '图标标识', type: 'text' },
-          { key: 'title', label: '标题', type: 'text' },
-          { key: 'desc', label: '描述', type: 'textarea' }
+          { key: 'title', label: '标题', type: 'text' }
         ],
-        { icon: '', title: '', desc: '' }
+        { icon: '', title: '' },
+        { maxItems: 2, visibleItems: 2 }
       ),
-      { key: 'directionsIntro', label: '方向介绍', type: 'textarea' },
       { key: 'featuredDirectionIds', label: '首页精选方向 ID', type: 'stringArray', defaultItem: '' },
-      objectField('moreDirectionCard', '更多方向卡片', [
-        { key: 'title', label: '标题', type: 'text' },
-        { key: 'tag', label: '标签', type: 'text' },
-        { key: 'desc', label: '描述', type: 'textarea' }
-      ]),
       objectField('environmentSection', '环境区块', [
-        { key: 'title', label: '标题', type: 'text' },
-        { key: 'subtitle', label: '副标题', type: 'text' },
         objectArrayField(
           'cards',
           '环境卡片',
@@ -138,10 +138,14 @@ export function getAdminPageFormSchema(pageKey) {
             { key: 'imageUrl', label: '图片 URL', type: 'text', validate: 'media-url' },
             { key: 'imageSeed', label: '图片 Seed', type: 'text' }
           ],
-          { label: '', imageUrl: '', imageSeed: '' }
+          { label: '', imageUrl: '', imageSeed: '' },
+          { maxItems: 2, visibleItems: 2 }
         )
       ]),
-      objectField('cta', '底部 CTA', ctaFields)
+      objectField('cta', '底部 CTA', [
+        { key: 'title', label: '标题', type: 'text', required: true },
+        { key: 'buttonText', label: '按钮文案', type: 'text', required: true }
+      ])
     ];
   }
 

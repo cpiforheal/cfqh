@@ -175,19 +175,19 @@
       hero: {
         chip: '医护轻题库',
         title: '题库入口配置',
-        desc: '这里集中维护每日一题、历年真题与错题本的入口摘要，以及纯文本导入说明。'
+        desc: '这里集中维护每日一题、模拟冲刺与错题本的入口摘要，以及纯文本导入说明。'
       },
       dailyQuestionCard: {
         title: '每日一题',
-        desc: '每天推送一道医护方向高频题，保持做题节奏。',
+        desc: '固定练习题组，适合每天保持手感与做题节奏。',
         buttonText: '进入每日一题',
-        note: '当前仅开放医护方向'
+        note: '当前使用固定题源'
       },
       pastPapersCard: {
-        title: '历年真题',
-        desc: '按年份整理医护真题卷，先做列表与预览。',
-        buttonText: '查看真题卷',
-        note: '适合后续继续导入整卷数据'
+        title: '模拟冲刺',
+        desc: '按套整理冲刺卷，支持通过 CSV 持续更新题目内容。',
+        buttonText: '查看模拟卷',
+        note: '题目热更新入口'
       },
       wrongBookCard: {
         title: '错题本',
@@ -296,8 +296,8 @@
     { _id: 'medical_question_2024_001', questionId: 'medical_q_2024_001', direction: 'medical', questionType: 'single_choice', stem: '患者静脉输液过程中突发寒战、高热，应首先考虑的常见输液反应是？', options: [{ id: 'A', text: '发热反应' }, { id: 'B', text: '空气栓塞' }, { id: 'C', text: '静脉炎' }, { id: 'D', text: '肺水肿' }], answer: 'A', explanation: '输液中出现寒战、高热等症状时，应优先考虑发热反应并按规范立即处理。', year: 2024, paperId: 'medical_paper_2024_a', tags: ['静脉输液', '护理基础'], sort: 20, status: 'published' }
   ],
   pastPapers: [
-    { _id: 'medical_paper_2025_a', paperId: 'medical_paper_2025_a', title: '2025 医护方向真题卷', year: 2025, direction: 'medical', description: '覆盖基础护理与高频操作题型，适合考前结构回看。', questionIds: ['medical_question_2025_001'], sort: 10, status: 'published' },
-    { _id: 'medical_paper_2024_a', paperId: 'medical_paper_2024_a', title: '2024 医护方向真题卷', year: 2024, direction: 'medical', description: '偏重护理基础与输液相关题型，适合阶段性复盘。', questionIds: ['medical_question_2024_001'], sort: 20, status: 'published' }
+    { _id: 'medical_paper_2025_a', paperId: 'medical_paper_2025_a', title: '2025 医护模拟冲刺卷 A', year: 2025, direction: 'medical', description: '覆盖基础护理与高频操作题型，适合考前结构回看。', questionIds: ['medical_question_2025_001'], sort: 10, status: 'published' },
+    { _id: 'medical_paper_2024_a', paperId: 'medical_paper_2024_a', title: '2024 医护模拟冲刺卷 B', year: 2024, direction: 'medical', description: '偏重护理基础与输液相关题型，适合阶段性复盘。', questionIds: ['medical_question_2024_001'], sort: 20, status: 'published' }
   ],
   questionImports: [
     { _id: 'question_import_001', title: '2025 医护真题原文', direction: 'medical', sourceType: 'paper', rawText: '【年份】2025\\n【方向】医护\\n【题型】单选题\\n【题干】成人心肺复苏按压时，胸外按压频率应为？\\n【选项】A. 60-80 次/分\\nB. 80-90 次/分\\nC. 100-120 次/分\\nD. 130-150 次/分\\n【答案】C', note: '示例原文，后续可做结构化拆分。', sort: 10, status: 'draft' }

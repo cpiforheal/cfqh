@@ -42,12 +42,12 @@ const VIEW_CONFIG = {
     kicker: '内容',
     breadcrumb: '医护题库',
     title: '题库管理',
-    subtitle: '维护每日一题、历年真题、错题本入口摘要，以及医护题目、真题试卷和纯文本导入内容。',
+    subtitle: '维护每日一题、模拟冲刺、错题本入口摘要，以及模拟卷题目、模拟冲刺卷和纯文本导入内容。',
     pageKey: 'questionBank',
     pageLabel: '题库页面',
     collections: [
-      { key: 'medicalQuestions', label: '医护题目' },
-      { key: 'pastPapers', label: '真题试卷' },
+      { key: 'medicalQuestions', label: '模拟卷题目' },
+      { key: 'pastPapers', label: '模拟冲刺卷' },
       { key: 'questionImports', label: '纯文本导入' }
     ]
   },
@@ -283,6 +283,8 @@ const QUESTION_BANK_CSV_HEADERS = [
   'explanation',
   'year',
   'paperId',
+  'paperTitle',
+  'paperDescription',
   'tags',
   'status'
 ];
@@ -490,7 +492,7 @@ const FIELD_LABELS = {
   tabs: '分类标签',
   questionBank: '题库配置',
   dailyQuestionCard: '每日一题入口',
-  pastPapersCard: '历年真题入口',
+  pastPapersCard: '模拟冲刺入口',
   wrongBookCard: '错题本入口',
   importGuide: '导入说明',
   templateText: '模板文本',
@@ -573,8 +575,8 @@ const OBJECT_ARRAY_FIELDS = new Set([
 ]);
 const ARRAY_TEMPLATES = {
   overviewStats: { value: '', label: '', note: '' },
-  quickLinks: { label: '', desc: '', url: '', openType: 'navigate', icon: '' },
-  advantages: { icon: '', title: '', desc: '' },
+  quickLinks: { label: '', url: '', openType: 'navigate', icon: '' },
+  advantages: { icon: '', title: '' },
   cards: { label: '', imageUrl: '', imageSeed: '' },
   features: { title: '', desc: '' },
   stats: { value: '', label: '', note: '' },
@@ -614,7 +616,7 @@ const SELECT_FIELD_OPTIONS = {
   ],
   sourceType: [
     { value: 'daily', label: '每日一题' },
-    { value: 'paper', label: '历年真题' },
+    { value: 'paper', label: '模拟冲刺' },
     { value: 'wrongbook', label: '错题整理' },
     { value: 'file', label: '文件导入' }
   ],
@@ -636,11 +638,31 @@ const COMPANION_FIELDS = {
   coverSeed: 'coverUrl'
 };
 
+const HOME_EDITOR_HIDDEN_PATHS = new Set([
+  'hero.secondaryNote',
+  'overviewStats.*.note',
+  'quickLinks.*.desc',
+  'advantages.*.desc',
+  'directionsIntro',
+  'moreDirectionCard',
+  'environmentSection.title',
+  'environmentSection.subtitle',
+  'cta.desc',
+  'cta.footnote'
+]);
+
+const HOME_EDITOR_ARRAY_RULES = {
+  overviewStats: { visibleItems: 3, maxItems: 3 },
+  quickLinks: { visibleItems: 4, maxItems: 4 },
+  advantages: { visibleItems: 2, maxItems: 2 },
+  'environmentSection.cards': { visibleItems: 2, maxItems: 2 }
+};
+
 const EDITOR_LAYOUTS = {
   'page:home': {
     hero: {
       title: '首页主配置',
-      desc: '先维护首屏和首页核心区块，次级模块收进补充区块里，阅读会更轻松。'
+      desc: '这里维护的是首页当前真实会显示的内容，包括 4 个快捷入口、2 项学习支持、2 张环境图和底部 CTA。'
     },
     sections: [
       {
@@ -649,20 +671,16 @@ const EDITOR_LAYOUTS = {
       },
       {
         title: '首页主体',
-        keys: ['advantages', 'directionsIntro', 'featuredDirectionIds']
+        keys: ['advantages', 'featuredDirectionIds']
       }
     ],
     secondarySections: [
       {
-        title: '更多方向与环境',
-        keys: ['moreDirectionCard', 'environmentSection']
+        title: '环境与转化',
+        keys: ['environmentSection', 'cta']
       },
-      {
-        title: '底部 CTA',
-        keys: ['cta']
-      }
     ],
-    foldLabel: '首页补充区块'
+    foldLabel: '更多首页区块'
   },
   'page:site': {
     hero: {
@@ -824,7 +842,7 @@ const EDITOR_LAYOUTS = {
   'page:questionBank': {
     hero: {
       title: '题库页主配置',
-      desc: '这里维护每日一题、历年真题和错题本的入口摘要，主区先看 row 概览，再进入字段表单。'
+      desc: '这里维护每日一题、模拟冲刺和错题本的入口摘要，主区先看 row 概览，再进入字段表单。'
     },
     sections: [
       {
@@ -846,8 +864,8 @@ const EDITOR_LAYOUTS = {
   },
   'collection:medicalQuestions': {
     hero: {
-      title: '题目基础信息',
-      desc: '先维护方向、题型、年份和状态，再补题干、选项、答案与解析。'
+      title: '模拟卷题目',
+      desc: '这里维护模拟冲刺卷里的题目明细，先看题号、题型和所属试卷，再补题干、答案与解析。'
     },
     sections: [
       {
@@ -866,8 +884,8 @@ const EDITOR_LAYOUTS = {
   },
   'collection:pastPapers': {
     hero: {
-      title: '试卷基础信息',
-      desc: '先维护试卷标题、年份、方向和状态，再补题目 ID 列表和摘要说明。'
+      title: '模拟冲刺卷',
+      desc: '先维护套卷标题、年份、方向和状态，再补题目 ID 列表和摘要说明。'
     },
     sections: [
       {
@@ -1124,6 +1142,23 @@ function getFriendlyEditorClass(scope) {
   return '';
 }
 
+function normalizeEditorPath(path) {
+  return (path || []).map((segment) => (typeof segment === 'number' ? '*' : String(segment))).join('.');
+}
+
+function isHomePageScope(scope) {
+  return scope === 'page:home';
+}
+
+function shouldHideField(scope, path) {
+  return isHomePageScope(scope) ? HOME_EDITOR_HIDDEN_PATHS.has(normalizeEditorPath(path)) : false;
+}
+
+function getArrayEditorRule(scope, path) {
+  if (!isHomePageScope(scope)) return null;
+  return HOME_EDITOR_ARRAY_RULES[normalizeEditorPath(path)] || null;
+}
+
 function renderPrimitiveInput(scope, path, fieldKey, value) {
   const label = humanizeLabel(fieldKey);
   const pathText = path.join('.');
@@ -1203,6 +1238,9 @@ function renderFormNode(scope, value, path = [], fieldKey = '') {
     const pathText = path.join('.');
     const objectItems = value.some((item) => item && typeof item === 'object' && !Array.isArray(item)) || OBJECT_ARRAY_FIELDS.has(fieldKey);
     const stringItems = value.every((item) => item == null || typeof item === 'string');
+    const arrayRule = getArrayEditorRule(scope, path);
+    const visibleItems = arrayRule?.visibleItems ? value.slice(0, arrayRule.visibleItems) : value;
+    const canAppend = arrayRule?.maxItems ? value.length < arrayRule.maxItems : true;
 
     if (!objectItems && (LINE_LIST_FIELDS.has(fieldKey) || stringItems)) {
       return renderLineListInput(scope, path, fieldKey, value);
@@ -1214,14 +1252,17 @@ function renderFormNode(scope, value, path = [], fieldKey = '') {
           <h4>${escapeHtml(label)}</h4>
           <p>${escapeHtml(objectItems ? '数组项会以卡片方式展示，适合逐项维护。' : '适合维护标签、ID、目录等简单列表。')}</p>
         </div>
-        <button class="system-action" type="button" data-action="append-array-item" data-form-scope="${escapeHtml(scope)}" data-form-path="${escapeHtml(pathText)}">新增一项</button>
+        ${canAppend ? `<button class="system-action" type="button" data-action="append-array-item" data-form-scope="${escapeHtml(scope)}" data-form-path="${escapeHtml(pathText)}">新增一项</button>` : ''}
       </div>
       <div class="form-array-list">
-        ${value.length ? value.map((item, index) => {
+        ${visibleItems.length ? visibleItems.map((item, index) => {
           const itemPath = [...path, index];
           const itemPathText = itemPath.join('.');
           if (objectItems) {
-            const fields = Object.keys(item || {}).filter((key) => !isManagedField(key)).map((key) => renderFormNode(scope, item[key], [...itemPath, key], key)).join('');
+            const fields = Object.keys(item || {})
+              .filter((key) => !isManagedField(key) && !shouldHideField(scope, [...itemPath, key]))
+              .map((key) => renderFormNode(scope, item[key], [...itemPath, key], key))
+              .join('');
             return `<article class="form-array-card">
               <div class="form-array-head">
                 <strong>${escapeHtml(`${label} ${index + 1}`)}</strong>
@@ -1243,7 +1284,10 @@ function renderFormNode(scope, value, path = [], fieldKey = '') {
   if (value && typeof value === 'object') {
     const label = fieldKey ? humanizeLabel(fieldKey) : '内容配置';
     const objectKeys = [...new Set([...Object.keys(value), ...getCompanionFieldKeys(value)])];
-    const fields = objectKeys.filter((key) => !isManagedField(key)).map((key) => renderFormNode(scope, value[key] ?? '', [...path, key], key)).join('');
+    const fields = objectKeys
+      .filter((key) => !isManagedField(key) && !shouldHideField(scope, [...path, key]))
+      .map((key) => renderFormNode(scope, value[key] ?? '', [...path, key], key))
+      .join('');
     return `<section class="form-block">
       ${fieldKey ? `<div class="form-block-head"><div><h4>${escapeHtml(label)}</h4></div></div>` : ''}
       <div class="form-grid">${fields || '<div class="empty-state">当前对象还没有可编辑字段。</div>'}</div>
@@ -1255,7 +1299,7 @@ function renderFormNode(scope, value, path = [], fieldKey = '') {
 
 function renderFieldsForKeys(scope, value, keys) {
   return keys
-    .filter((key) => Object.prototype.hasOwnProperty.call(value || {}, key) && !isManagedField(key))
+    .filter((key) => Object.prototype.hasOwnProperty.call(value || {}, key) && !isManagedField(key) && !shouldHideField(scope, [key]))
     .map((key) => renderFormNode(scope, value[key], [key], key))
     .join('');
 }
@@ -1281,7 +1325,9 @@ function renderStructuredEditor(scope, value, layout) {
   const secondaryKeys = new Set(secondarySections.flatMap((section) => section.keys));
   const jsonKeys = new Set(layout.jsonFields || []);
   const renderedKeys = new Set([...primaryKeys, ...secondaryKeys, ...jsonKeys]);
-  const remainderKeys = Object.keys(value || {}).filter((key) => !isManagedField(key) && !renderedKeys.has(key));
+  const remainderKeys = Object.keys(value || {}).filter(
+    (key) => !isManagedField(key) && !renderedKeys.has(key) && !shouldHideField(scope, [key])
+  );
   const secondaryMarkup = secondarySections.map((section) => {
     const fields = renderFieldsForKeys(scope, value, section.keys);
     if (!fields) return '';
@@ -1765,8 +1811,8 @@ function getPageSectionRows(pageKey, page = {}) {
       },
       {
         id: 'pastPapersCard',
-        title: '历年真题',
-        desc: page.pastPapersCard?.title || page.pastPapersCard?.desc || '真题入口摘要',
+        title: '模拟冲刺',
+        desc: page.pastPapersCard?.title || page.pastPapersCard?.desc || '模拟卷入口摘要',
         meta: [page.pastPapersCard?.buttonText, page.pastPapersCard?.note].filter(Boolean).join(' / ') || '入口文案与按钮',
         keys: ['pastPapersCard']
       },
@@ -1788,33 +1834,42 @@ function getPageSectionRows(pageKey, page = {}) {
   }
 
   if (pageKey === 'home') {
+    const statCount = Math.min((page.overviewStats || []).length, 3);
+    const quickLinkCount = Math.min((page.quickLinks || []).length, 4);
+    const advantageCount = Math.min((page.advantages || []).length, 2);
+    const environmentCount = Math.min((page.environmentSection?.cards || []).length, 2);
     return [
       {
         id: 'hero',
         title: '首屏与入口',
         desc: page.hero?.title || page.hero?.chip || '主标题、角标和入口按钮',
-        meta: `${(page.overviewStats || []).length} 项统计 · ${(page.quickLinks || []).length} 个快捷入口`,
+        meta: `${statCount} 项统计 · ${quickLinkCount} 个快捷入口`,
         keys: ['hero', 'overviewStats', 'quickLinks']
       },
       {
         id: 'core',
         title: '首页主体',
-        desc: summarizeText(page.directionsIntro, 34) || '优势模块与首页精选方向',
-        meta: `${(page.advantages || []).length} 项优势 · ${(page.featuredDirectionIds || []).length} 个精选方向`,
-        keys: ['advantages', 'directionsIntro', 'featuredDirectionIds']
+        desc: (page.advantages || []).slice(0, 2).map((item) => item?.title).filter(Boolean).join(' / ') || '学习支持与首页精选方向',
+        meta: `${advantageCount} 项学习支持 · ${(page.featuredDirectionIds || []).length} 个精选方向`,
+        keys: ['advantages', 'featuredDirectionIds']
       },
       {
         id: 'environment',
-        title: '更多方向与环境',
-        desc: page.moreDirectionCard?.title || page.environmentSection?.title || '更多方向卡片与环境展示',
-        meta: `${(page.environmentSection?.cards || []).length} 张环境卡片`,
-        keys: ['moreDirectionCard', 'environmentSection']
+        title: '环境展示',
+        desc:
+          (page.environmentSection?.cards || [])
+            .slice(0, 2)
+            .map((item) => item?.label)
+            .filter(Boolean)
+            .join(' / ') || '首页环境图片区块',
+        meta: `${environmentCount} 张环境卡片`,
+        keys: ['environmentSection']
       },
       {
         id: 'cta',
         title: '底部 CTA',
         desc: page.cta?.title || '底部转化区块',
-        meta: page.cta?.buttonText || '按钮与说明文案',
+        meta: page.cta?.buttonText || '按钮文案',
         keys: ['cta']
       }
     ];
@@ -2040,21 +2095,21 @@ function renderQuestionBankPagePanel(view, page) {
           </button>`).join('')}
         </div>
         <div class="workspace-compact-summary workspace-enter question-bank-toolkit-summary" style="--enter-delay: 80ms;">
-          <strong>CSV 批量导入</strong>
-          <span>按约定字段上传医护题库，先预览校验，再一键导入到每日一题基础题池。</span>
+          <strong>模拟冲刺卷 CSV 导入</strong>
+          <span>按约定字段上传模拟卷题目，系统会同步校验并更新对应套卷，不影响每日一题固定题源。</span>
           <em>${escapeHtml(preview
             ? `${preview.fileName || '当前文件'} · ${preview.validCount}/${preview.totalRows} 行可导入`
             : lastSummary
-              ? `上次导入 ${lastSummary.importedCount || 0} 题，新增 ${lastSummary.createdCount || 0} 题`
-              : '支持 2000+ 题，按 questionId 覆盖更新')}</em>
+              ? `上次导入 ${lastSummary.importedCount || 0} 题，联动 ${lastSummary.paperCount || 0} 套模拟卷`
+              : '支持按 questionId 覆盖更新，并按 paperId 自动归档到模拟卷')}</em>
         </div>
         <div class="record-list compact-list workspace-enter question-bank-toolkit-list" style="--enter-delay: 100ms;">
           <button class="record-row workspace-row-enter question-bank-import-row${ui.openEditors.questionBankCsvImport ? ' active' : ''}" style="--enter-delay: 110ms;" type="button" data-action="open-question-bank-import">
             <span class="record-row-main">
-              <strong class="record-row-title">CSV 题库导入</strong>
+              <strong class="record-row-title">CSV 模拟卷导入</strong>
               <span class="record-row-meta">${escapeHtml(preview
                 ? `已载入 ${preview.fileName || 'CSV 文件'}，${preview.invalidCount ? `还有 ${preview.invalidCount} 行待修正` : '校验通过，可直接导入'}`
-                : '上传 questionId / stem / optionA... 这套标准字段，系统会自动识别并预览。')}</span>
+                : '上传 questionId / paperId / paperTitle / stem... 这套字段，系统会自动识别并预览。')}</span>
             </span>
             <span class="record-pill">${escapeHtml(preview ? '查看预览' : '上传 CSV')}</span>
           </button>
@@ -2078,18 +2133,18 @@ function renderQuestionBankImportOverlay() {
   const canCommit = Boolean(preview && Number(preview.validCount || 0) > 0 && Number(preview.invalidCount || 0) === 0 && !importUi.isSubmitting);
   const summaryText = preview
     ? `${preview.fileName || '当前 CSV'} 共 ${preview.totalRows} 行，${preview.validCount} 行可导入，${preview.invalidCount} 行待修正。`
-    : '先选择 CSV 文件，系统会先校验字段、答案格式和重复题目，再允许导入。';
+    : '先选择 CSV 文件，系统会先校验字段、答案格式、题号重复与试卷归属，再允许导入。';
   const latestText = importUi.lastSummary
-    ? `上次导入 ${importUi.lastSummary.importedCount || 0} 题，新增 ${importUi.lastSummary.createdCount || 0} 题，更新 ${importUi.lastSummary.updatedCount || 0} 题。`
-    : '当前支持 questionId 覆盖更新，适合分批修订题库。';
+    ? `上次导入 ${importUi.lastSummary.importedCount || 0} 题，新增 ${importUi.lastSummary.createdCount || 0} 题，更新 ${importUi.lastSummary.updatedCount || 0} 题；联动 ${importUi.lastSummary.paperCount || 0} 套模拟卷。`
+    : '当前支持 questionId 覆盖更新，并按 paperId 自动同步模拟冲刺卷。';
 
   return `<div class="editor-overlay is-visible directions-editor-overlay question-bank-import-overlay" data-editor-question-bank-import="true">
     <button class="editor-overlay-backdrop" type="button" aria-label="关闭导入弹层" data-action="close-question-bank-import"></button>
     <article class="panel editor-panel editor-modal-shell editor-modal-shell-directions directions-enter-modal">
       <div class="panel-head editor-modal-head directions-enter-modal-item" style="--enter-delay: 0ms;">
         <div>
-          <h3>CSV 题库导入</h3>
-          <p>先按标准表头上传医护题目，系统会先预览，再决定是否正式入库。</p>
+          <h3>CSV 模拟卷导入</h3>
+          <p>先按标准表头上传模拟卷题目，系统会先预览，再同步到模拟冲刺卷。</p>
         </div>
         <div class="panel-actions">
           <button class="system-action" type="button" data-action="pick-question-bank-import-file">${preview ? '重新选择 CSV' : '选择 CSV'}</button>
@@ -2111,7 +2166,7 @@ function renderQuestionBankImportOverlay() {
             <div class="question-bank-import-head">
               <div>
                 <strong>字段约束</strong>
-                <span>表头请严格使用下面这一行，顺序可保持一致，便于直接导入。</span>
+                <span>表头请严格使用下面这一行，paperTitle 和 paperDescription 可选，但建议一起维护。</span>
               </div>
               <button class="system-action" type="button" data-action="pick-question-bank-import-file">上传 CSV</button>
             </div>
@@ -2121,6 +2176,7 @@ function renderQuestionBankImportOverlay() {
               <span>多选答案示例：A|C|D</span>
               <span>判断答案示例：T / F</span>
               <span>答案可留空，但 status 请用 draft</span>
+              <span>同一 paperId 会自动归并成一套模拟卷</span>
             </div>
           </article>
           ${preview ? `<article class="question-bank-import-card">
@@ -2147,6 +2203,7 @@ function renderQuestionBankImportOverlay() {
                   <tr>
                     <th>行号</th>
                     <th>题目 ID</th>
+                    <th>试卷 ID</th>
                     <th>题型</th>
                     <th>题干预览</th>
                     <th>年份</th>
@@ -2156,6 +2213,7 @@ function renderQuestionBankImportOverlay() {
                   ${preview.previewRows.map((row) => `<tr>
                     <td>${escapeHtml(String(row.lineNumber || '-'))}</td>
                     <td>${escapeHtml(row.questionId || '-')}</td>
+                    <td>${escapeHtml(row.paperId || '-')}</td>
                     <td>${escapeHtml(row.questionType || '-')}</td>
                     <td><span class="table-inline-summary">${escapeHtml(summarizeText(row.stem, 44) || '-')}</span></td>
                     <td>${escapeHtml(String(row.year || '-'))}</td>
@@ -3020,7 +3078,7 @@ async function loadOverviewData() {
     { label: '师资团队', pageKey: 'teachers', collectionKey: 'teachers' },
     { label: '开设方向', pageKey: 'courses', collectionKey: 'directions' },
     { label: '媒体资源', pageKey: 'materials', collectionKey: 'mediaAssets' },
-    { label: '医护题库', pageKey: 'questionBank', collectionKey: 'medicalQuestions' }
+    { label: '模拟卷题目', pageKey: 'questionBank', collectionKey: 'medicalQuestions' }
   ];
 
   const healthRows = healthMap.map((item) => {
