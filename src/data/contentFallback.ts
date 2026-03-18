@@ -32,7 +32,7 @@
       quickLinks: [
         { label: '热门方向', desc: '查看课程方向', url: '/pages/courses/index', openType: 'switchTab', icon: 'compass' },
         { label: '每日一题', desc: '每天练 1 题', url: '/pages/question-bank/daily-question/index', openType: 'navigate', icon: 'daily' },
-        { label: '模拟冲刺', desc: '考前整卷训练', url: '/pages/question-bank/past-papers/index', openType: 'navigate', icon: 'paper' },
+        { label: '模拟题', desc: '考前整卷训练', url: '/pages/question-bank/past-papers/index', openType: 'navigate', icon: 'paper' },
         { label: '错题本', desc: '回看错题记录', url: '/pages/question-bank/wrong-book/index', openType: 'navigate', icon: 'wrongbook' }
       ],
       advantages: [
@@ -59,6 +59,36 @@
         desc: '',
         buttonText: '立即咨询',
         footnote: ''
+      }
+    },
+    questionBank: {
+      hero: {
+        chip: '医护轻题库',
+        title: '题库入口配置',
+        desc: '这里集中维护每日一题、模拟题与错题本的页面文案，模拟题支持 CSV 热更新。'
+      },
+      dailyQuestionCard: {
+        title: '每日一题',
+        desc: '固定练习题组，适合每天保持手感与做题节奏。',
+        buttonText: '进入每日一题',
+        note: '固定题源'
+      },
+      pastPapersCard: {
+        title: '模拟题',
+        desc: '按套练模拟卷，支持通过 CSV 持续热更新题目内容。',
+        buttonText: '进入模拟题',
+        note: '支持 CSV 热更新'
+      },
+      wrongBookCard: {
+        title: '错题本',
+        desc: '沉淀做错题目和解析，方便回看与重复练习。',
+        buttonText: '回看错题',
+        note: '错题复盘与回看'
+      },
+      importGuide: {
+        title: '纯文本导入',
+        desc: '支持直接粘贴原始题文、整卷文本或错题整理，后续再做结构化处理。',
+        templateText: '【题目来源】2025 医护真题\\n【题型】单选题\\n【题干】\\n【选项】A.\\nB.\\nC.\\nD.\\n【答案】\\n【解析】'
       }
     },
     courses: {

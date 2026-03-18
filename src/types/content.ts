@@ -108,6 +108,27 @@ export interface MoreSection {
   desc: string;
 }
 
+// 题库子页卡片
+export interface QuestionBankCard {
+  title: string;
+  desc: string;
+  buttonText: string;
+  note: string;
+}
+
+// 题库页配置
+export interface QuestionBankPage {
+  hero: HeroSection;
+  dailyQuestionCard: QuestionBankCard;
+  pastPapersCard: QuestionBankCard;
+  wrongBookCard: QuestionBankCard;
+  importGuide: {
+    title: string;
+    desc: string;
+    templateText: string;
+  };
+}
+
 // 首页配置
 export interface HomePage {
   hero: HeroSection;
@@ -167,6 +188,7 @@ export interface MaterialsPage {
 // 页面配置集合
 export interface Pages {
   home: HomePage;
+  questionBank: QuestionBankPage;
   courses: CoursesPage;
   teachers: TeachersPage;
   success: SuccessPage;

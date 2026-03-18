@@ -106,6 +106,13 @@ function getQuickLinkTone(icon, index) {
   );
 }
 
+const HOME_PORTAL_LINKS = [
+  { label: '热门方向', url: '/pages/courses/index', openType: 'switchTab', icon: 'compass' },
+  { label: '每日一题', url: '/pages/question-bank/daily-question/index', openType: 'navigate', icon: 'daily' },
+  { label: '模拟题', url: '/pages/question-bank/past-papers/index', openType: 'navigate', icon: 'paper' },
+  { label: '错题本', url: '/pages/question-bank/wrong-book/index', openType: 'navigate', icon: 'wrongbook' }
+];
+
 function mapHomeDirections(page, allDirections) {
   const featuredIds = page?.featuredDirectionIds || [];
   const source = featuredIds.length
@@ -997,7 +1004,6 @@ export default function HomePage() {
   const hero = normalizedPage.hero || defaultHomePage.hero;
   const heroHasBackgroundImage = Boolean(hero.backgroundImageUrl);
   const stats = normalizedPage.overviewStats || defaultHomePage.overviewStats;
-  const quickLinks = normalizedPage.quickLinks || defaultHomePage.quickLinks;
   const advantages = normalizedPage.advantages || defaultHomePage.advantages;
   const environmentCards = normalizedPage.environmentSection?.cards || defaultHomePage.environmentSection.cards;
   const cta = normalizedPage.cta || defaultHomePage.cta;
@@ -1005,14 +1011,11 @@ export default function HomePage() {
   const heroTags = (hero.tags || []).slice(0, 2);
   const featuredAdvantages = advantages.slice(0, 2);
   const visibleEnvironmentCards = environmentCards.slice(0, 2);
-  const portalQuickLinks = Array.from({ length: 4 }, (_, index) => quickLinks[index] || defaultHomePage.quickLinks[index])
-    .filter(Boolean)
-    .map((item, index) => ({
-      ...item,
-      openType: item?.openType || 'navigate',
-      icon: item?.icon || 'compass',
-      ...getQuickLinkTone(item?.icon, index)
-    }));
+  const quickLinksSource = (normalizedPage.quickLinks || []).slice(0, 4);
+  const portalQuickLinks = (quickLinksSource.length ? quickLinksSource : HOME_PORTAL_LINKS).map((item, index) => ({
+    ...item,
+    ...getQuickLinkTone(item.icon, index)
+  }));
   const homeTone = {
     accent: '#0284c7',
     accentStrong: '#0369a1',

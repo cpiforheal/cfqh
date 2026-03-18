@@ -4,8 +4,10 @@ import {
   buildPastPapersMockPayload,
   buildWrongBookMockPayload
 } from '../data/questionBankMock';
+import fallbackContent from '../data/contentFallback';
 import { CMS_PREVIEW_BASE_URL, CMS_PREVIEW_ENABLED } from '../config/cms';
 import { callCloudFunction } from './cloud';
+import { getPublicContent } from './content';
 
 function withMeta(payload, source, extras = {}) {
   return {
@@ -139,6 +141,27 @@ function normalizePastPapersPayload(payload) {
   };
 }
 
+function normalizeQuestionBankCard(card = {}, fallbackCard = {}) {
+  return {
+    title: String(card?.title || fallbackCard?.title || '').trim(),
+    desc: String(card?.desc || fallbackCard?.desc || '').trim(),
+    buttonText: String(card?.buttonText || fallbackCard?.buttonText || '').trim(),
+    note: String(card?.note || fallbackCard?.note || '').trim()
+  };
+}
+
+function normalizeQuestionBankPage(page = {}) {
+  const fallbackPage = fallbackContent.pages.questionBank || {};
+
+  return {
+    ...fallbackPage,
+    ...page,
+    dailyQuestionCard: normalizeQuestionBankCard(page?.dailyQuestionCard, fallbackPage.dailyQuestionCard),
+    pastPapersCard: normalizeQuestionBankCard(page?.pastPapersCard, fallbackPage.pastPapersCard),
+    wrongBookCard: normalizeQuestionBankCard(page?.wrongBookCard, fallbackPage.wrongBookCard)
+  };
+}
+
 async function getQuestionBankPreviewPayload() {
   if (!CMS_PREVIEW_ENABLED) {
     return null;
@@ -172,6 +195,16 @@ async function getQuestionBankCloudPayload() {
   }
 
   return null;
+}
+
+export async function getQuestionBankPageConfig() {
+  try {
+    const payload = await getPublicContent('questionBank');
+    return normalizeQuestionBankPage(payload?.page || {});
+  } catch (error) {
+    console.warn('[questionBank] 题库页配置获取失败', error);
+    return normalizeQuestionBankPage();
+  }
 }
 
 export function getDailyQuestionPageData(userId = 'guest-medical') {

@@ -1,11 +1,13 @@
 import Taro from '@tarojs/taro';
 import { Text, View } from '@tarojs/components';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import PageHomeButton from '../../../components/PageHomeButton';
 import PageHero from '../../../components/PageHero';
 import PageSectionTitle from '../../../components/PageSectionTitle';
+import fallbackContent from '../../../data/contentFallback';
+import { useCmsAutoRefresh } from '../../../hooks/useCmsAutoRefresh';
 import { buildPastPapersMockPayload } from '../../../data/questionBankMock';
-import { getPastPapersPageData } from '../../../services/questionBank';
+import { getPastPapersPageData, getQuestionBankPageConfig } from '../../../services/questionBank';
 import { pageStyle, surfaceCardStyle, ui } from '../../../styles/ui';
 
 const heroBackground = 'linear-gradient(135deg, #183754 0%, #18304a 58%, #102333 100%)';
@@ -53,16 +55,30 @@ function ToolButton(props) {
 
 export default function PastPapersPage() {
   const [payload, setPayload] = useState(buildPastPapersMockPayload());
+  const [pageConfig, setPageConfig] = useState(fallbackContent.pages.questionBank.pastPapersCard);
   const [selectedYear, setSelectedYear] = useState<number | 'all'>('all');
   const [activePaperId, setActivePaperId] = useState(payload.papers[0]?.id || '');
 
-  useEffect(() => {
+  const loadContent = useCallback(async () => {
     Taro.hideLoading();
-    getPastPapersPageData().then((result) => {
-      setPayload(result);
-      setActivePaperId(result.papers[0]?.id || '');
+    const [nextPayload, nextPageConfig] = await Promise.all([
+      getPastPapersPageData(),
+      getQuestionBankPageConfig()
+    ]);
+
+    setPayload(nextPayload);
+    setPageConfig(nextPageConfig.pastPapersCard || fallbackContent.pages.questionBank.pastPapersCard);
+    setActivePaperId((currentId) => {
+      const visibleIds = new Set(nextPayload.papers.map((item) => item.id));
+      return currentId && visibleIds.has(currentId) ? currentId : nextPayload.papers[0]?.id || '';
     });
   }, []);
+
+  useEffect(() => {
+    loadContent();
+  }, [loadContent]);
+
+  useCmsAutoRefresh(loadContent);
 
   const years = useMemo(() => ['all', ...payload.papers.map((item) => item.year)], [payload.papers]).filter(
     (value, index, list) => list.indexOf(value) === index
@@ -86,17 +102,22 @@ export default function PastPapersPage() {
       <PageHero
         compact
         chip="考前冲刺"
-        title="模拟冲刺卷"
-        desc="按套刷题，提前进入考场节奏。"
+        title={pageConfig.title || fallbackContent.pages.questionBank.pastPapersCard.title}
+        desc={pageConfig.desc || fallbackContent.pages.questionBank.pastPapersCard.desc}
         background={heroBackground}
         bubbleColor="rgba(96,165,250,0.14)"
         headerRight={<PageHomeButton label="返回" />}
       >
-        <View style={{ display: 'flex', flexWrap: 'wrap', gap: '12rpx' }}>
+        <View style={{ display: 'flex', flexWrap: 'wrap', gap: '12rpx', marginBottom: pageConfig.note ? '12rpx' : '0' }}>
           <MiniMetric label="冲刺套数" value={`${payload.papers.length} 套`} />
           <MiniMetric label="可选批次" value={`${years.length - 1 || 0} 组`} />
           <MiniMetric label="题量总计" value={`${totalQuestions} 题`} />
         </View>
+        {pageConfig.note ? (
+          <Text style={{ display: 'block', fontSize: ui.type.note, color: '#dbeafe', fontWeight: 700 }}>
+            {pageConfig.note}
+          </Text>
+        ) : null}
       </PageHero>
 
       <View style={{ margin: '-26rpx 24rpx 0', position: 'relative', zIndex: 3 }}>

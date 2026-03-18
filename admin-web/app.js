@@ -42,12 +42,12 @@ const VIEW_CONFIG = {
     kicker: '内容',
     breadcrumb: '医护题库',
     title: '题库管理',
-    subtitle: '维护每日一题、模拟冲刺、错题本入口摘要，以及模拟卷题目、模拟冲刺卷和纯文本导入内容。',
+    subtitle: '维护三个题库子页面当前真实显示的标题与说明，并通过 CSV 热更新模拟题题目与套卷。',
     pageKey: 'questionBank',
     pageLabel: '题库页面',
     collections: [
-      { key: 'medicalQuestions', label: '模拟卷题目' },
-      { key: 'pastPapers', label: '模拟冲刺卷' },
+      { key: 'medicalQuestions', label: '模拟题题目' },
+      { key: 'pastPapers', label: '模拟题套卷' },
       { key: 'questionImports', label: '纯文本导入' }
     ]
   },
@@ -491,9 +491,9 @@ const FIELD_LABELS = {
   environmentImages: '环境图片',
   tabs: '分类标签',
   questionBank: '题库配置',
-  dailyQuestionCard: '每日一题入口',
-  pastPapersCard: '模拟冲刺入口',
-  wrongBookCard: '错题本入口',
+  dailyQuestionCard: '每日一题页',
+  pastPapersCard: '模拟题页',
+  wrongBookCard: '错题本页',
   importGuide: '导入说明',
   templateText: '模板文本',
   questionId: '题目 ID',
@@ -616,7 +616,7 @@ const SELECT_FIELD_OPTIONS = {
   ],
   sourceType: [
     { value: 'daily', label: '每日一题' },
-    { value: 'paper', label: '模拟冲刺' },
+    { value: 'paper', label: '模拟题' },
     { value: 'wrongbook', label: '错题整理' },
     { value: 'file', label: '文件导入' }
   ],
@@ -649,6 +649,14 @@ const HOME_EDITOR_HIDDEN_PATHS = new Set([
   'environmentSection.subtitle',
   'cta.desc',
   'cta.footnote'
+]);
+
+const QUESTION_BANK_EDITOR_HIDDEN_PATHS = new Set([
+  'hero',
+  'importGuide',
+  'dailyQuestionCard.buttonText',
+  'pastPapersCard.buttonText',
+  'wrongBookCard.buttonText'
 ]);
 
 const HOME_EDITOR_ARRAY_RULES = {
@@ -842,30 +850,27 @@ const EDITOR_LAYOUTS = {
   'page:questionBank': {
     hero: {
       title: '题库页主配置',
-      desc: '这里维护每日一题、模拟冲刺和错题本的入口摘要，主区先看 row 概览，再进入字段表单。'
+      desc: '这里维护的是三个题库子页面当前真实会显示的首屏文案，改完保存后会直接对应到小程序页面。'
     },
     sections: [
       {
-        title: '题库首屏',
-        keys: ['hero']
+        title: '每日一题页',
+        keys: ['dailyQuestionCard']
       },
       {
-        title: '轻功能入口',
-        keys: ['dailyQuestionCard', 'pastPapersCard', 'wrongBookCard']
-      }
-    ],
-    secondarySections: [
+        title: '模拟题页',
+        keys: ['pastPapersCard']
+      },
       {
-        title: '导入说明',
-        keys: ['importGuide']
+        title: '错题本页',
+        keys: ['wrongBookCard']
       }
-    ],
-    foldLabel: '题库页补充区块'
+    ]
   },
   'collection:medicalQuestions': {
     hero: {
-      title: '模拟卷题目',
-      desc: '这里维护模拟冲刺卷里的题目明细，先看题号、题型和所属试卷，再补题干、答案与解析。'
+      title: '模拟题题目',
+      desc: '这里维护模拟题里的题目明细，先看题号、题型和所属试卷，再补题干、答案与解析。'
     },
     sections: [
       {
@@ -884,7 +889,7 @@ const EDITOR_LAYOUTS = {
   },
   'collection:pastPapers': {
     hero: {
-      title: '模拟冲刺卷',
+      title: '模拟题套卷',
       desc: '先维护套卷标题、年份、方向和状态，再补题目 ID 列表和摘要说明。'
     },
     sections: [
@@ -1150,8 +1155,26 @@ function isHomePageScope(scope) {
   return scope === 'page:home';
 }
 
+function isQuestionBankPageScope(scope) {
+  return scope === 'page:questionBank';
+}
+
+function usesDirectSectionEditor(pageKey) {
+  return pageKey === 'home' || pageKey === 'questionBank';
+}
+
 function shouldHideField(scope, path) {
-  return isHomePageScope(scope) ? HOME_EDITOR_HIDDEN_PATHS.has(normalizeEditorPath(path)) : false;
+  const normalizedPath = normalizeEditorPath(path);
+
+  if (isHomePageScope(scope)) {
+    return HOME_EDITOR_HIDDEN_PATHS.has(normalizedPath);
+  }
+
+  if (isQuestionBankPageScope(scope)) {
+    return QUESTION_BANK_EDITOR_HIDDEN_PATHS.has(normalizedPath);
+  }
+
+  return false;
 }
 
 function getArrayEditorRule(scope, path) {
@@ -1767,7 +1790,7 @@ function renderPageEditorOverlay(pageKey, pageLabel, page) {
         <div class="directions-enter-modal-item" style="--enter-delay: 60ms;">
           <div class="workspace-compact-summary editor-subsection-summary">
             <strong>${escapeHtml(selectedSectionId ? `当前区块：${activeRow?.title || pageLabel}` : '页面配置总览')}</strong>
-            <span>${escapeHtml('先点区块 row，再继续进入字段 row 和具体表单。')}</span>
+            <span>${escapeHtml(usesDirectSectionEditor(pageKey) ? '当前页面区块点开后会直接显示真实生效的表单，不再额外套字段工作台。' : '先点区块 row，再继续进入字段 row 和具体表单。')}</span>
             <em>${escapeHtml(`当前页面 ${rows.length} 个区块`)}</em>
           </div>
           ${renderPageSectionsTable(pageKey, rows, selectedSectionId, 'select-page-editor-section')}
@@ -1796,39 +1819,25 @@ function getPageSectionRows(pageKey, page = {}) {
   if (pageKey === 'questionBank') {
     return [
       {
-        id: 'hero',
-        title: '题库首屏',
-        desc: page.hero?.title || page.hero?.chip || '题库页标题与说明',
-        meta: summarizeText(page.hero?.desc, 30) || '首屏文案',
-        keys: ['hero']
-      },
-      {
         id: 'dailyQuestionCard',
-        title: '每日一题',
-        desc: page.dailyQuestionCard?.title || page.dailyQuestionCard?.desc || '每日题入口摘要',
-        meta: [page.dailyQuestionCard?.buttonText, page.dailyQuestionCard?.note].filter(Boolean).join(' / ') || '入口文案与按钮',
+        title: '每日一题页',
+        desc: page.dailyQuestionCard?.title || page.dailyQuestionCard?.desc || '小程序每日一题页标题与说明',
+        meta: page.dailyQuestionCard?.note || '固定题源提示',
         keys: ['dailyQuestionCard']
       },
       {
         id: 'pastPapersCard',
-        title: '模拟冲刺',
-        desc: page.pastPapersCard?.title || page.pastPapersCard?.desc || '模拟卷入口摘要',
-        meta: [page.pastPapersCard?.buttonText, page.pastPapersCard?.note].filter(Boolean).join(' / ') || '入口文案与按钮',
+        title: '模拟题页',
+        desc: page.pastPapersCard?.title || page.pastPapersCard?.desc || '小程序模拟题页标题与说明',
+        meta: page.pastPapersCard?.note || 'CSV 热更新提示',
         keys: ['pastPapersCard']
       },
       {
         id: 'wrongBookCard',
-        title: '错题本',
-        desc: page.wrongBookCard?.title || page.wrongBookCard?.desc || '错题入口摘要',
-        meta: [page.wrongBookCard?.buttonText, page.wrongBookCard?.note].filter(Boolean).join(' / ') || '入口文案与按钮',
+        title: '错题本页',
+        desc: page.wrongBookCard?.title || page.wrongBookCard?.desc || '小程序错题本页标题与说明',
+        meta: page.wrongBookCard?.note || '复盘说明',
         keys: ['wrongBookCard']
-      },
-      {
-        id: 'importGuide',
-        title: '导入说明',
-        desc: page.importGuide?.title || page.importGuide?.desc || '纯文本导入说明',
-        meta: summarizeText(page.importGuide?.templateText, 30) || '模板文本与说明',
-        keys: ['importGuide']
       }
     ];
   }
@@ -1983,7 +1992,38 @@ function getHomeSectionFieldRows(section, page = {}) {
   });
 }
 
+function renderDirectSectionEditor(pageKey, page, section) {
+  const fields = renderFieldsForKeys(`page:${pageKey}`, page, section.keys);
+  if (!fields) {
+    return `<div class="editor-subsection-shell directions-enter-modal-item" style="--enter-delay: 40ms;">
+      <div class="workspace-compact-summary editor-subsection-summary">
+        <strong>${escapeHtml(section.title)}</strong>
+        <span>当前区块没有可编辑字段。</span>
+        <em>${escapeHtml(`区块字段 ${section.keys.length} 组`)}</em>
+      </div>
+      <div class="friendly-editor friendly-editor-pages">
+        <div class="empty-state">当前区块暂无可编辑内容。</div>
+      </div>
+    </div>`;
+  }
+
+  return `<div class="editor-subsection-shell directions-enter-modal-item" style="--enter-delay: 40ms;">
+    <div class="workspace-compact-summary editor-subsection-summary">
+      <strong>${escapeHtml(section.title)}</strong>
+      <span>这里展示的就是当前真实生效的字段，改完直接保存即可。</span>
+      <em>${escapeHtml(`区块字段 ${section.keys.length} 组`)}</em>
+    </div>
+    <div class="friendly-editor friendly-editor-pages">
+      ${fields}
+    </div>
+  </div>`;
+}
+
 function renderPageSectionFieldWorkbench(pageKey, page, section) {
+  if (usesDirectSectionEditor(pageKey)) {
+    return renderDirectSectionEditor(pageKey, page, section);
+  }
+
   const ui = getViewUi();
   const rows = getHomeSectionFieldRows(section, page);
   const stateKey = `page-field:${pageKey}:${section.id}`;
@@ -2095,18 +2135,18 @@ function renderQuestionBankPagePanel(view, page) {
           </button>`).join('')}
         </div>
         <div class="workspace-compact-summary workspace-enter question-bank-toolkit-summary" style="--enter-delay: 80ms;">
-          <strong>模拟冲刺卷 CSV 导入</strong>
-          <span>按约定字段上传模拟卷题目，系统会同步校验并更新对应套卷，不影响每日一题固定题源。</span>
+          <strong>模拟题 CSV 导入</strong>
+          <span>按约定字段上传模拟题题目，系统会同步校验并更新对应套卷，不影响每日一题固定题源。</span>
           <em>${escapeHtml(preview
             ? `${preview.fileName || '当前文件'} · ${preview.validCount}/${preview.totalRows} 行可导入`
             : lastSummary
-              ? `上次导入 ${lastSummary.importedCount || 0} 题，联动 ${lastSummary.paperCount || 0} 套模拟卷`
-              : '支持按 questionId 覆盖更新，并按 paperId 自动归档到模拟卷')}</em>
+              ? `上次导入 ${lastSummary.importedCount || 0} 题，联动 ${lastSummary.paperCount || 0} 套题卷`
+              : '支持按 questionId 覆盖更新，并按 paperId 自动归档到套卷')}</em>
         </div>
         <div class="record-list compact-list workspace-enter question-bank-toolkit-list" style="--enter-delay: 100ms;">
           <button class="record-row workspace-row-enter question-bank-import-row${ui.openEditors.questionBankCsvImport ? ' active' : ''}" style="--enter-delay: 110ms;" type="button" data-action="open-question-bank-import">
             <span class="record-row-main">
-              <strong class="record-row-title">CSV 模拟卷导入</strong>
+              <strong class="record-row-title">CSV 模拟题导入</strong>
               <span class="record-row-meta">${escapeHtml(preview
                 ? `已载入 ${preview.fileName || 'CSV 文件'}，${preview.invalidCount ? `还有 ${preview.invalidCount} 行待修正` : '校验通过，可直接导入'}`
                 : '上传 questionId / paperId / paperTitle / stem... 这套字段，系统会自动识别并预览。')}</span>
@@ -2135,16 +2175,16 @@ function renderQuestionBankImportOverlay() {
     ? `${preview.fileName || '当前 CSV'} 共 ${preview.totalRows} 行，${preview.validCount} 行可导入，${preview.invalidCount} 行待修正。`
     : '先选择 CSV 文件，系统会先校验字段、答案格式、题号重复与试卷归属，再允许导入。';
   const latestText = importUi.lastSummary
-    ? `上次导入 ${importUi.lastSummary.importedCount || 0} 题，新增 ${importUi.lastSummary.createdCount || 0} 题，更新 ${importUi.lastSummary.updatedCount || 0} 题；联动 ${importUi.lastSummary.paperCount || 0} 套模拟卷。`
-    : '当前支持 questionId 覆盖更新，并按 paperId 自动同步模拟冲刺卷。';
+    ? `上次导入 ${importUi.lastSummary.importedCount || 0} 题，新增 ${importUi.lastSummary.createdCount || 0} 题，更新 ${importUi.lastSummary.updatedCount || 0} 题；联动 ${importUi.lastSummary.paperCount || 0} 套题卷。`
+    : '当前支持 questionId 覆盖更新，并按 paperId 自动同步模拟题套卷。';
 
   return `<div class="editor-overlay is-visible directions-editor-overlay question-bank-import-overlay" data-editor-question-bank-import="true">
     <button class="editor-overlay-backdrop" type="button" aria-label="关闭导入弹层" data-action="close-question-bank-import"></button>
     <article class="panel editor-panel editor-modal-shell editor-modal-shell-directions directions-enter-modal">
       <div class="panel-head editor-modal-head directions-enter-modal-item" style="--enter-delay: 0ms;">
         <div>
-          <h3>CSV 模拟卷导入</h3>
-          <p>先按标准表头上传模拟卷题目，系统会先预览，再同步到模拟冲刺卷。</p>
+          <h3>CSV 模拟题导入</h3>
+          <p>先按标准表头上传模拟题题目，系统会先预览，再同步到对应套卷。</p>
         </div>
         <div class="panel-actions">
           <button class="system-action" type="button" data-action="pick-question-bank-import-file">${preview ? '重新选择 CSV' : '选择 CSV'}</button>
@@ -2176,7 +2216,7 @@ function renderQuestionBankImportOverlay() {
               <span>多选答案示例：A|C|D</span>
               <span>判断答案示例：T / F</span>
               <span>答案可留空，但 status 请用 draft</span>
-              <span>同一 paperId 会自动归并成一套模拟卷</span>
+              <span>同一 paperId 会自动归并成一套题卷</span>
             </div>
           </article>
           ${preview ? `<article class="question-bank-import-card">
@@ -3078,7 +3118,7 @@ async function loadOverviewData() {
     { label: '师资团队', pageKey: 'teachers', collectionKey: 'teachers' },
     { label: '开设方向', pageKey: 'courses', collectionKey: 'directions' },
     { label: '媒体资源', pageKey: 'materials', collectionKey: 'mediaAssets' },
-    { label: '模拟卷题目', pageKey: 'questionBank', collectionKey: 'medicalQuestions' }
+    { label: '模拟题题目', pageKey: 'questionBank', collectionKey: 'medicalQuestions' }
   ];
 
   const healthRows = healthMap.map((item) => {

@@ -1,8 +1,11 @@
 import Taro from '@tarojs/taro';
 import { ScrollView, Swiper, SwiperItem, Text, View } from '@tarojs/components';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import fallbackContent from '../../../data/contentFallback';
 import { dailyPracticeCsvQuestions } from '../../../data/dailyPracticeCsvQuestions';
 import { buildDailyQuestionMockPayload } from '../../../data/questionBankMock';
+import { useCmsAutoRefresh } from '../../../hooks/useCmsAutoRefresh';
+import { getQuestionBankPageConfig } from '../../../services/questionBank';
 import { pageStyle, ui } from '../../../styles/ui';
 
 function goBackHome() {
@@ -130,6 +133,7 @@ function OptionRow(props) {
 
 export default function DailyQuestionPage() {
   const [signInRecord, setSignInRecord] = useState(() => buildDailyQuestionMockPayload().signInRecord);
+  const [pageConfig, setPageConfig] = useState(fallbackContent.pages.questionBank.dailyQuestionCard);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
   const [submittedMap, setSubmittedMap] = useState<Record<string, boolean>>({});
@@ -162,6 +166,17 @@ export default function DailyQuestionPage() {
     () => Object.values(submittedMap).filter(Boolean).length,
     [submittedMap]
   );
+
+  const loadPageConfig = useCallback(async () => {
+    const nextPageConfig = await getQuestionBankPageConfig();
+    setPageConfig(nextPageConfig.dailyQuestionCard || fallbackContent.pages.questionBank.dailyQuestionCard);
+  }, []);
+
+  useEffect(() => {
+    loadPageConfig();
+  }, [loadPageConfig]);
+
+  useCmsAutoRefresh(loadPageConfig);
 
   function handleSelect(optionId: string) {
     if (submitted || !currentQuestion) return;
@@ -290,7 +305,9 @@ export default function DailyQuestionPage() {
             <Text style={{ fontSize: '52rpx', color: ui.colors.text, lineHeight: 1, marginRight: '8rpx' }}>‹</Text>
             <Text style={{ fontSize: ui.type.note, color: ui.colors.textSubtle, fontWeight: 700 }}>返回</Text>
           </View>
-          <Text style={{ fontSize: '42rpx', color: ui.colors.text, fontWeight: 900 }}>每日一练</Text>
+          <Text style={{ fontSize: '42rpx', color: ui.colors.text, fontWeight: 900 }}>
+            {pageConfig.title || fallbackContent.pages.questionBank.dailyQuestionCard.title}
+          </Text>
           <View
             style={{
               minWidth: '136rpx',
@@ -322,10 +339,11 @@ export default function DailyQuestionPage() {
         >
           <View>
             <Text style={{ display: 'block', fontSize: ui.type.note, color: '#0f766e', fontWeight: 800, marginBottom: '6rpx' }}>
-              固定练习题组 · 10 道题
+              {pageConfig.desc || fallbackContent.pages.questionBank.dailyQuestionCard.desc}
             </Text>
             <Text style={{ display: 'block', fontSize: ui.type.meta, color: ui.colors.textMuted }}>
-              {currentQuestion?.tags?.join(' / ') || '医护方向'} · 当前先记录练习进度
+              {(pageConfig.note || fallbackContent.pages.questionBank.dailyQuestionCard.note || '当前使用固定题源') +
+                ` · ${currentQuestion?.tags?.join(' / ') || '医护方向'}`}
             </Text>
           </View>
           <Text style={{ fontSize: ui.type.note, color: '#0f766e', fontWeight: 800 }}>

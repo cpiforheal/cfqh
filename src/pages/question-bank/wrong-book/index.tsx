@@ -1,11 +1,13 @@
 import Taro from '@tarojs/taro';
 import { Text, View } from '@tarojs/components';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import PageHomeButton from '../../../components/PageHomeButton';
 import PageHero from '../../../components/PageHero';
 import PageSectionTitle from '../../../components/PageSectionTitle';
+import fallbackContent from '../../../data/contentFallback';
+import { useCmsAutoRefresh } from '../../../hooks/useCmsAutoRefresh';
 import { buildWrongBookMockPayload } from '../../../data/questionBankMock';
-import { getWrongBookPageData } from '../../../services/questionBank';
+import { getQuestionBankPageConfig, getWrongBookPageData } from '../../../services/questionBank';
 import { pageStyle, surfaceCardStyle, ui } from '../../../styles/ui';
 
 const heroBackground = 'linear-gradient(135deg, #4c2d12 0%, #3a2b18 56%, #1f2937 100%)';
@@ -73,12 +75,25 @@ function SummaryCard(props) {
 
 export default function WrongBookPage() {
   const [payload, setPayload] = useState(buildWrongBookMockPayload());
+  const [pageConfig, setPageConfig] = useState(fallbackContent.pages.questionBank.wrongBookCard);
   const [expandedId, setExpandedId] = useState('');
 
-  useEffect(() => {
+  const loadContent = useCallback(async () => {
     Taro.hideLoading();
-    getWrongBookPageData().then((result) => setPayload(result));
+    const [nextPayload, nextPageConfig] = await Promise.all([
+      getWrongBookPageData(),
+      getQuestionBankPageConfig()
+    ]);
+
+    setPayload(nextPayload);
+    setPageConfig(nextPageConfig.wrongBookCard || fallbackContent.pages.questionBank.wrongBookCard);
   }, []);
+
+  useEffect(() => {
+    loadContent();
+  }, [loadContent]);
+
+  useCmsAutoRefresh(loadContent);
 
   const focusItem = payload.items.find((item) => item.reviewStatus === '待复习') || payload.items[0];
 
@@ -97,17 +112,22 @@ export default function WrongBookPage() {
       <PageHero
         compact
         chip="复习任务"
-        title="错题本"
-        desc="先复习最该回看的那一题。"
+        title={pageConfig.title || fallbackContent.pages.questionBank.wrongBookCard.title}
+        desc={pageConfig.desc || fallbackContent.pages.questionBank.wrongBookCard.desc}
         background={heroBackground}
         bubbleColor="rgba(251,146,60,0.14)"
         headerRight={<PageHomeButton label="返回" />}
       >
-        <View style={{ display: 'flex', flexWrap: 'wrap', gap: '12rpx' }}>
+        <View style={{ display: 'flex', flexWrap: 'wrap', gap: '12rpx', marginBottom: pageConfig.note ? '12rpx' : '0' }}>
           <MiniMetric label="待复习" value={`${payload.summary.pendingReview} 题`} />
           <MiniMetric label="今日新增" value={`${payload.summary.todayUpdated} 题`} />
           <MiniMetric label="累计错题" value={`${payload.summary.totalWrong} 题`} />
         </View>
+        {pageConfig.note ? (
+          <Text style={{ display: 'block', fontSize: ui.type.note, color: '#ffedd5', fontWeight: 700 }}>
+            {pageConfig.note}
+          </Text>
+        ) : null}
       </PageHero>
 
       <View style={{ margin: '-26rpx 24rpx 0', position: 'relative', zIndex: 3 }}>

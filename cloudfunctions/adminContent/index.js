@@ -7,6 +7,7 @@ const db = cloud.database();
 const PAGE_COLLECTIONS = {
   site: 'site_settings',
   home: 'page_home',
+  questionBank: 'page_question_bank',
   courses: 'page_courses',
   teachers: 'page_teachers',
   success: 'page_success',
@@ -17,6 +18,7 @@ const PAGE_COLLECTIONS = {
 const PAGE_DOC_IDS = {
   site: 'default',
   home: 'singleton',
+  questionBank: 'singleton',
   courses: 'singleton',
   teachers: 'singleton',
   success: 'singleton',

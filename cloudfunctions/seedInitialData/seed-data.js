@@ -30,7 +30,7 @@
       quickLinks: [
         { label: '热门方向', desc: '查看课程方向', url: '/pages/courses/index', openType: 'switchTab', icon: 'compass' },
         { label: '每日一题', desc: '每天练 1 题', url: '/pages/question-bank/daily-question/index', openType: 'navigate', icon: 'daily' },
-        { label: '模拟冲刺', desc: '考前整卷训练', url: '/pages/question-bank/past-papers/index', openType: 'navigate', icon: 'paper' },
+        { label: '模拟题', desc: '考前整卷训练', url: '/pages/question-bank/past-papers/index', openType: 'navigate', icon: 'paper' },
         { label: '错题本', desc: '回看错题记录', url: '/pages/question-bank/wrong-book/index', openType: 'navigate', icon: 'wrongbook' }
       ],
       advantages: [
@@ -167,25 +167,25 @@
       hero: {
         chip: '医护轻题库',
         title: '题库入口配置',
-        desc: '这里集中维护每日一题、模拟冲刺与错题本的入口摘要，以及纯文本导入说明。'
+        desc: '这里集中维护每日一题、模拟题与错题本的页面文案，模拟题支持 CSV 热更新。'
       },
       dailyQuestionCard: {
         title: '每日一题',
         desc: '固定练习题组，适合每天保持手感与做题节奏。',
         buttonText: '进入每日一题',
-        note: '当前使用固定题源'
+        note: '固定题源'
       },
       pastPapersCard: {
-        title: '模拟冲刺',
-        desc: '按套整理冲刺卷，支持通过 CSV 持续更新题目内容。',
-        buttonText: '查看模拟卷',
-        note: '题目热更新入口'
+        title: '模拟题',
+        desc: '按套练模拟卷，支持通过 CSV 持续热更新题目内容。',
+        buttonText: '进入模拟题',
+        note: '支持 CSV 热更新'
       },
       wrongBookCard: {
         title: '错题本',
-        desc: '沉淀做错题目、最近记录和解析，方便重复练习。',
+        desc: '沉淀做错题目和解析，方便回看与重复练习。',
         buttonText: '回看错题',
-        note: '当前只保留轻量复盘结构'
+        note: '错题复盘与回看'
       },
       importGuide: {
         title: '纯文本导入',

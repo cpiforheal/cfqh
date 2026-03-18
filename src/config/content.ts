@@ -1,6 +1,7 @@
 export const pageCollectionMap = {
   site: 'site_settings',
   home: 'page_home',
+  questionBank: 'page_question_bank',
   courses: 'page_courses',
   teachers: 'page_teachers',
   success: 'page_success',
@@ -11,6 +12,7 @@ export const pageCollectionMap = {
 export const pageDocumentIdMap = {
   site: 'default',
   home: 'singleton',
+  questionBank: 'singleton',
   courses: 'singleton',
   teachers: 'singleton',
   success: 'singleton',
@@ -31,6 +33,7 @@ export const listCollectionMap = {
 export const adminPageOptions = [
   { key: 'site', label: '站点设置' },
   { key: 'home', label: '首页' },
+  { key: 'questionBank', label: '题库页' },
   { key: 'courses', label: '开设方向' },
   { key: 'teachers', label: '师资' },
   { key: 'success', label: '成果' },

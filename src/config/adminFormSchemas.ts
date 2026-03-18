@@ -149,6 +149,26 @@ export function getAdminPageFormSchema(pageKey) {
     ];
   }
 
+  if (pageKey === 'questionBank') {
+    return [
+      objectField('dailyQuestionCard', '每日一题页', [
+        { key: 'title', label: '标题', type: 'text', required: true },
+        { key: 'desc', label: '描述', type: 'textarea', required: true },
+        { key: 'note', label: '备注', type: 'text' }
+      ]),
+      objectField('pastPapersCard', '模拟题页', [
+        { key: 'title', label: '标题', type: 'text', required: true },
+        { key: 'desc', label: '描述', type: 'textarea', required: true },
+        { key: 'note', label: '备注', type: 'text' }
+      ]),
+      objectField('wrongBookCard', '错题本页', [
+        { key: 'title', label: '标题', type: 'text', required: true },
+        { key: 'desc', label: '描述', type: 'textarea', required: true },
+        { key: 'note', label: '备注', type: 'text' }
+      ])
+    ];
+  }
+
   if (pageKey === 'courses') {
     return [
       { key: 'title', label: '页面标题', type: 'text', required: true },
