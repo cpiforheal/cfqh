@@ -1,5 +1,6 @@
 import fallbackContent from '../data/contentFallback';
 import { callCloudFunction } from './cloud';
+import { ErrorHandler, ErrorType, AppError } from '../utils/errorHandler';
 
 function getFallbackList(collection) {
   if (collection === 'directions') return fallbackContent.directions;
@@ -13,12 +14,32 @@ function getFallbackList(collection) {
 }
 
 export async function getAdminAuth() {
-  const result = await callCloudFunction('adminAuth', {});
-  return result || { ok: false, isAdmin: false, bootstrapRequired: true };
+  try {
+    const result = await callCloudFunction('adminAuth', {});
+
+    if (!result || !result.ok) {
+      throw new AppError(ErrorType.PERMISSION, '获取管理员权限失败');
+    }
+
+    return result;
+  } catch (error) {
+    console.error('[admin] 权限验证失败:', error);
+    return { ok: false, isAdmin: false, bootstrapRequired: true };
+  }
 }
 
 export async function seedInitialData(params) {
-  return callCloudFunction('seedInitialData', params || {});
+  try {
+    const result = await callCloudFunction('seedInitialData', params || {});
+
+    if (!result || !result.ok) {
+      throw new AppError(ErrorType.CLOUD_FUNCTION, '初始化数据失败');
+    }
+
+    return result;
+  } catch (error) {
+    throw ErrorHandler.parseCloudError(error);
+  }
 }
 
 export async function getAdminPage(pageKey) {
@@ -31,23 +52,35 @@ export async function getAdminPage(pageKey) {
     if (result && result.ok) {
       return result.data;
     }
+
+    throw new AppError(ErrorType.CLOUD_FUNCTION, '获取页面数据失败');
   } catch (error) {
-    console.warn('[admin] fallback page:', pageKey, error && error.message ? error.message : error);
-  }
+    console.warn('[admin] 降级使用本地页面数据:', pageKey, error);
 
-  if (pageKey === 'site') {
-    return fallbackContent.site || null;
-  }
+    if (pageKey === 'site') {
+      return fallbackContent.site || null;
+    }
 
-  return fallbackContent.pages[pageKey] || null;
+    return fallbackContent.pages[pageKey] || null;
+  }
 }
 
 export async function saveAdminPage(pageKey, content) {
-  return callCloudFunction('adminContent', {
-    action: 'savePage',
-    pageKey,
-    content
-  });
+  try {
+    const result = await callCloudFunction('adminContent', {
+      action: 'savePage',
+      pageKey,
+      content
+    });
+
+    if (!result || !result.ok) {
+      throw new AppError(ErrorType.CLOUD_FUNCTION, '保存页面失败');
+    }
+
+    return result;
+  } catch (error) {
+    throw ErrorHandler.parseCloudError(error);
+  }
 }
 
 export async function getAdminList(collection) {
@@ -60,41 +93,66 @@ export async function getAdminList(collection) {
     if (result && result.ok) {
       return result.data || [];
     }
-  } catch (error) {
-    console.warn('[admin] fallback list:', collection, error && error.message ? error.message : error);
-  }
 
-  return getFallbackList(collection);
+    throw new AppError(ErrorType.CLOUD_FUNCTION, '获取列表数据失败');
+  } catch (error) {
+    console.warn('[admin] 降级使用本地列表数据:', collection, error);
+    return getFallbackList(collection);
+  }
 }
 
 export async function getAdminItem(collection, id) {
-  const result = await callCloudFunction('adminContent', {
-    action: 'getItem',
-    collection,
-    id
-  });
+  try {
+    const result = await callCloudFunction('adminContent', {
+      action: 'getItem',
+      collection,
+      id
+    });
 
-  if (result && result.ok) {
-    return result.data;
+    if (result && result.ok) {
+      return result.data;
+    }
+
+    throw new AppError(ErrorType.CLOUD_FUNCTION, '获取项目数据失败');
+  } catch (error) {
+    throw ErrorHandler.parseCloudError(error);
   }
-
-  return null;
 }
 
 export async function saveAdminItem(collection, item) {
-  return callCloudFunction('adminContent', {
-    action: 'saveItem',
-    collection,
-    item
-  });
+  try {
+    const result = await callCloudFunction('adminContent', {
+      action: 'saveItem',
+      collection,
+      item
+    });
+
+    if (!result || !result.ok) {
+      throw new AppError(ErrorType.CLOUD_FUNCTION, '保存项目失败');
+    }
+
+    return result;
+  } catch (error) {
+    throw ErrorHandler.parseCloudError(error);
+  }
 }
 
 export async function deleteAdminItem(collection, id) {
-  return callCloudFunction('adminContent', {
-    action: 'deleteItem',
-    collection,
-    id
-  });
+  try {
+    const result = await callCloudFunction('adminContent', {
+      action: 'deleteItem',
+      collection,
+      id
+    });
+
+    if (!result || !result.ok) {
+      throw new AppError(ErrorType.CLOUD_FUNCTION, '删除项目失败');
+    }
+
+    return result;
+  } catch (error) {
+    throw ErrorHandler.parseCloudError(error);
+  }
 }
 
 export function getEmptyPageContent(pageKey) {

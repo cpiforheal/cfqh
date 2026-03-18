@@ -15,48 +15,41 @@
   "pages": {
     "home": {
       "hero": {
-        "chip": "江苏省专转本权威培训品牌",
-        "title": "专注江苏专转本",
-        "highlightTitle": "医护与高数精细化教研",
-        "desc": "以医护大类与高数专项为核心，提供更稳、更清晰的专转本备考支持。",
+        "chip": "江苏省专转本专业辅导",
+        "title": "专转本，一次就上岸",
+        "highlightTitle": "医护大类 & 高数专项 · 精细化教研体系",
+        "desc": "医护大类 + 高数专项双主线，让备考更稳、更清晰",
         "tags": [
-          "机构介绍",
-          "开设方向",
-          "师资团队"
+          "92%+ 上岸率",
+          "全职答疑",
+          "独立校区"
         ],
         "primaryButton": {
-          "text": "了解机构实力",
-          "url": "/pages/about/index",
-          "openType": "navigate"
+          "text": "查看上岸学员案例",
+          "url": "/pages/success/index",
+          "openType": "switchTab"
         },
-        "secondaryNote": "集训管理 · 跟踪答疑",
+        "secondaryNote": "真实数据 · 可验证",
         "backgroundImageSeed": "university"
       },
       "overviewStats": [
         {
-          "value": "核心",
-          "label": "教研团队",
-          "note": "全职答疑"
-        },
-        {
-          "value": "精品",
-          "label": "小班督学",
-          "note": "全程跟进"
-        },
-        {
-          "value": "高",
+          "value": "92.3%",
           "label": "上岸率",
-          "note": "双主线教研"
+          "note": "2025届实际数据"
+        },
+        {
+          "value": "1:8",
+          "label": "师生比",
+          "note": "小班精细化"
+        },
+        {
+          "value": "365天",
+          "label": "全年答疑",
+          "note": "全职坐班"
         }
       ],
       "quickLinks": [
-        {
-          "label": "机构介绍",
-          "desc": "看品牌介绍",
-          "url": "/pages/about/index",
-          "openType": "navigate",
-          "icon": "building"
-        },
         {
           "label": "开设方向",
           "desc": "看方向配置",
@@ -77,6 +70,13 @@
           "url": "/pages/success/index",
           "openType": "switchTab",
           "icon": "trophy"
+        },
+        {
+          "label": "机构介绍",
+          "desc": "看品牌介绍",
+          "url": "/pages/about/index",
+          "openType": "navigate",
+          "icon": "building"
         }
       ],
       "advantages": [
@@ -312,6 +312,36 @@
       },
       "_createdAt": "2026-03-12T13:37:26.800Z",
       "_updatedAt": "2026-03-12T13:37:26.800Z"
+    },
+    "questionBank": {
+      "hero": {
+        "chip": "医护轻题库",
+        "title": "题库入口配置",
+        "desc": "这里集中维护每日一题、历年真题与错题本的入口摘要，以及纯文本导入说明。"
+      },
+      "dailyQuestionCard": {
+        "title": "每日一题",
+        "desc": "每天推送一道医护方向高频题，保持做题节奏。",
+        "buttonText": "进入每日一题",
+        "note": "当前仅开放医护方向"
+      },
+      "pastPapersCard": {
+        "title": "历年真题",
+        "desc": "按年份整理医护真题卷，先做列表与预览。",
+        "buttonText": "查看真题卷",
+        "note": "适合后续继续导入整卷数据"
+      },
+      "wrongBookCard": {
+        "title": "错题本",
+        "desc": "沉淀做错题目、最近记录和解析，方便重复练习。",
+        "buttonText": "回看错题",
+        "note": "当前只保留轻量复盘结构"
+      },
+      "importGuide": {
+        "title": "纯文本导入",
+        "desc": "支持直接粘贴原始题文、整卷文本或错题整理，后续再做结构化处理。",
+        "templateText": "【题目来源】2025 医护真题\\n【题型】单选题\\n【题干】\\n【选项】A.\\nB.\\nC.\\nD.\\n【答案】\\n【解析】"
+      }
     }
   },
   "directions": [
@@ -677,6 +707,84 @@
       "status": "published",
       "createdAt": "2026-03-12T13:37:26.800Z",
       "updatedAt": "2026-03-12T13:37:26.800Z"
+    }
+  ],
+  "medicalQuestions": [
+    {
+      "_id": "medical_question_2025_001",
+      "questionId": "medical_q_2025_001",
+      "direction": "medical",
+      "questionType": "single_choice",
+      "stem": "成人心肺复苏按压时，胸外按压的频率通常应保持在以下哪一范围？",
+      "options": [
+        { "id": "A", "text": "60-80 次/分" },
+        { "id": "B", "text": "80-90 次/分" },
+        { "id": "C", "text": "100-120 次/分" },
+        { "id": "D", "text": "130-150 次/分" }
+      ],
+      "answer": "C",
+      "explanation": "成人心肺复苏胸外按压应保持 100-120 次/分，同时保证按压深度和回弹质量。",
+      "year": 2025,
+      "paperId": "medical_paper_2025_a",
+      "tags": ["基础护理", "急救"],
+      "sort": 10,
+      "status": "published"
+    },
+    {
+      "_id": "medical_question_2024_001",
+      "questionId": "medical_q_2024_001",
+      "direction": "medical",
+      "questionType": "single_choice",
+      "stem": "患者静脉输液过程中突发寒战、高热，应首先考虑的常见输液反应是？",
+      "options": [
+        { "id": "A", "text": "发热反应" },
+        { "id": "B", "text": "空气栓塞" },
+        { "id": "C", "text": "静脉炎" },
+        { "id": "D", "text": "肺水肿" }
+      ],
+      "answer": "A",
+      "explanation": "输液中出现寒战、高热等症状时，应优先考虑发热反应并按规范立即处理。",
+      "year": 2024,
+      "paperId": "medical_paper_2024_a",
+      "tags": ["静脉输液", "护理基础"],
+      "sort": 20,
+      "status": "published"
+    }
+  ],
+  "pastPapers": [
+    {
+      "_id": "medical_paper_2025_a",
+      "paperId": "medical_paper_2025_a",
+      "title": "2025 医护方向真题卷",
+      "year": 2025,
+      "direction": "medical",
+      "description": "覆盖基础护理与高频操作题型，适合考前结构回看。",
+      "questionIds": ["medical_question_2025_001"],
+      "sort": 10,
+      "status": "published"
+    },
+    {
+      "_id": "medical_paper_2024_a",
+      "paperId": "medical_paper_2024_a",
+      "title": "2024 医护方向真题卷",
+      "year": 2024,
+      "direction": "medical",
+      "description": "偏重护理基础与输液相关题型，适合阶段性复盘。",
+      "questionIds": ["medical_question_2024_001"],
+      "sort": 20,
+      "status": "published"
+    }
+  ],
+  "questionImports": [
+    {
+      "_id": "question_import_001",
+      "title": "2025 医护真题原文",
+      "direction": "medical",
+      "sourceType": "paper",
+      "rawText": "【年份】2025\\n【方向】医护\\n【题型】单选题\\n【题干】成人心肺复苏按压时，胸外按压频率应为？\\n【选项】A. 60-80 次/分\\nB. 80-90 次/分\\nC. 100-120 次/分\\nD. 130-150 次/分\\n【答案】C",
+      "note": "示例原文，后续可做结构化拆分。",
+      "sort": 10,
+      "status": "draft"
     }
   ],
   "mediaAssets": []

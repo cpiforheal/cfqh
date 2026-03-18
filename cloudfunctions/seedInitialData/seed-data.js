@@ -165,6 +165,36 @@
         buttonText: '咨询资料详情',
         footnote: '资料目录 · 使用建议 · 阶段搭配'
       }
+    },
+    questionBank: {
+      hero: {
+        chip: '医护轻题库',
+        title: '题库入口配置',
+        desc: '这里集中维护每日一题、历年真题与错题本的入口摘要，以及纯文本导入说明。'
+      },
+      dailyQuestionCard: {
+        title: '每日一题',
+        desc: '每天推送一道医护方向高频题，保持做题节奏。',
+        buttonText: '进入每日一题',
+        note: '当前仅开放医护方向'
+      },
+      pastPapersCard: {
+        title: '历年真题',
+        desc: '按年份整理医护真题卷，先做列表与预览。',
+        buttonText: '查看真题卷',
+        note: '适合后续继续导入整卷数据'
+      },
+      wrongBookCard: {
+        title: '错题本',
+        desc: '沉淀做错题目、最近记录和解析，方便重复练习。',
+        buttonText: '回看错题',
+        note: '当前只保留轻量复盘结构'
+      },
+      importGuide: {
+        title: '纯文本导入',
+        desc: '支持直接粘贴原始题文、整卷文本或错题整理，后续再做结构化处理。',
+        templateText: '【题目来源】2025 医护真题\\n【题型】单选题\\n【题干】\\n【选项】A.\\nB.\\nC.\\nD.\\n【答案】\\n【解析】'
+      }
     }
   },
   directions: [
@@ -255,6 +285,17 @@
     { _id: 'material_medical_exercises', seriesId: 'series_medical', type: '习题集', title: '医护高频题型集', stage: '强化阶段', subtitle: '专项刷题 / 高频整理', desc: '把高频考点拆成专项训练，便于阶段刷题与错题复盘。', contents: ['专项习题', '高频考点', '错题复盘'], sort: 60, status: 'published' },
     { _id: 'material_medical_mock', seriesId: 'series_medical', type: '模拟卷', title: '医护全真模拟卷', stage: '冲刺阶段', subtitle: '整卷模考 / 结构训练', desc: '按真实考试结构组卷，适合整卷检测与答题节奏训练。', contents: ['整卷模考', '答案解析', '分值结构'], sort: 70, status: 'published' },
     { _id: 'material_medical_final', seriesId: 'series_medical', type: '冲刺卷', title: '医护考前冲刺卷', stage: '考前阶段', subtitle: '最后回看 / 高频压缩', desc: '聚焦考前高频考点压缩复习，方便最后阶段集中回看。', contents: ['考前压缩', '高频回顾', '冲刺提示'], sort: 80, status: 'published' }
+  ],
+  medicalQuestions: [
+    { _id: 'medical_question_2025_001', questionId: 'medical_q_2025_001', direction: 'medical', questionType: 'single_choice', stem: '成人心肺复苏按压时，胸外按压的频率通常应保持在以下哪一范围？', options: [{ id: 'A', text: '60-80 次/分' }, { id: 'B', text: '80-90 次/分' }, { id: 'C', text: '100-120 次/分' }, { id: 'D', text: '130-150 次/分' }], answer: 'C', explanation: '成人心肺复苏胸外按压应保持 100-120 次/分，同时保证按压深度和回弹质量。', year: 2025, paperId: 'medical_paper_2025_a', tags: ['基础护理', '急救'], sort: 10, status: 'published' },
+    { _id: 'medical_question_2024_001', questionId: 'medical_q_2024_001', direction: 'medical', questionType: 'single_choice', stem: '患者静脉输液过程中突发寒战、高热，应首先考虑的常见输液反应是？', options: [{ id: 'A', text: '发热反应' }, { id: 'B', text: '空气栓塞' }, { id: 'C', text: '静脉炎' }, { id: 'D', text: '肺水肿' }], answer: 'A', explanation: '输液中出现寒战、高热等症状时，应优先考虑发热反应并按规范立即处理。', year: 2024, paperId: 'medical_paper_2024_a', tags: ['静脉输液', '护理基础'], sort: 20, status: 'published' }
+  ],
+  pastPapers: [
+    { _id: 'medical_paper_2025_a', paperId: 'medical_paper_2025_a', title: '2025 医护方向真题卷', year: 2025, direction: 'medical', description: '覆盖基础护理与高频操作题型，适合考前结构回看。', questionIds: ['medical_question_2025_001'], sort: 10, status: 'published' },
+    { _id: 'medical_paper_2024_a', paperId: 'medical_paper_2024_a', title: '2024 医护方向真题卷', year: 2024, direction: 'medical', description: '偏重护理基础与输液相关题型，适合阶段性复盘。', questionIds: ['medical_question_2024_001'], sort: 20, status: 'published' }
+  ],
+  questionImports: [
+    { _id: 'question_import_001', title: '2025 医护真题原文', direction: 'medical', sourceType: 'paper', rawText: '【年份】2025\\n【方向】医护\\n【题型】单选题\\n【题干】成人心肺复苏按压时，胸外按压频率应为？\\n【选项】A. 60-80 次/分\\nB. 80-90 次/分\\nC. 100-120 次/分\\nD. 130-150 次/分\\n【答案】C', note: '示例原文，后续可做结构化拆分。', sort: 10, status: 'draft' }
   ]
 };
 

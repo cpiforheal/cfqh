@@ -88,6 +88,7 @@ const CLOUD_ENV_ID = RUNTIME_ENV.CLOUDBASE_ENV_ID;
 const pageOptions = [
   { key: 'site', label: '站点设置' },
   { key: 'home', label: '首页' },
+  { key: 'questionBank', label: '医护题库' },
   { key: 'courses', label: '开设方向' },
   { key: 'teachers', label: '师资' },
   { key: 'success', label: '成果' },
@@ -97,6 +98,9 @@ const pageOptions = [
 
 const listOptions = [
   { key: 'directions', label: '方向列表' },
+  { key: 'medicalQuestions', label: '医护题目' },
+  { key: 'pastPapers', label: '真题试卷' },
+  { key: 'questionImports', label: '纯文本导入' },
   { key: 'teachers', label: '师资列表' },
   { key: 'successCases', label: '成果案例' },
   { key: 'materialSeries', label: '教材套系' },
@@ -107,6 +111,7 @@ const listOptions = [
 const PAGE_COLLECTIONS = {
   site: 'site_settings',
   home: 'page_home',
+  questionBank: 'page_question_bank',
   courses: 'page_courses',
   teachers: 'page_teachers',
   success: 'page_success',
@@ -117,6 +122,7 @@ const PAGE_COLLECTIONS = {
 const PAGE_DOC_IDS = {
   site: 'default',
   home: 'singleton',
+  questionBank: 'singleton',
   courses: 'singleton',
   teachers: 'singleton',
   success: 'singleton',
@@ -126,6 +132,9 @@ const PAGE_DOC_IDS = {
 
 const LIST_COLLECTIONS = {
   directions: 'directions',
+  medicalQuestions: 'medical_questions',
+  pastPapers: 'past_papers',
+  questionImports: 'question_imports',
   teachers: 'teachers',
   successCases: 'success_cases',
   materialSeries: 'material_series',
@@ -263,6 +272,328 @@ function stampSeedData(seed, timestamp = nowIso()) {
   return nextSeed;
 }
 
+const QUESTION_BANK_CSV_HEADERS = [
+  'questionId',
+  'direction',
+  'questionType',
+  'stem',
+  'optionA',
+  'optionB',
+  'optionC',
+  'optionD',
+  'optionE',
+  'optionF',
+  'answer',
+  'explanation',
+  'year',
+  'paperId',
+  'tags',
+  'status'
+];
+
+const QUESTION_BANK_REQUIRED_HEADERS = [
+  'questionId',
+  'direction',
+  'questionType',
+  'stem',
+  'status'
+];
+
+function normalizeCsvCell(value) {
+  return String(value ?? '').replace(/^\uFEFF/, '').trim();
+}
+
+function parseCsv(text = '') {
+  const rows = [];
+  let row = [];
+  let field = '';
+  let inQuotes = false;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    const next = text[index + 1];
+
+    if (inQuotes) {
+      if (char === '"') {
+        if (next === '"') {
+          field += '"';
+          index += 1;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        field += char;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inQuotes = true;
+      continue;
+    }
+
+    if (char === ',') {
+      row.push(field);
+      field = '';
+      continue;
+    }
+
+    if (char === '\n') {
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = '';
+      continue;
+    }
+
+    if (char === '\r') {
+      if (next === '\n') {
+        index += 1;
+      }
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = '';
+      continue;
+    }
+
+    field += char;
+  }
+
+  if (field !== '' || row.length) {
+    row.push(field);
+    rows.push(row);
+  }
+
+  return rows;
+}
+
+function splitPipeValues(value) {
+  return normalizeCsvCell(value)
+    .split('|')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function parseQuestionBankCsv(csvText = '') {
+  const rows = parseCsv(csvText);
+  const headerRow = (rows[0] || []).map((value) => normalizeCsvCell(value));
+  const missingHeaders = QUESTION_BANK_REQUIRED_HEADERS.filter((header) => !headerRow.includes(header));
+
+  if (!headerRow.length) {
+    throw new Error('CSV 为空，请先填写表头和题目内容');
+  }
+
+  if (missingHeaders.length) {
+    throw new Error(`CSV 缺少必要字段：${missingHeaders.join('、')}`);
+  }
+
+  const normalizedRows = rows
+    .slice(1)
+    .map((cells, index) => ({
+      lineNumber: index + 2,
+      record: Object.fromEntries(headerRow.map((header, cellIndex) => [header, normalizeCsvCell(cells[cellIndex] || '')]))
+    }))
+    .filter(({ record }) => Object.values(record).some(Boolean));
+
+  const seenQuestionIds = new Set();
+  const validRows = [];
+  const errors = [];
+
+  for (const { lineNumber, record } of normalizedRows) {
+    const rowErrors = [];
+    const questionId = normalizeCsvCell(record.questionId);
+    const direction = normalizeCsvCell(record.direction || 'medical') || 'medical';
+    const questionType = normalizeCsvCell(record.questionType);
+    const stem = normalizeCsvCell(record.stem);
+    const answer = normalizeCsvCell(record.answer).toUpperCase();
+    const status = normalizeCsvCell(record.status || 'published') || 'published';
+    const yearRaw = normalizeCsvCell(record.year);
+    const options = ['A', 'B', 'C', 'D', 'E', 'F']
+      .map((label) => ({
+        id: label,
+        text: normalizeCsvCell(record[`option${label}`])
+      }))
+      .filter((item) => item.text);
+
+    if (!questionId) {
+      rowErrors.push('questionId 不能为空');
+    }
+
+    if (questionId && seenQuestionIds.has(questionId)) {
+      rowErrors.push('questionId 重复');
+    }
+
+    if (direction !== 'medical') {
+      rowErrors.push('direction 当前只支持 medical');
+    }
+
+    if (!['single_choice', 'multiple_choice', 'judge'].includes(questionType)) {
+      rowErrors.push('questionType 仅支持 single_choice / multiple_choice / judge');
+    }
+
+    if (!stem) {
+      rowErrors.push('stem 不能为空');
+    }
+
+    if (!['published', 'draft'].includes(status)) {
+      rowErrors.push('status 仅支持 published / draft');
+    }
+
+    if (yearRaw && !/^\d{4}$/.test(yearRaw)) {
+      rowErrors.push('year 需为四位年份');
+    }
+
+    if (questionType === 'single_choice') {
+      if (options.length < 2) {
+        rowErrors.push('单选题至少需要 2 个选项');
+      }
+      if (answer && !/^[A-F]$/.test(answer)) {
+        rowErrors.push('单选题 answer 需为 A-F 中的单个选项');
+      }
+      if (answer && !options.some((item) => item.id === answer)) {
+        rowErrors.push('单选题 answer 对应的选项不存在');
+      }
+    }
+
+    if (questionType === 'multiple_choice') {
+      const answers = splitPipeValues(answer.toUpperCase());
+      if (options.length < 2) {
+        rowErrors.push('多选题至少需要 2 个选项');
+      }
+      if (answer && !answers.length) {
+        rowErrors.push('多选题 answer 需使用 A|C 这样的格式');
+      }
+      if (answers.some((item) => !/^[A-F]$/.test(item))) {
+        rowErrors.push('多选题 answer 只能填写 A-F，并用 | 分隔');
+      }
+      if (new Set(answers).size !== answers.length) {
+        rowErrors.push('多选题 answer 不能重复填写同一选项');
+      }
+      if (answers.some((item) => !options.some((option) => option.id === item))) {
+        rowErrors.push('多选题 answer 中存在未定义选项');
+      }
+    }
+
+    if (questionType === 'judge') {
+      if (answer && !['T', 'F'].includes(answer)) {
+        rowErrors.push('判断题 answer 仅支持 T 或 F');
+      }
+    }
+
+    if (!answer && status === 'published') {
+      rowErrors.push('answer 留空时 status 需为 draft');
+    }
+
+    if (rowErrors.length) {
+      errors.push({
+        lineNumber,
+        questionId: questionId || '',
+        message: rowErrors.join('；')
+      });
+      continue;
+    }
+
+    seenQuestionIds.add(questionId);
+    validRows.push({
+      lineNumber,
+      question: {
+        questionId,
+        direction: 'medical',
+        questionType,
+        stem,
+        options,
+        answer,
+        explanation: normalizeCsvCell(record.explanation),
+        year: yearRaw ? Number(yearRaw) : new Date().getFullYear(),
+        paperId: normalizeCsvCell(record.paperId),
+        tags: splitPipeValues(record.tags),
+        status
+      }
+    });
+  }
+
+  return {
+    headers: headerRow,
+    totalRows: normalizedRows.length,
+    validRows,
+    errors
+  };
+}
+
+function buildQuestionBankCsvPreview(csvText = '', fileName = '') {
+  const parsed = parseQuestionBankCsv(csvText);
+  return {
+    fileName,
+    expectedHeaders: QUESTION_BANK_CSV_HEADERS,
+    totalRows: parsed.totalRows,
+    validCount: parsed.validRows.length,
+    invalidCount: parsed.errors.length,
+    previewRows: parsed.validRows.slice(0, 6).map(({ lineNumber, question }) => ({
+      lineNumber,
+      questionId: question.questionId,
+      questionType: question.questionType,
+      stem: question.stem,
+      optionsCount: question.options.length,
+      year: question.year,
+      status: question.status
+    })),
+    errors: parsed.errors.slice(0, 12)
+  };
+}
+
+async function importQuestionBankCsv(csvText = '', fileName = '') {
+  const parsed = parseQuestionBankCsv(csvText);
+  if (parsed.errors.length) {
+    const firstError = parsed.errors[0];
+    throw new Error(`CSV 校验失败，共 ${parsed.errors.length} 行有问题。第 ${firstError.lineNumber} 行：${firstError.message}`);
+  }
+
+  const existingQuestions = await store.listCollection('medicalQuestions');
+  const existingMap = new Map(existingQuestions.map((item) => [item.questionId, item]));
+  const maxSort = existingQuestions.reduce((max, item) => Math.max(max, Number(item.sort || 0)), 0);
+  let createdCount = 0;
+  let updatedCount = 0;
+  let nextSort = maxSort + 10;
+
+  for (const { question } of parsed.validRows) {
+    const existing = existingMap.get(question.questionId);
+    const payload = {
+      ...question,
+      sort: existing?.sort || nextSort
+    };
+
+    if (existing) {
+      await store.updateItem('medicalQuestions', existing._id, payload);
+      updatedCount += 1;
+      continue;
+    }
+
+    await store.createItem('medicalQuestions', payload);
+    nextSort += 10;
+    createdCount += 1;
+  }
+
+  const excerpt = csvText.length > 2400 ? `${csvText.slice(0, 2400)}\n...` : csvText;
+  await store.createItem('questionImports', {
+    title: fileName || `csv_import_${new Date().toISOString().slice(0, 10)}`,
+    direction: 'medical',
+    sourceType: 'file',
+    rawText: excerpt,
+    note: `CSV 导入完成：共 ${parsed.totalRows} 行，新增 ${createdCount} 题，更新 ${updatedCount} 题。`,
+    sort: Date.now(),
+    status: 'published'
+  });
+
+  return {
+    fileName,
+    totalRows: parsed.totalRows,
+    createdCount,
+    updatedCount,
+    importedCount: parsed.validRows.length
+  };
+}
+
 function getEmptyTemplate(collectionKey) {
   if (collectionKey === 'directions') {
     return {
@@ -358,6 +689,51 @@ function getEmptyTemplate(collectionKey) {
     };
   }
 
+  if (collectionKey === 'medicalQuestions') {
+    return {
+      _id: '',
+      questionId: '',
+      direction: 'medical',
+      questionType: 'single_choice',
+      stem: '',
+      options: [],
+      answer: '',
+      explanation: '',
+      year: new Date().getFullYear(),
+      paperId: '',
+      tags: [],
+      sort: 100,
+      status: 'draft'
+    };
+  }
+
+  if (collectionKey === 'pastPapers') {
+    return {
+      _id: '',
+      paperId: '',
+      title: '',
+      year: new Date().getFullYear(),
+      direction: 'medical',
+      description: '',
+      questionIds: [],
+      sort: 100,
+      status: 'draft'
+    };
+  }
+
+  if (collectionKey === 'questionImports') {
+    return {
+      _id: '',
+      title: '',
+      direction: 'medical',
+      sourceType: 'paper',
+      rawText: '',
+      note: '',
+      sort: 100,
+      status: 'draft'
+    };
+  }
+
   return {};
 }
 
@@ -436,6 +812,12 @@ async function buildPublicPayload(pageKey) {
   if (pageKey === 'materials') {
     payload.materialSeries = sortPublished(await store.listCollection('materialSeries'));
     payload.materialItems = sortPublished(await store.listCollection('materialItems'));
+  }
+
+  if (pageKey === 'questionBank') {
+    payload.medicalQuestions = sortPublished(await store.listCollection('medicalQuestions'));
+    payload.pastPapers = sortPublished(await store.listCollection('pastPapers'));
+    payload.questionImports = sortPublished(await store.listCollection('questionImports'));
   }
 
   payload.__meta = buildPublicMeta(pageKey, payload);
@@ -564,8 +946,19 @@ class CloudStore {
   async listCollection(collectionKey) {
     const collection = LIST_COLLECTIONS[collectionKey];
     if (!collection) throw new Error('未知集合');
-    const result = await this.db.collection(collection).orderBy('sort', 'asc').limit(100).get();
-    return result.data || [];
+    const batchSize = 100;
+    const allItems = [];
+
+    for (let offset = 0; offset < 5000; offset += batchSize) {
+      const result = await this.db.collection(collection).orderBy('sort', 'asc').skip(offset).limit(batchSize).get();
+      const batch = result.data || [];
+      allItems.push(...batch);
+      if (batch.length < batchSize) {
+        break;
+      }
+    }
+
+    return allItems;
   }
 
   async getItem(collectionKey, itemId) {
@@ -632,8 +1025,8 @@ class CloudStore {
     }
 
     for (const [collectionKey, collectionName] of Object.entries(LIST_COLLECTIONS)) {
-      const current = await this.db.collection(collectionName).limit(100).get();
-      for (const item of current.data || []) {
+      const current = await this.listCollection(collectionKey);
+      for (const item of current || []) {
         await this.db.collection(collectionName).doc(item._id).remove();
       }
 
@@ -705,6 +1098,30 @@ async function handleApi(req, res, pathname) {
     const collectionKey = parts[2];
     sendJson(res, 200, { ok: true, data: getEmptyTemplate(collectionKey) });
     return;
+  }
+
+  if (parts[1] === 'import' && parts[2] === 'question-bank-csv' && req.method === 'POST') {
+    const body = await readBody(req);
+    const action = parts[3] || 'preview';
+    const csvText = String(body.csvText || '');
+    const fileName = String(body.fileName || '');
+
+    if (!csvText.trim()) {
+      sendJson(res, 400, { ok: false, message: '请先上传 CSV 内容' });
+      return;
+    }
+
+    if (action === 'preview') {
+      const preview = buildQuestionBankCsvPreview(csvText, fileName);
+      sendJson(res, 200, { ok: true, data: preview });
+      return;
+    }
+
+    if (action === 'commit') {
+      const summary = await importQuestionBankCsv(csvText, fileName);
+      sendJson(res, 200, { ok: true, data: summary });
+      return;
+    }
   }
 
   if (parts[1] === 'page') {

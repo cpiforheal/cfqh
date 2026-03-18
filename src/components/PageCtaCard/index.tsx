@@ -2,12 +2,14 @@ import { Navigator, Text, View } from '@tarojs/components';
 import { darkPanelStyle, ui } from '../../styles/ui';
 
 export default function PageCtaCard(props) {
+  const compact = Boolean(props.compact);
+
   return (
     <View
       style={{
         margin: props.margin || `${ui.spacing.section} ${ui.spacing.page} 0`,
         borderRadius: ui.radius.lg,
-        padding: '36rpx 30rpx 34rpx',
+        padding: compact ? '30rpx 26rpx 28rpx' : '36rpx 30rpx 34rpx',
         background: props.background || darkPanelStyle.background,
         boxShadow: darkPanelStyle.boxShadow,
         overflow: 'hidden',
@@ -22,7 +24,7 @@ export default function PageCtaCard(props) {
           width: '220rpx',
           height: '220rpx',
           borderRadius: ui.radius.pill,
-          backgroundColor: 'rgba(91,77,255,0.14)'
+          backgroundColor: props.orbColor || 'rgba(91,77,255,0.14)'
         }}
       />
 
@@ -30,28 +32,30 @@ export default function PageCtaCard(props) {
         style={{
           position: 'relative',
           display: 'block',
-          fontSize: '34rpx',
+          fontSize: compact ? ui.type.section : '34rpx',
           color: '#ffffff',
           fontWeight: 900,
-          marginBottom: '14rpx'
+          marginBottom: props.desc ? '14rpx' : '20rpx'
         }}
       >
         {props.title}
       </Text>
-      <Text
-        style={{
-          position: 'relative',
-          display: 'block',
-          fontSize: ui.type.body,
-          lineHeight: 1.78,
-          color: ui.colors.darkText,
-          marginBottom: '26rpx',
-          width: '520rpx',
-          maxWidth: '100%'
-        }}
-      >
-        {props.desc}
-      </Text>
+      {props.desc ? (
+        <Text
+          style={{
+            position: 'relative',
+            display: 'block',
+            fontSize: compact ? ui.type.meta : ui.type.body,
+            lineHeight: compact ? 1.6 : 1.78,
+            color: ui.colors.darkText,
+            marginBottom: '26rpx',
+            width: '520rpx',
+            maxWidth: '100%'
+          }}
+        >
+          {props.desc}
+        </Text>
+      ) : null}
       <Navigator
         url={props.url || '/pages/about/index'}
         openType={props.openType || 'navigate'}
@@ -60,15 +64,15 @@ export default function PageCtaCard(props) {
           display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
-          minWidth: '220rpx',
-          height: '82rpx',
-          padding: '0 30rpx',
+          minWidth: compact ? '200rpx' : '220rpx',
+          height: compact ? '76rpx' : '82rpx',
+          padding: compact ? '0 26rpx' : '0 30rpx',
           borderRadius: ui.radius.sm,
-          backgroundColor: '#ffffff',
-          boxShadow: '0 12rpx 24rpx rgba(15,23,42,0.16)'
+          background: props.buttonBackground || '#ffffff',
+          boxShadow: props.buttonShadow || '0 12rpx 24rpx rgba(15,23,42,0.16)'
         }}
       >
-        <Text style={{ fontSize: ui.type.button, color: ui.colors.text, fontWeight: 800 }}>
+        <Text style={{ fontSize: ui.type.button, color: props.buttonTextColor || ui.colors.text, fontWeight: 800 }}>
           {props.buttonText || '立即咨询'}
         </Text>
       </Navigator>

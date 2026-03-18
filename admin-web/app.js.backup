@@ -122,10 +122,7 @@ const ICONS = {
   chevronRight: '<path d="m9 18 6-6-6-6"></path>',
   close: '<path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>',
   sun: '<circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path>',
-  moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"></path>',
-  edit: '<path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path>',
-  copy: '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>',
-  trash: '<path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>'
+  moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"></path>'
 };
 
 const state = {
@@ -182,7 +179,7 @@ function preferredSidebarCollapsed() {
 function applyTheme(theme) {
   state.theme = theme;
   document.documentElement.setAttribute('data-theme', theme);
-  refs.themeToggle.textContent = theme === 'dark' ? '切换亮色' : '切换暗色';
+  refs.themeToggle.innerHTML = icon(theme === 'dark' ? 'sun' : 'moon');
   refs.themeToggle.title = theme === 'dark' ? '切换为亮色主题' : '切换为暗色主题';
   refs.themeToggle.setAttribute('aria-label', refs.themeToggle.title);
   localStorage.setItem('admin-web-theme', theme);
@@ -2564,6 +2561,7 @@ function renderTableCollectionSection(collectionKey, items) {
 
 function renderSidebar() {
   refs.nav.innerHTML = NAV_ITEMS.map((item) => `<button class="nav-item${state.activeView === item.key ? ' active' : ''}" type="button" data-nav="${escapeHtml(item.key)}" aria-label="${escapeHtml(item.label)}">
+    <span class="nav-icon">${icon(item.icon)}</span>
     <span class="nav-label">${escapeHtml(item.label)}</span>
   </button>`).join('');
 }
@@ -2799,148 +2797,55 @@ function renderCollectionSection(collectionKey, items) {
 
   const collectionMeta = getCollectionMeta(collectionKey);
   const selected = getSelectedCollectionState(collectionKey, items);
-  const ui = getViewUi();
-  const keyword = (ui.filters[collectionKey] || '').toLowerCase();
-  const statusFilter = ui.statusFilters[collectionKey] || 'all';
-
-  // 过滤数据
-  const filteredItems = items.filter(item => {
-    // 状态过滤
-    if (statusFilter !== 'all' && item.status !== statusFilter) {
-      return false;
-    }
-
-    // 关键词搜索
-    if (keyword) {
-      const searchText = [
-        getPrimaryLabel(item, collectionKey),
-        getSecondaryLabel(item, collectionKey),
-        item._id,
-        item.slug,
-        item.category
-      ].filter(Boolean).join(' ').toLowerCase();
-
-      return searchText.includes(keyword);
-    }
-
-    return true;
-  });
-
   const editorLabel = selected.isDraft ? '新建条目' : selected.item ? `编辑 ${getPrimaryLabel(selected.item, collectionKey)}` : '暂无条目';
-  const publishedCount = items.filter(item => item.status === 'published').length;
 
-  return `<section class=”collection-section workspace-motion-scope”>
-    <div class=”table-layout table-layout-single”>
-      <article class=”panel table-panel table-panel-focus workspace-panel-enter”>
-        <div class=”panel-head workspace-enter” style=”--enter-delay: 0ms;”>
+  return `<section class="collection-section workspace-motion-scope">
+    <div class="collection-grid">
+      <article class="panel list-panel workspace-panel-enter">
+        <div class="panel-head workspace-enter" style="--enter-delay: 0ms;">
           <div>
             <h3>${escapeHtml(collectionMeta.label)}</h3>
-            <p>表格展示关键信息，点击行编辑详细内容。</p>
+            <p>主区只保留清晰 row 和重点信息，编辑时再用浮层聚焦单条记录。</p>
           </div>
-          <div class=”panel-actions”>
-            <button class=”system-action” type=”button” data-action=”reload-view”>刷新</button>
-            <button class=”system-action” type=”button” data-action=”new-item” data-collection-key=”${escapeHtml(collectionKey)}”>新建</button>
-          </div>
-        </div>
-        <div class=”table-toolbar workspace-enter” style=”--enter-delay: 40ms;”>
-          <label class=”table-search”>
-            ${icon('search')}
-            <input type=”text” value=”${escapeHtml(keyword)}” placeholder=”搜索${collectionMeta.label}” data-list-filter=”${escapeHtml(collectionKey)}” />
-          </label>
-          <div class=”table-filters”>
-            ${STATUS_FILTER_OPTIONS.map((option) => `<button class=”segment${statusFilter === option.key ? ' active' : ''}” type=”button” data-action=”set-status-filter” data-collection-key=”${escapeHtml(collectionKey)}” data-status-key=”${escapeHtml(option.key)}”>${escapeHtml(option.label)}</button>`).join('')}
+          <div class="panel-actions">
+            <button class="system-action" type="button" data-action="new-item" data-collection-key="${escapeHtml(collectionKey)}">新建</button>
           </div>
         </div>
-        <div class=”workspace-compact-summary workspace-enter” style=”--enter-delay: 80ms;”>
-          <strong>${escapeHtml(selected.item ? `当前编辑：${getPrimaryLabel(selected.item, collectionKey)}` : collectionMeta.label)}</strong>
-          <span>共 ${items.length} 条记录，已发布 ${publishedCount} 条${filteredItems.length !== items.length ? `，当前显示 ${filteredItems.length} 条` : ''}</span>
-          <em>${selected.item ? `ID: ${selected.itemId}` : '点击表格行进入编辑'}</em>
-        </div>
-        <div class=”table-shell workspace-enter” style=”--enter-delay: 120ms;”>
-          ${filteredItems.length ? `<table class=”data-table data-table-compact”>
-            <thead>
-              <tr>
-                <th style=”width: 40px;”>
-                  <input type=”checkbox” class=”table-checkbox” data-action=”toggle-all-items” data-collection-key=”${escapeHtml(collectionKey)}” />
-                </th>
-                <th>名称</th>
-                <th>详情</th>
-                <th style=”width: 100px;”>状态</th>
-                <th style=”width: 120px;”>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${filteredItems.map((item, index) => {
-                const isActive = selected.itemId === item._id && !selected.isDraft;
-                return `<tr class=”workspace-row-enter${isActive ? ' active' : ''}” style=”--enter-delay: ${160 + index * 20}ms;”>
-                  <td>
-                    <input type=”checkbox” class=”table-checkbox” data-item-id=”${escapeHtml(item._id || '')}” />
-                  </td>
-                  <td>
-                    <div class=”table-cell-content”>
-                      <span class=”status-dot status-${item.status === 'published' ? 'published' : 'draft'}”></span>
-                      <strong class=”data-table-title”>${escapeHtml(getPrimaryLabel(item, collectionKey))}</strong>
-                    </div>
-                  </td>
-                  <td>
-                    <span class=”data-table-sub”>${escapeHtml(getSecondaryLabel(item, collectionKey) || '-')}</span>
-                  </td>
-                  <td>
-                    <span class=”record-pill${item.status === 'published' ? ' success' : ''}”>${escapeHtml(item.status || 'draft')}</span>
-                  </td>
-                  <td>
-                    <div class=”table-actions”>
-                      <button class=”row-action” type=”button” data-action=”select-item” data-collection-key=”${escapeHtml(collectionKey)}” data-item-id=”${escapeHtml(item._id || '')}” title=”编辑”>${icon('edit')}</button>
-                      <button class=”row-action” type=”button” data-action=”duplicate-item” data-collection-key=”${escapeHtml(collectionKey)}” data-item-id=”${escapeHtml(item._id || '')}” title=”复制”>${icon('copy')}</button>
-                      <button class=”row-action danger” type=”button” data-action=”delete-item” data-collection-key=”${escapeHtml(collectionKey)}” data-item-id=”${escapeHtml(item._id || '')}” title=”删除”>${icon('trash')}</button>
-                    </div>
-                  </td>
-                </tr>`;
-              }).join('')}
-            </tbody>
-          </table>` : '<div class=”empty-state”>当前筛选条件下没有数据，试试调整搜索或状态过滤。</div>'}
+        <div class="record-list">
+          ${items.length ? items.map((item, index) => `<button class="record-row workspace-row-enter${selected.itemId === item._id && !selected.isDraft ? ' active' : ''}" style="--enter-delay: ${120 + index * 26}ms;" type="button" data-action="select-item" data-collection-key="${escapeHtml(collectionKey)}" data-item-id="${escapeHtml(item._id || '')}">
+            <span class="record-row-main">
+              <strong class="record-row-title">${escapeHtml(getPrimaryLabel(item, collectionKey))}</strong>
+              <span class="record-row-meta">${escapeHtml(getSecondaryLabel(item, collectionKey) || '暂无补充说明')}</span>
+            </span>
+            <span class="record-pill ${item.status === 'published' ? 'success' : ''}">${escapeHtml(item.status || 'draft')}</span>
+          </button>`).join('') : '<div class="empty-state">当前集合还没有数据，点击右上角“新建”即可开始。</div>'}
         </div>
       </article>
-      ${renderCollectionEditorOverlay(collectionKey, collectionMeta.label, selected)}
+
+      <article class="panel editor-panel workspace-panel-enter">
+        <div class="panel-head workspace-enter" style="--enter-delay: 40ms;">
+          <div>
+            <h3>${escapeHtml(editorLabel)}</h3>
+            <p>${selected.item ? '保持主列表不动，在这里集中修改当前条目的重点字段。' : '先从左侧选择条目，或者新建一个内容条目。'}</p>
+          </div>
+          <div class="panel-actions">
+            <button class="system-action" type="button" data-action="save-item" data-collection-key="${escapeHtml(collectionKey)}">保存条目</button>
+            ${selected.item && !selected.isDraft ? `<button class="system-action danger-action" type="button" data-action="delete-item" data-collection-key="${escapeHtml(collectionKey)}" data-item-id="${escapeHtml(selected.itemId)}">删除</button>` : ''}
+          </div>
+        </div>
+        ${selected.item ? `<div class="editor-meta">
+          <span class="meta-chip">ID ${escapeHtml(selected.itemId || '新建中')}</span>
+          <span class="meta-chip">更新时间 ${escapeHtml(formatDateTime(getUpdatedAt(selected.item)))}</span>
+          <span class="meta-chip">集合 ${escapeHtml(collectionMeta.label)}</span>
+        </div>
+        ${renderFriendlyEditor(`collection:${collectionKey}`, selected.item)}
+        <div class="editor-actions">
+          <button class="system-action" type="button" data-action="save-item" data-collection-key="${escapeHtml(collectionKey)}">保存条目</button>
+          <button class="system-action" type="button" data-action="reload-view">重新拉取</button>
+        </div>` : '<div class="empty-state">这里会显示所选条目的编辑内容。</div>'}
+      </article>
     </div>
   </section>`;
-}
-
-function renderCollectionEditorOverlay(collectionKey, collectionLabel, selected) {
-  const ui = getViewUi();
-  const isOpen = Boolean(ui.openEditors[collectionKey]);
-
-  if (!isOpen || !selected.item) {
-    return '';
-  }
-
-  const editorLabel = selected.isDraft ? `新建${collectionLabel}` : `编辑 ${getPrimaryLabel(selected.item, collectionKey)}`;
-
-  return `<div class="editor-overlay editor-overlay-open">
-    <article class="editor-modal directions-enter-modal">
-      <div class="editor-modal-head directions-enter-modal-item" style="--enter-delay: 0ms;">
-        <div>
-          <h2>${escapeHtml(editorLabel)}</h2>
-          <p>修改完成后点击保存，或按 ESC 关闭。</p>
-        </div>
-        <button class="editor-close" type="button" data-action="close-editor" data-editor-key="${escapeHtml(collectionKey)}" aria-label="关闭编辑器">${icon('close')}</button>
-      </div>
-      <div class="editor-meta directions-enter-modal-item" style="--enter-delay: 20ms;">
-        <span class="meta-chip">ID ${escapeHtml(selected.itemId || '新建中')}</span>
-        <span class="meta-chip">更新时间 ${escapeHtml(formatDateTime(getUpdatedAt(selected.item)))}</span>
-        <span class="meta-chip">集合 ${escapeHtml(collectionLabel)}</span>
-      </div>
-      <div class="editor-body directions-enter-modal-item" style="--enter-delay: 40ms;">
-        ${renderFriendlyEditor(`collection:${collectionKey}`, selected.item)}
-      </div>
-      <div class="editor-actions directions-enter-modal-item" style="--enter-delay: 60ms;">
-        <button class="system-action" type="button" data-action="save-item" data-collection-key="${escapeHtml(collectionKey)}">保存</button>
-        <button class="system-action" type="button" data-action="reload-view">重新拉取</button>
-        ${selected.item && !selected.isDraft ? `<button class="system-action danger-action" type="button" data-action="delete-item" data-collection-key="${escapeHtml(collectionKey)}" data-item-id="${escapeHtml(selected.itemId)}">删除</button>` : ''}
-        <button class="system-action" type="button" data-action="close-editor" data-editor-key="${escapeHtml(collectionKey)}">关闭</button>
-      </div>
-    </article>
-  </div>`;
 }
 
 function renderModule(view, data) {
@@ -3312,13 +3217,10 @@ function bindGlobalActions() {
         return;
       }
 
-      if (action === 'close-editor') {
+      if (action === 'close-editor' && collectionKey) {
         const ui = getViewUi();
-        const editorKey = button.dataset.editorKey || collectionKey;
-        if (editorKey) {
-          ui.openEditors[editorKey] = false;
-          delete ui.drafts[editorKey];
-        }
+        ui.openEditors[collectionKey] = false;
+        delete ui.drafts[collectionKey];
         renderModule(VIEW_CONFIG[state.activeView], state.currentData);
         return;
       }

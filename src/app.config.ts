@@ -5,12 +5,29 @@
     'pages/teachers/index',
     'pages/success/index',
     'pages/materials/index',
-    'pages/about/index',
-    'pages/admin/login/index',
-    'pages/admin/dashboard/index',
-    'pages/admin/page-editor/index',
-    'pages/admin/list-editor/index',
-    'pages/admin/item-editor/index'
+    'pages/about/index'
+  ],
+  subPackages: [
+    {
+      root: 'pages/question-bank',
+      pages: [
+        'daily-question/index',
+        'past-papers/index',
+        'wrong-book/index'
+      ],
+      name: 'questionBank'
+    },
+    {
+      root: 'pages/admin',
+      pages: [
+        'login/index',
+        'dashboard/index',
+        'page-editor/index',
+        'list-editor/index',
+        'item-editor/index'
+      ],
+      name: 'admin'
+    }
   ],
   window: {
     navigationBarTitleText: '启航专转本',
