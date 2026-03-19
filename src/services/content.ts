@@ -7,8 +7,17 @@ import { ErrorHandler, ErrorType, AppError } from '../utils/errorHandler';
 
 // 缓存配置
 const CACHE_TTL = 5 * 60 * 1000; // 5分钟缓存
+const CACHE_VERSION = '2026-03-18-home-sync-v1';
 const CACHE_KEY_PREFIX = 'cms_content_';
 const CACHE_META_KEY = 'cms_meta_';
+
+function getCacheKey(pageKey) {
+  return `${CACHE_KEY_PREFIX}${CACHE_VERSION}_${pageKey}`;
+}
+
+function getMetaKey(pageKey) {
+  return `${CACHE_META_KEY}${CACHE_VERSION}_${pageKey}`;
+}
 
 function isPublished(item) {
   return !!item && (!item.status || item.status === 'published');
@@ -35,8 +44,8 @@ function withMeta(payload, source, extras = {}) {
 // 从 Storage 读取缓存
 function getCachedContent(pageKey) {
   try {
-    const cacheKey = CACHE_KEY_PREFIX + pageKey;
-    const metaKey = CACHE_META_KEY + pageKey;
+    const cacheKey = getCacheKey(pageKey);
+    const metaKey = getMetaKey(pageKey);
 
     const cached = Taro.getStorageSync(cacheKey);
     const meta = Taro.getStorageSync(metaKey);
@@ -65,8 +74,8 @@ function getCachedContent(pageKey) {
 // 保存到 Storage 缓存
 function setCachedContent(pageKey, data) {
   try {
-    const cacheKey = CACHE_KEY_PREFIX + pageKey;
-    const metaKey = CACHE_META_KEY + pageKey;
+    const cacheKey = getCacheKey(pageKey);
+    const metaKey = getMetaKey(pageKey);
 
     Taro.setStorageSync(cacheKey, data);
     Taro.setStorageSync(metaKey, {
@@ -84,8 +93,8 @@ function setCachedContent(pageKey, data) {
 // 清除指定页面缓存
 export function clearContentCache(pageKey) {
   try {
-    const cacheKey = CACHE_KEY_PREFIX + pageKey;
-    const metaKey = CACHE_META_KEY + pageKey;
+    const cacheKey = getCacheKey(pageKey);
+    const metaKey = getMetaKey(pageKey);
 
     Taro.removeStorageSync(cacheKey);
     Taro.removeStorageSync(metaKey);

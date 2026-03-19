@@ -13,13 +13,13 @@
   pages: {
     home: {
       hero: {
-        chip: '江苏省专转本专业辅导',
-        title: '专转本，一次就上岸',
-        highlightTitle: '医护大类 & 高数专项 · 精细化教研体系',
-        desc: '医护大类 + 高数专项双主线，让备考更稳、更清晰',
-        tags: ['92%+ 上岸率', '全职答疑', '独立校区'],
-        primaryButton: { text: '查看上岸学员案例', url: '/pages/success/index', openType: 'switchTab' },
-        secondaryNote: '真实数据 · 可验证',
+        chip: '护理 / 助产 / 医护背景同学',
+        title: '想冲江苏专转本？',
+        highlightTitle: '先判断方向，再安排课程',
+        desc: '新同学先看适合方向和课程安排，在学同学再进入每日一题、模拟题和错题本。',
+        tags: ['92.3% 上岸率', '1:8 小班跟进', '独立校区学习'],
+        primaryButton: { text: '了解课程安排', url: '/pages/courses/index', openType: 'switchTab' },
+        secondaryNote: '先选方向，再做训练',
         backgroundImageSeed: 'university'
       },
       overviewStats: [
@@ -28,14 +28,14 @@
         { value: '365天', label: '全年答疑', note: '全职坐班' }
       ],
       quickLinks: [
-        { label: '热门方向', desc: '查看课程方向', url: '/pages/courses/index', openType: 'switchTab', icon: 'compass' },
-        { label: '每日一题', desc: '每天练 1 题', url: '/pages/question-bank/daily-question/index', openType: 'navigate', icon: 'daily' },
-        { label: '模拟题', desc: '考前整卷训练', url: '/pages/question-bank/past-papers/index', openType: 'navigate', icon: 'paper' },
-        { label: '错题本', desc: '回看错题记录', url: '/pages/question-bank/wrong-book/index', openType: 'navigate', icon: 'wrongbook' }
+        { label: '机构介绍', desc: '看品牌介绍', url: '/pages/about/index', openType: 'navigate', icon: 'building' },
+        { label: '每日一题', desc: '在学每日打卡', url: '/pages/question-bank/daily-question/index', openType: 'navigate', icon: 'daily' },
+        { label: '模拟题', desc: '考前整卷冲刺', url: '/pages/question-bank/past-papers/index', openType: 'navigate', icon: 'paper' },
+        { label: '错题本', desc: '回看薄弱题', url: '/pages/question-bank/wrong-book/index', openType: 'navigate', icon: 'wrongbook' }
       ],
       advantages: [
-        { icon: 'team', title: '全职教研团队', desc: '老师全职坐班，答疑更及时' },
-        { icon: 'building', title: '独立校区管理', desc: '吃住学一体化，备考节奏更稳定' }
+        { icon: 'team', title: '答疑有人盯', desc: '第一次来了解也能先把基础、目标院校和卡点问清楚，问题当天就有人跟进。' },
+        { icon: 'building', title: '备考节奏更稳', desc: '课程、督学和住宿安排放在同一节奏里，适合想集中投入、少走弯路的同学。' }
       ],
       directionsIntro: '',
       featuredDirectionIds: ['direction_medical', 'direction_math'],
@@ -53,9 +53,9 @@
         ]
       },
       cta: {
-        title: '预约咨询',
-        desc: '',
-        buttonText: '立即咨询',
+        title: '先聊清楚，再决定报哪条线',
+        desc: '把当前专业、目标院校和备考时间说明白，我们会先帮你判断适合的方向，再给课程安排建议。',
+        buttonText: '预约咨询',
         footnote: ''
       }
     },

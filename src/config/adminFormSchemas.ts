@@ -23,27 +23,27 @@ const directionIconOptions = [
 ];
 
 const pageHeroBasicFields = [
-  { key: 'chip', label: '角标', type: 'text', required: true },
-  { key: 'title', label: '主标题', type: 'text', required: true },
-  { key: 'desc', label: '描述', type: 'textarea', required: true }
+  { key: 'chip', label: '区块角标', type: 'text', required: true },
+  { key: 'title', label: '区块主标题', type: 'text', required: true },
+  { key: 'desc', label: '区块说明', type: 'textarea', required: true }
 ];
 
 const ctaFields = [
-  { key: 'title', label: '标题', type: 'text', required: true },
-  { key: 'desc', label: '描述', type: 'textarea', required: true },
+  { key: 'title', label: '区块标题', type: 'text', required: true },
+  { key: 'desc', label: '区块说明', type: 'textarea', required: true },
   { key: 'buttonText', label: '按钮文案', type: 'text', required: true },
-  { key: 'footnote', label: '底部说明', type: 'text' }
+  { key: 'footnote', label: '补充提示', type: 'text' }
 ];
 
 const statFields = [
-  { key: 'value', label: '数值', type: 'text', required: true },
-  { key: 'label', label: '标签', type: 'text', required: true },
-  { key: 'note', label: '备注', type: 'text' }
+  { key: 'value', label: '数据数值', type: 'text', required: true },
+  { key: 'label', label: '数据标签', type: 'text', required: true },
+  { key: 'note', label: '补充提示', type: 'text' }
 ];
 
 const pageValueFields = [
-  { key: 'title', label: '标题', type: 'text', required: true },
-  { key: 'desc', label: '描述', type: 'textarea', required: true }
+  { key: 'title', label: '卡片标题', type: 'text', required: true },
+  { key: 'desc', label: '卡片说明', type: 'textarea', required: true }
 ];
 
 function objectField(key, label, fields, extra = {}) {
@@ -70,27 +70,28 @@ function objectArrayField(key, label, fields, defaultItem, extra = {}) {
 export function getAdminPageFormSchema(pageKey) {
   if (pageKey === 'site') {
     return [
-      { key: 'siteName', label: '站点名称', type: 'text', required: true },
+      { key: 'siteName', label: '小程序名称', type: 'text', required: true },
       { key: 'brandName', label: '品牌名称', type: 'text', required: true },
-      { key: 'contactPhone', label: '联系电话', type: 'text' },
-      { key: 'contactWechat', label: '微信号', type: 'text' },
-      { key: 'contactQrcode', label: '二维码链接', type: 'text' },
-      { key: 'contactQrcodeUrl', label: '二维码图片 URL', type: 'text', validate: 'media-url' },
-      { key: 'address', label: '地址', type: 'text' },
-      { key: 'serviceHours', label: '服务时间', type: 'text' },
-      { key: 'intro', label: '机构简介', type: 'textarea' }
+      { key: 'contactPhone', label: '底部联系电话', type: 'text' },
+      { key: 'contactWechat', label: '咨询微信号', type: 'text' },
+      { key: 'contactQrcode', label: '咨询二维码链接', type: 'text' },
+      { key: 'contactQrcodeUrl', label: '咨询二维码图片 URL', type: 'text', validate: 'media-url' },
+      { key: 'address', label: '校区地址', type: 'text' },
+      { key: 'serviceHours', label: '咨询服务时间', type: 'text' },
+      { key: 'intro', label: '机构简介（关于我们页）', type: 'textarea' }
     ];
   }
 
   if (pageKey === 'home') {
     return [
-      objectField('hero', '首屏', [
-        ...pageHeroBasicFields,
-        { key: 'highlightTitle', label: '高亮标题', type: 'text', required: true },
-        { key: 'backgroundImageUrl', label: '背景图 URL', type: 'text', validate: 'media-url' },
-        { key: 'backgroundImageSeed', label: '背景图 Seed', type: 'text' },
-        { key: 'tags', label: '标签组', type: 'stringArray', defaultItem: '' },
-        objectField('primaryButton', '主按钮', [
+      objectField('hero', '首页大屏主视觉', [
+        { key: 'chip', label: '首页大屏小角标', type: 'text', required: true },
+        { key: 'title', label: '首页大屏第一行标题', type: 'text', required: true },
+        { key: 'desc', label: '首页大屏说明', type: 'textarea', required: true },
+        { key: 'highlightTitle', label: '首页大屏第二行标题', type: 'text', required: true },
+        { key: 'backgroundImageUrl', label: '首页大屏背景图 URL', type: 'text', validate: 'media-url' },
+        { key: 'tags', label: '首页大屏标签', type: 'stringArray', defaultItem: '' },
+        objectField('primaryButton', '首页大屏按钮', [
           { key: 'text', label: '按钮文案', type: 'text', required: true },
           { key: 'url', label: '跳转地址', type: 'text', required: true },
           { key: 'openType', label: '跳转方式', type: 'select', options: openTypeOptions }
@@ -98,7 +99,7 @@ export function getAdminPageFormSchema(pageKey) {
       ]),
       objectArrayField(
         'overviewStats',
-        '总览统计',
+        '首屏数据卡（3项）',
         [
           { key: 'value', label: '数值', type: 'text', required: true },
           { key: 'label', label: '标签', type: 'text', required: true }
@@ -108,7 +109,7 @@ export function getAdminPageFormSchema(pageKey) {
       ),
       objectArrayField(
         'quickLinks',
-        '快捷入口',
+        '首页四个功能入口',
         [
           { key: 'label', label: '标题', type: 'text' },
           { key: 'url', label: '跳转地址', type: 'text' },
@@ -120,30 +121,31 @@ export function getAdminPageFormSchema(pageKey) {
       ),
       objectArrayField(
         'advantages',
-        '核心优势',
+        '学习支持（热门方向下方）',
         [
           { key: 'icon', label: '图标标识', type: 'text' },
-          { key: 'title', label: '标题', type: 'text' }
+          { key: 'title', label: '标题', type: 'text' },
+          { key: 'desc', label: '说明', type: 'textarea' }
         ],
-        { icon: '', title: '' },
+        { icon: '', title: '', desc: '' },
         { maxItems: 2, visibleItems: 2 }
       ),
-      { key: 'featuredDirectionIds', label: '首页精选方向 ID', type: 'stringArray', defaultItem: '' },
-      objectField('environmentSection', '环境区块', [
+      { key: 'featuredDirectionIds', label: '热门方向展示 ID', type: 'stringArray', defaultItem: '' },
+      objectField('environmentSection', '校区环境（咨询区上方）', [
         objectArrayField(
           'cards',
-          '环境卡片',
+          '环境图片',
           [
             { key: 'label', label: '名称', type: 'text', required: true },
-            { key: 'imageUrl', label: '图片 URL', type: 'text', validate: 'media-url' },
-            { key: 'imageSeed', label: '图片 Seed', type: 'text' }
+            { key: 'imageUrl', label: '图片 URL', type: 'text', validate: 'media-url' }
           ],
-          { label: '', imageUrl: '', imageSeed: '' },
+          { label: '', imageUrl: '' },
           { maxItems: 2, visibleItems: 2 }
         )
       ]),
-      objectField('cta', '底部 CTA', [
+      objectField('cta', '底部咨询区（环境下方）', [
         { key: 'title', label: '标题', type: 'text', required: true },
+        { key: 'desc', label: '说明', type: 'textarea', required: true },
         { key: 'buttonText', label: '按钮文案', type: 'text', required: true }
       ])
     ];
@@ -152,99 +154,99 @@ export function getAdminPageFormSchema(pageKey) {
   if (pageKey === 'questionBank') {
     return [
       objectField('dailyQuestionCard', '每日一题页', [
-        { key: 'title', label: '标题', type: 'text', required: true },
-        { key: 'desc', label: '描述', type: 'textarea', required: true },
-        { key: 'note', label: '备注', type: 'text' }
+        { key: 'title', label: '页面标题', type: 'text', required: true },
+        { key: 'desc', label: '页面说明', type: 'textarea', required: true },
+        { key: 'note', label: '补充提示', type: 'text' }
       ]),
       objectField('pastPapersCard', '模拟题页', [
-        { key: 'title', label: '标题', type: 'text', required: true },
-        { key: 'desc', label: '描述', type: 'textarea', required: true },
-        { key: 'note', label: '备注', type: 'text' }
+        { key: 'title', label: '页面标题', type: 'text', required: true },
+        { key: 'desc', label: '页面说明', type: 'textarea', required: true },
+        { key: 'note', label: '补充提示', type: 'text' }
       ]),
       objectField('wrongBookCard', '错题本页', [
-        { key: 'title', label: '标题', type: 'text', required: true },
-        { key: 'desc', label: '描述', type: 'textarea', required: true },
-        { key: 'note', label: '备注', type: 'text' }
+        { key: 'title', label: '页面标题', type: 'text', required: true },
+        { key: 'desc', label: '页面说明', type: 'textarea', required: true },
+        { key: 'note', label: '补充提示', type: 'text' }
       ])
     ];
   }
 
   if (pageKey === 'courses') {
     return [
-      { key: 'title', label: '页面标题', type: 'text', required: true },
-      { key: 'subtitle', label: '页面描述', type: 'textarea', required: true },
-      { key: 'categories', label: '分类标签', type: 'stringArray', defaultItem: '' },
-      { key: 'suggestions', label: '规划建议', type: 'stringArray', defaultItem: '' },
-      { key: 'featuredDirectionIds', label: '展示方向 ID', type: 'stringArray', defaultItem: '' },
-      objectField('moreSection', '更多方向区块', [
-        { key: 'title', label: '标题', type: 'text', required: true },
-        { key: 'tag', label: '标签', type: 'text' },
-        { key: 'desc', label: '描述', type: 'textarea', required: true }
+      { key: 'title', label: '方向页主标题', type: 'text', required: true },
+      { key: 'subtitle', label: '方向页顶部说明', type: 'textarea', required: true },
+      { key: 'categories', label: '顶部筛选标签', type: 'stringArray', defaultItem: '' },
+      { key: 'suggestions', label: '报考建议列表', type: 'stringArray', defaultItem: '' },
+      { key: 'featuredDirectionIds', label: '方向列表展示 ID', type: 'stringArray', defaultItem: '' },
+      objectField('moreSection', '底部补充区块', [
+        { key: 'title', label: '区块标题', type: 'text', required: true },
+        { key: 'tag', label: '区块标签', type: 'text' },
+        { key: 'desc', label: '区块说明', type: 'textarea', required: true }
       ])
     ];
   }
 
   if (pageKey === 'teachers') {
     return [
-      objectField('hero', '首屏', [
+      objectField('hero', '师资页首屏', [
         ...pageHeroBasicFields,
-        { key: 'imageUrl', label: '背景图 URL', type: 'text', validate: 'media-url' },
-        { key: 'imageSeed', label: '背景图 Seed', type: 'text' }
+        { key: 'imageUrl', label: '首屏背景图 URL', type: 'text', validate: 'media-url' },
+        { key: 'imageSeed', label: '首屏背景图 Seed', type: 'text' }
       ]),
-      objectField('introCard', '介绍卡片', [
-        { key: 'title', label: '标题', type: 'text' },
-        { key: 'desc', label: '描述', type: 'textarea' }
+      objectField('introCard', '页首介绍卡', [
+        { key: 'title', label: '卡片标题', type: 'text' },
+        { key: 'desc', label: '卡片说明', type: 'textarea' }
       ]),
-      objectArrayField('features', '核心优势', pageValueFields, { title: '', desc: '' }),
-      objectField('cta', '底部 CTA', ctaFields)
+      objectArrayField('features', '师资页优势卡', pageValueFields, { title: '', desc: '' }),
+      objectField('cta', '底部咨询区', ctaFields)
     ];
   }
 
   if (pageKey === 'success') {
     return [
-      objectField('hero', '首屏', pageHeroBasicFields),
-      objectArrayField('stats', '统计数据', statFields, { value: '', label: '', note: '' }),
-      objectField('cta', '底部 CTA', ctaFields)
+      objectField('hero', '成绩页首屏', pageHeroBasicFields),
+      objectArrayField('stats', '成绩页数据卡', statFields, { value: '', label: '', note: '' }),
+      objectField('cta', '底部咨询区', ctaFields)
     ];
   }
 
   if (pageKey === 'about') {
     return [
-      objectField('hero', '首屏', [
+      objectField('hero', '关于页首屏', [
         ...pageHeroBasicFields,
-        { key: 'imageUrl', label: '背景图 URL', type: 'text', validate: 'media-url' },
-        { key: 'imageSeed', label: '背景图 Seed', type: 'text' }
+        { key: 'imageUrl', label: '首屏背景图 URL', type: 'text', validate: 'media-url' },
+        { key: 'imageSeed', label: '首屏背景图 Seed', type: 'text' }
       ]),
-      objectField('introCard', '介绍卡片', [
-        { key: 'title', label: '标题', type: 'text' },
-        { key: 'desc', label: '描述', type: 'textarea' }
+      objectField('introCard', '机构介绍卡', [
+        { key: 'title', label: '卡片标题', type: 'text' },
+        { key: 'desc', label: '卡片说明', type: 'textarea' }
       ]),
-      objectArrayField('values', '理念内容', pageValueFields, { title: '', desc: '' }),
+      objectArrayField('values', '办学理念卡片', pageValueFields, { title: '', desc: '' }),
       objectArrayField(
         'environmentImages',
-        '环境图片',
+        '校区环境图片',
         [
-          { key: 'label', label: '名称', type: 'text', required: true },
+          { key: 'label', label: '图片名称', type: 'text', required: true },
           { key: 'imageUrl', label: '图片 URL', type: 'text', validate: 'media-url' },
           { key: 'imageSeed', label: '图片 Seed', type: 'text' }
         ],
         { label: '', imageUrl: '', imageSeed: '' }
       ),
-      objectField('cta', '底部 CTA', ctaFields)
+      objectField('cta', '底部咨询区', ctaFields)
     ];
   }
 
   if (pageKey === 'materials') {
     return [
-      objectField('hero', '首屏', [
+      objectField('hero', '资料页首屏', [
         ...pageHeroBasicFields,
-        { key: 'imageUrl', label: '背景图 URL', type: 'text', validate: 'media-url' },
-        { key: 'imageSeed', label: '背景图 Seed', type: 'text' }
+        { key: 'imageUrl', label: '首屏背景图 URL', type: 'text', validate: 'media-url' },
+        { key: 'imageSeed', label: '首屏背景图 Seed', type: 'text' }
       ]),
-      { key: 'tabs', label: '分类标签', type: 'stringArray', defaultItem: '' },
-      objectArrayField('overviewStats', '总览统计', statFields, { value: '', label: '', note: '' }),
-      { key: 'featuredSeriesIds', label: '精选套系 ID', type: 'stringArray', defaultItem: '' },
-      objectField('cta', '底部 CTA', ctaFields)
+      { key: 'tabs', label: '资料页顶部标签', type: 'stringArray', defaultItem: '' },
+      objectArrayField('overviewStats', '资料页数据卡', statFields, { value: '', label: '', note: '' }),
+      { key: 'featuredSeriesIds', label: '精选资料展示 ID', type: 'stringArray', defaultItem: '' },
+      objectField('cta', '底部咨询区', ctaFields)
     ];
   }
 
@@ -255,27 +257,27 @@ export function getAdminCollectionFormSchema(collection) {
   if (collection === 'directions') {
     return [
       { key: '_id', label: 'ID', type: 'text' },
-      { key: 'name', label: '方向名称', type: 'text', required: true },
+      { key: 'name', label: '方向卡标题', type: 'text', required: true },
       { key: 'slug', label: 'Slug', type: 'text', required: true },
       { key: 'category', label: '分类', type: 'text', required: true },
       { key: 'isFeatured', label: '首页精选', type: 'boolean' },
-      { key: 'featuredTag', label: '精选标签', type: 'text' },
-      { key: 'homeTag', label: '首页标签', type: 'text' },
-      { key: 'summary', label: '摘要', type: 'textarea', required: true },
-      { key: 'audience', label: '适合人群', type: 'textarea' },
-      { key: 'features', label: '核心卖点', type: 'stringArray', defaultItem: '' },
-      { key: 'chips', label: '标签组', type: 'stringArray', defaultItem: '' },
-      { key: 'iconType', label: '图标类型', type: 'select', options: directionIconOptions },
-      objectField('homeCard', '首页卡片样式', [
-        { key: 'tag', label: '标签文案', type: 'text' },
+      { key: 'featuredTag', label: '首页热门方向标签', type: 'text' },
+      { key: 'homeTag', label: '首页角标', type: 'text' },
+      { key: 'summary', label: '方向简介', type: 'textarea', required: true },
+      { key: 'audience', label: '适合哪些同学', type: 'textarea' },
+      { key: 'features', label: '方向重点标签', type: 'stringArray', defaultItem: '' },
+      { key: 'chips', label: '方向补充标签', type: 'stringArray', defaultItem: '' },
+      { key: 'iconType', label: '方向图标', type: 'select', options: directionIconOptions },
+      objectField('homeCard', '首页热门方向卡样式', [
+        { key: 'tag', label: '卡片标签文案', type: 'text' },
         { key: 'tagColor', label: '标签颜色', type: 'text' },
         { key: 'tagBackground', label: '标签背景', type: 'text' },
-        { key: 'headerBackground', label: '头部背景', type: 'text' },
+        { key: 'headerBackground', label: '卡片头部背景', type: 'text' },
         { key: 'iconColor', label: '图标颜色', type: 'text' }
       ]),
-      objectField('coursesCard', '方向页卡片样式', [
-        { key: 'style', label: '明暗样式', type: 'select', options: [{ label: '浅色', value: 'light' }, { label: '深色', value: 'dark' }] },
-        { key: 'tag', label: '标签文案', type: 'text' },
+      objectField('coursesCard', '方向页列表卡样式', [
+        { key: 'style', label: '卡片明暗样式', type: 'select', options: [{ label: '浅色', value: 'light' }, { label: '深色', value: 'dark' }] },
+        { key: 'tag', label: '卡片标签文案', type: 'text' },
         { key: 'accent', label: '强调色', type: 'text' },
         { key: 'background', label: '背景值', type: 'text' },
         { key: 'iconBg', label: '图标背景', type: 'text' },

@@ -450,35 +450,35 @@ const FIELD_LABELS = {
   address: '地址',
   serviceHours: '服务时间',
   intro: '机构简介',
-  hero: '首屏',
-  chip: '角标',
+  hero: '首页大屏主视觉',
+  chip: '首页大屏小角标',
   title: '标题',
-  highlightTitle: '高亮标题',
-  desc: '描述',
+  highlightTitle: '主标题第二行',
+  desc: '说明',
   secondaryNote: '补充说明',
   backgroundImageUrl: '背景图 URL',
   backgroundImageSeed: '背景图 Seed',
   imageUrl: '图片 URL',
   imageSeed: '图片 Seed',
-  tags: '标签',
-  primaryButton: '主按钮',
+  tags: '首页大屏标签',
+  primaryButton: '首页大屏按钮',
   text: '文案',
   url: '链接',
   openType: '打开方式',
-  overviewStats: '统计数据',
+  overviewStats: '首屏数据卡（3项）',
   value: '值',
   label: '标签',
   note: '备注',
-  quickLinks: '快捷入口',
+  quickLinks: '首页四个功能入口',
   icon: '图标',
-  advantages: '核心优势',
+  advantages: '学习支持（热门方向下方）',
   directionsIntro: '方向介绍',
-  featuredDirectionIds: '精选方向 ID',
+  featuredDirectionIds: '热门方向展示 ID',
   moreDirectionCard: '更多方向卡片',
-  environmentSection: '环境区块',
+  environmentSection: '校区环境（咨询区上方）',
   subtitle: '副标题',
   cards: '卡片',
-  cta: '底部 CTA',
+  cta: '底部咨询区（环境下方）',
   buttonText: '按钮文案',
   footnote: '底部说明',
   categories: '分类',
@@ -575,9 +575,9 @@ const OBJECT_ARRAY_FIELDS = new Set([
 ]);
 const ARRAY_TEMPLATES = {
   overviewStats: { value: '', label: '', note: '' },
-  quickLinks: { label: '', url: '', openType: 'navigate', icon: '' },
-  advantages: { icon: '', title: '' },
-  cards: { label: '', imageUrl: '', imageSeed: '' },
+  quickLinks: { label: '', desc: '', url: '', openType: 'navigate', icon: '' },
+  advantages: { icon: '', title: '', desc: '' },
+  cards: { label: '', imageUrl: '' },
   features: { title: '', desc: '' },
   stats: { value: '', label: '', note: '' },
   values: { title: '', desc: '' },
@@ -640,14 +640,14 @@ const COMPANION_FIELDS = {
 
 const HOME_EDITOR_HIDDEN_PATHS = new Set([
   'hero.secondaryNote',
+  'hero.backgroundImageSeed',
   'overviewStats.*.note',
   'quickLinks.*.desc',
-  'advantages.*.desc',
   'directionsIntro',
   'moreDirectionCard',
   'environmentSection.title',
   'environmentSection.subtitle',
-  'cta.desc',
+  'environmentSection.cards.*.imageSeed',
   'cta.footnote'
 ]);
 
@@ -670,22 +670,45 @@ const EDITOR_LAYOUTS = {
   'page:home': {
     hero: {
       title: '首页主配置',
-      desc: '这里维护的是首页当前真实会显示的内容，包括 4 个快捷入口、2 项学习支持、2 张环境图和底部 CTA。'
+      desc: '这里的条目已经按首页真实顺序拆开：首页大屏主视觉、首屏数据卡、四个功能入口、热门方向、学习支持、校区环境、底部咨询区。'
     },
     sections: [
       {
-        title: '首屏与入口',
-        keys: ['hero', 'overviewStats', 'quickLinks']
+        title: '首页大屏主视觉',
+        desc: '对应首页最上方第一屏的大标题区，包括小角标、两行主标题、说明、标签和首个按钮。',
+        keys: ['hero']
       },
       {
-        title: '首页主体',
-        keys: ['advantages', 'featuredDirectionIds']
+        title: '首屏数据卡',
+        desc: '对应首屏下面的 3 个数字卡片。',
+        keys: ['overviewStats']
+      },
+      {
+        title: '首页四个功能入口',
+        desc: '对应“机构介绍 / 每日一题 / 模拟题 / 错题本”这 4 个入口。',
+        keys: ['quickLinks']
+      },
+      {
+        title: '热门方向',
+        desc: '对应四个入口下方的热门方向大卡片，目前通过方向 ID 控制。',
+        keys: ['featuredDirectionIds']
+      },
+      {
+        title: '学习支持',
+        desc: '对应热门方向下方的两张学习支持卡片。',
+        keys: ['advantages']
       }
     ],
     secondarySections: [
       {
-        title: '环境与转化',
-        keys: ['environmentSection', 'cta']
+        title: '校区环境',
+        desc: '对应底部咨询区上方的环境图片区块。',
+        keys: ['environmentSection']
+      },
+      {
+        title: '底部咨询区',
+        desc: '对应页面最下方的蓝色咨询转化卡片。',
+        keys: ['cta']
       },
     ],
     foldLabel: '更多首页区块'
@@ -698,12 +721,14 @@ const EDITOR_LAYOUTS = {
     sections: [
       {
         title: '品牌与联系',
+        desc: '对应关于我们页“联系方式”卡片中的品牌名、电话、微信和服务时间。',
         keys: ['siteName', 'brandName', 'contactPhone', 'contactWechat', 'serviceHours']
       }
     ],
     secondarySections: [
       {
         title: '补充信息',
+        desc: '对应关于我们页联系方式卡片下半部分的二维码、地址和机构简介。',
         keys: ['contactQrcode', 'contactQrcodeUrl', 'address', 'intro']
       }
     ],
@@ -717,10 +742,12 @@ const EDITOR_LAYOUTS = {
     sections: [
       {
         title: '核心字段',
+        desc: '对应首页热门方向卡和方向页列表卡最核心的名称、分类与简介。',
         keys: ['name', 'category', 'status', 'sort', 'isFeatured', 'summary']
       },
       {
         title: '内容表达',
+        desc: '对应方向卡里的适合人群与文案重点。',
         keys: ['audience']
       }
     ],
@@ -736,14 +763,17 @@ const EDITOR_LAYOUTS = {
     sections: [
       {
         title: '核心字段',
+        desc: '对应师资页老师卡片最直接展示的姓名、身份、标签和排序。',
         keys: ['name', 'role', 'tag', 'status', 'sort', 'specialties']
       },
       {
         title: '内容表达',
+        desc: '对应老师卡片里的简介和补充文案。',
         keys: ['summary', 'desc', 'subtitle']
       },
       {
         title: '展示资源',
+        desc: '对应师资卡片里的头像资源。',
         keys: ['avatarUrl', 'avatarSeed']
       }
     ]
@@ -756,12 +786,14 @@ const EDITOR_LAYOUTS = {
     sections: [
       {
         title: '页面主信息',
+        desc: '对应方向页顶部标题、筛选标签、报考建议和精选方向。',
         keys: ['title', 'subtitle', 'categories', 'suggestions', 'featuredDirectionIds']
       }
     ],
     secondarySections: [
       {
         title: '更多方向区块',
+        desc: '对应方向页底部“更多方向”区块的标题和说明。',
         keys: ['moreSection']
       }
     ],
@@ -775,12 +807,14 @@ const EDITOR_LAYOUTS = {
     sections: [
       {
         title: '页面主信息',
+        desc: '对应师资页首屏、介绍卡和核心优势区。',
         keys: ['hero', 'introCard', 'features']
       }
     ],
     secondarySections: [
       {
         title: '底部 CTA',
+        desc: '对应师资页底部咨询引导区。',
         keys: ['cta']
       }
     ],
@@ -794,12 +828,14 @@ const EDITOR_LAYOUTS = {
     sections: [
       {
         title: '页面主信息',
+        desc: '对应成果页首屏和顶部成果数据卡。',
         keys: ['hero', 'stats']
       }
     ],
     secondarySections: [
       {
         title: '底部 CTA',
+        desc: '对应成果页底部咨询引导区。',
         keys: ['cta']
       }
     ],
@@ -813,16 +849,19 @@ const EDITOR_LAYOUTS = {
     sections: [
       {
         title: '页面主信息',
+        desc: '对应关于页首屏、介绍卡和机构理念卡片。',
         keys: ['hero', 'introCard', 'values']
       }
     ],
     secondarySections: [
       {
         title: '环境展示',
+        desc: '对应关于页校区环境图片区。',
         keys: ['environmentImages']
       },
       {
         title: '底部 CTA',
+        desc: '对应关于页底部咨询引导区。',
         keys: ['cta']
       }
     ],
@@ -836,12 +875,14 @@ const EDITOR_LAYOUTS = {
     sections: [
       {
         title: '页面主信息',
+        desc: '对应资料页首屏、顶部分类标签和总览统计卡。',
         keys: ['hero', 'tabs', 'overviewStats']
       }
     ],
     secondarySections: [
       {
         title: '推荐与 CTA',
+        desc: '对应资料页精选套系推荐和底部咨询区。',
         keys: ['featuredSeriesIds', 'cta']
       }
     ],
@@ -855,14 +896,17 @@ const EDITOR_LAYOUTS = {
     sections: [
       {
         title: '每日一题页',
+        desc: '对应小程序每日一题入口打开后的页面标题和说明。',
         keys: ['dailyQuestionCard']
       },
       {
         title: '模拟题页',
+        desc: '对应小程序模拟题入口打开后的页面标题和说明。',
         keys: ['pastPapersCard']
       },
       {
         title: '错题本页',
+        desc: '对应小程序错题本入口打开后的页面标题和说明。',
         keys: ['wrongBookCard']
       }
     ]
@@ -875,14 +919,17 @@ const EDITOR_LAYOUTS = {
     sections: [
       {
         title: '核心字段',
+        desc: '对应模拟题题目最基础的题号、题型、年份和所属试卷。',
         keys: ['questionId', 'direction', 'questionType', 'year', 'paperId', 'status', 'sort']
       },
       {
         title: '题干与答案',
+        desc: '对应小程序做题页里的题干、选项、答案和解析。',
         keys: ['stem', 'options', 'answer', 'explanation']
       },
       {
         title: '标签',
+        desc: '对应题目补充标签。',
         keys: ['tags']
       }
     ]
@@ -895,10 +942,12 @@ const EDITOR_LAYOUTS = {
     sections: [
       {
         title: '核心字段',
+        desc: '对应模拟题列表页里展示的试卷标题、年份和方向。',
         keys: ['paperId', 'title', 'year', 'direction', 'status', 'sort']
       },
       {
         title: '试卷内容',
+        desc: '对应试卷说明和题目列表归属。',
         keys: ['description', 'questionIds']
       }
     ]
@@ -911,14 +960,17 @@ const EDITOR_LAYOUTS = {
     sections: [
       {
         title: '导入信息',
+        desc: '对应纯文本导入记录的标题、来源和状态。',
         keys: ['title', 'direction', 'sourceType', 'status', 'sort']
       },
       {
         title: '原始文本',
+        desc: '对应待解析的原始题文内容。',
         keys: ['rawText']
       },
       {
         title: '补充说明',
+        desc: '对应导入记录备注。',
         keys: ['note']
       }
     ]
@@ -965,6 +1017,286 @@ function normalizeCmsValue(value) {
 
 function humanizeLabel(key) {
   return FIELD_LABELS[key] || key.replace(/([a-z])([A-Z])/g, '$1 $2').replaceAll('_', ' ');
+}
+
+const SCOPED_FIELD_LABELS = {
+  'page:home': {
+    hero: '首页大屏主视觉',
+    'hero.chip': '首页大屏小角标',
+    'hero.title': '首页大屏第一行标题',
+    'hero.highlightTitle': '首页大屏第二行标题',
+    'hero.desc': '首页大屏说明',
+    'hero.backgroundImageUrl': '首页大屏背景图 URL',
+    'hero.tags': '首页大屏标签',
+    'hero.primaryButton': '首页大屏按钮',
+    'hero.primaryButton.text': '首页大屏按钮文案',
+    'hero.primaryButton.url': '首页大屏按钮跳转地址',
+    'hero.primaryButton.openType': '首页大屏按钮跳转方式',
+    overviewStats: '首屏数据卡',
+    'overviewStats.*': '数据卡',
+    'overviewStats.*.value': '数据卡数值',
+    'overviewStats.*.label': '数据卡标签',
+    quickLinks: '首页四个功能入口',
+    'quickLinks.*': '功能入口',
+    'quickLinks.*.label': '入口标题',
+    'quickLinks.*.url': '入口跳转地址',
+    'quickLinks.*.openType': '入口跳转方式',
+    'quickLinks.*.icon': '入口图标标识',
+    featuredDirectionIds: '热门方向展示 ID',
+    advantages: '学习支持',
+    'advantages.*': '学习支持卡片',
+    'advantages.*.icon': '卡片图标标识',
+    'advantages.*.title': '卡片标题',
+    'advantages.*.desc': '卡片说明',
+    environmentSection: '校区环境',
+    'environmentSection.cards': '环境图片',
+    'environmentSection.cards.*': '环境图片',
+    'environmentSection.cards.*.label': '图片名称',
+    'environmentSection.cards.*.imageUrl': '图片 URL',
+    cta: '底部咨询区',
+    'cta.title': '咨询区标题',
+    'cta.desc': '咨询区说明',
+    'cta.buttonText': '咨询按钮文案'
+  },
+  'page:site': {
+    siteName: '小程序站点名称',
+    brandName: '品牌名称',
+    contactPhone: '前端联系电话',
+    contactWechat: '前端微信咨询号',
+    contactQrcode: '联系二维码链接',
+    contactQrcodeUrl: '联系二维码图片',
+    address: '校区地址',
+    serviceHours: '咨询服务时间',
+    intro: '机构简介'
+  },
+  'page:courses': {
+    title: '方向页主标题',
+    subtitle: '方向页说明',
+    categories: '顶部筛选标签',
+    suggestions: '报考建议列表',
+    featuredDirectionIds: '精选方向卡片 ID',
+    moreSection: '更多方向区块',
+    'moreSection.title': '区块标题',
+    'moreSection.tag': '区块标签',
+    'moreSection.desc': '区块说明'
+  },
+  'page:teachers': {
+    hero: '师资页首屏',
+    'hero.chip': '首屏小角标',
+    'hero.title': '师资页主标题',
+    'hero.desc': '师资页说明',
+    'hero.imageUrl': '首屏配图 URL',
+    introCard: '介绍卡片',
+    'introCard.title': '介绍卡标题',
+    'introCard.desc': '介绍卡说明',
+    features: '核心优势',
+    'features.*': '优势卡片',
+    'features.*.title': '优势标题',
+    'features.*.desc': '优势说明',
+    cta: '底部咨询区',
+    'cta.title': '咨询区标题',
+    'cta.desc': '咨询区说明',
+    'cta.buttonText': '咨询按钮文案'
+  },
+  'page:success': {
+    hero: '成果页首屏',
+    'hero.chip': '首屏小角标',
+    'hero.title': '成果页主标题',
+    'hero.desc': '成果页说明',
+    stats: '成果数据卡',
+    'stats.*': '成果数据卡',
+    'stats.*.value': '数据值',
+    'stats.*.label': '数据标签',
+    'stats.*.note': '补充说明',
+    cta: '底部咨询区',
+    'cta.title': '咨询区标题',
+    'cta.desc': '咨询区说明',
+    'cta.buttonText': '咨询按钮文案'
+  },
+  'page:about': {
+    hero: '关于页首屏',
+    'hero.chip': '首屏小角标',
+    'hero.title': '关于页主标题',
+    'hero.desc': '关于页说明',
+    'hero.imageUrl': '首屏配图 URL',
+    introCard: '介绍卡片',
+    'introCard.title': '介绍卡标题',
+    'introCard.desc': '介绍卡说明',
+    values: '机构理念卡片',
+    'values.*': '理念卡片',
+    'values.*.title': '理念标题',
+    'values.*.desc': '理念说明',
+    environmentImages: '校区环境图片',
+    'environmentImages.*': '环境图片',
+    'environmentImages.*.label': '图片名称',
+    'environmentImages.*.imageUrl': '图片 URL',
+    cta: '底部咨询区',
+    'cta.title': '咨询区标题',
+    'cta.desc': '咨询区说明',
+    'cta.buttonText': '咨询按钮文案'
+  },
+  'page:materials': {
+    hero: '资料页首屏',
+    'hero.chip': '首屏小角标',
+    'hero.title': '资料页主标题',
+    'hero.desc': '资料页说明',
+    'hero.imageUrl': '首屏配图 URL',
+    tabs: '顶部资料分类标签',
+    overviewStats: '总览统计卡',
+    'overviewStats.*': '统计卡',
+    'overviewStats.*.value': '统计值',
+    'overviewStats.*.label': '统计标签',
+    'overviewStats.*.note': '统计说明',
+    featuredSeriesIds: '精选资料套系 ID',
+    cta: '底部咨询区',
+    'cta.title': '咨询区标题',
+    'cta.desc': '咨询区说明',
+    'cta.buttonText': '咨询按钮文案'
+  },
+  'page:questionBank': {
+    dailyQuestionCard: '每日一题页',
+    'dailyQuestionCard.title': '页面标题',
+    'dailyQuestionCard.desc': '页面说明',
+    'dailyQuestionCard.note': '补充提示',
+    pastPapersCard: '模拟题页',
+    'pastPapersCard.title': '页面标题',
+    'pastPapersCard.desc': '页面说明',
+    'pastPapersCard.note': '补充提示',
+    wrongBookCard: '错题本页',
+    'wrongBookCard.title': '页面标题',
+    'wrongBookCard.desc': '页面说明',
+    'wrongBookCard.note': '补充提示'
+  },
+  'collection:directions': {
+    name: '方向名称',
+    slug: '方向 Slug',
+    category: '方向分类',
+    isFeatured: '是否进入首页推荐',
+    featuredTag: '首页精选标签',
+    homeTag: '首页卡片角标',
+    summary: '方向简介',
+    audience: '适合人群',
+    features: '核心重点',
+    chips: '辅助标签',
+    iconType: '方向图标',
+    homeCard: '首页卡片样式',
+    'homeCard.tag': '首页卡标签文案',
+    'homeCard.tagColor': '首页卡标签颜色',
+    'homeCard.tagBackground': '首页卡标签背景',
+    'homeCard.headerBackground': '首页卡头部背景',
+    'homeCard.iconColor': '首页卡图标颜色',
+    coursesCard: '方向页卡片样式',
+    'coursesCard.style': '卡片明暗样式',
+    'coursesCard.tag': '卡片标签文案',
+    'coursesCard.accent': '卡片强调色',
+    'coursesCard.background': '卡片背景值',
+    'coursesCard.iconBg': '卡片图标背景',
+    'coursesCard.iconType': '卡片图标',
+    sort: '排序值',
+    status: '发布状态'
+  },
+  'collection:teachers': {
+    name: '老师姓名',
+    role: '老师身份',
+    tag: '老师标签',
+    avatarUrl: '头像图片 URL',
+    avatarSeed: '头像 Seed',
+    intro: '卡片简介',
+    specialties: '擅长标签',
+    sort: '排序值',
+    status: '发布状态'
+  },
+  'collection:successCases': {
+    title: '上岸故事标题',
+    subtitle: '上岸故事说明',
+    coverUrl: '封面图片 URL',
+    coverSeed: '封面 Seed',
+    year: '上岸年份',
+    category: '案例分类',
+    sort: '排序值',
+    status: '发布状态'
+  },
+  'collection:materialSeries': {
+    name: '套系名称',
+    slug: '套系 Slug',
+    category: '套系分类',
+    tag: '套系标签',
+    accent: '套系强调色',
+    summary: '套系简介',
+    shelfLabel: '书架标签',
+    items: '套系标签组',
+    sort: '排序值',
+    status: '发布状态'
+  },
+  'collection:materialItems': {
+    seriesId: '所属套系 ID',
+    type: '资料类型',
+    title: '资料标题',
+    subtitle: '资料副标题',
+    stage: '适用阶段',
+    desc: '资料说明',
+    contents: '目录标签',
+    sort: '排序值',
+    status: '发布状态'
+  },
+  'collection:medicalQuestions': {
+    questionId: '题目 ID',
+    direction: '所属方向',
+    questionType: '题型',
+    stem: '题干',
+    options: '选项',
+    'options.*': '选项',
+    'options.*.id': '选项标识',
+    'options.*.text': '选项内容',
+    answer: '答案',
+    explanation: '解析',
+    paperId: '所属试卷 ID',
+    tags: '题目标签',
+    status: '发布状态'
+  },
+  'collection:pastPapers': {
+    paperId: '试卷 ID',
+    title: '试卷标题',
+    description: '试卷说明',
+    year: '年份',
+    direction: '所属方向',
+    questionIds: '题目 ID 列表',
+    status: '发布状态'
+  },
+  'collection:questionImports': {
+    title: '导入名称',
+    direction: '所属方向',
+    sourceType: '导入来源',
+    rawText: '原始文本',
+    note: '补充说明',
+    status: '发布状态'
+  },
+  'collection:mediaAssets': {
+    title: '资源名称',
+    category: '资源分类',
+    module: '使用模块',
+    type: '资源类型',
+    url: '资源地址',
+    thumbUrl: '缩略图地址',
+    alt: '替代文本',
+    tags: '资源标签',
+    sort: '排序值',
+    status: '发布状态'
+  }
+};
+
+function getScopedFieldLabel(scope, path, fieldKey) {
+  const normalizedPath = normalizeEditorPath(path);
+  const scopedLabels = SCOPED_FIELD_LABELS[scope] || null;
+  if (scopedLabels) {
+    return scopedLabels[normalizedPath] || humanizeLabel(fieldKey);
+  }
+  return humanizeLabel(fieldKey);
+}
+
+function getArrayItemTitle(scope, path, fieldKey, index) {
+  const itemPath = [...path, index];
+  return `${getScopedFieldLabel(scope, itemPath, fieldKey)} ${index + 1}`;
 }
 
 function parsePath(pathText) {
@@ -1160,7 +1492,7 @@ function isQuestionBankPageScope(scope) {
 }
 
 function usesDirectSectionEditor(pageKey) {
-  return pageKey === 'home' || pageKey === 'questionBank';
+  return true;
 }
 
 function shouldHideField(scope, path) {
@@ -1183,7 +1515,7 @@ function getArrayEditorRule(scope, path) {
 }
 
 function renderPrimitiveInput(scope, path, fieldKey, value) {
-  const label = humanizeLabel(fieldKey);
+  const label = getScopedFieldLabel(scope, path, fieldKey);
   const pathText = path.join('.');
   const selectOptions = getSelectOptions(fieldKey);
   const isImageUrlField = /(?:image|background|avatar|cover|thumb)Url$/i.test(fieldKey);
@@ -1242,7 +1574,7 @@ function renderPrimitiveInput(scope, path, fieldKey, value) {
 }
 
 function renderLineListInput(scope, path, fieldKey, value) {
-  const label = humanizeLabel(fieldKey);
+  const label = getScopedFieldLabel(scope, path, fieldKey);
   const pathText = path.join('.');
   return `<label class="form-field form-field-wide">
     <span class="form-label">${escapeHtml(label)}</span>
@@ -1257,7 +1589,7 @@ function renderFormNode(scope, value, path = [], fieldKey = '') {
   }
 
   if (Array.isArray(value)) {
-    const label = humanizeLabel(fieldKey);
+    const label = getScopedFieldLabel(scope, path, fieldKey);
     const pathText = path.join('.');
     const objectItems = value.some((item) => item && typeof item === 'object' && !Array.isArray(item)) || OBJECT_ARRAY_FIELDS.has(fieldKey);
     const stringItems = value.every((item) => item == null || typeof item === 'string');
@@ -1288,7 +1620,7 @@ function renderFormNode(scope, value, path = [], fieldKey = '') {
               .join('');
             return `<article class="form-array-card">
               <div class="form-array-head">
-                <strong>${escapeHtml(`${label} ${index + 1}`)}</strong>
+                <strong>${escapeHtml(getArrayItemTitle(scope, path, fieldKey, index))}</strong>
                 <button class="system-action danger-action" type="button" data-action="remove-array-item" data-form-scope="${escapeHtml(scope)}" data-form-path="${escapeHtml(pathText)}" data-index="${index}">删除</button>
               </div>
               <div class="form-grid">${fields || '<div class="empty-state">当前对象还没有字段。</div>'}</div>
@@ -1305,7 +1637,7 @@ function renderFormNode(scope, value, path = [], fieldKey = '') {
   }
 
   if (value && typeof value === 'object') {
-    const label = fieldKey ? humanizeLabel(fieldKey) : '内容配置';
+    const label = fieldKey ? getScopedFieldLabel(scope, path, fieldKey) : '内容配置';
     const objectKeys = [...new Set([...Object.keys(value), ...getCompanionFieldKeys(value)])];
     const fields = objectKeys
       .filter((key) => !isManagedField(key) && !shouldHideField(scope, [...path, key]))
@@ -1384,6 +1716,7 @@ function renderStructuredEditor(scope, value, layout) {
       return `<section class="form-section">
         <div class="form-section-head">
           <h4>${escapeHtml(section.title)}</h4>
+          ${section.desc ? `<p>${escapeHtml(section.desc)}</p>` : ''}
         </div>
         <div class="form-grid">${fields}</div>
       </section>`;
@@ -1790,9 +2123,10 @@ function renderPageEditorOverlay(pageKey, pageLabel, page) {
         <div class="directions-enter-modal-item" style="--enter-delay: 60ms;">
           <div class="workspace-compact-summary editor-subsection-summary">
             <strong>${escapeHtml(selectedSectionId ? `当前区块：${activeRow?.title || pageLabel}` : '页面配置总览')}</strong>
-            <span>${escapeHtml(usesDirectSectionEditor(pageKey) ? '当前页面区块点开后会直接显示真实生效的表单，不再额外套字段工作台。' : '先点区块 row，再继续进入字段 row 和具体表单。')}</span>
+            <span>区块名称、字段名称和前端展示位置已经统一，点区块卡片或表格 row 就会直接看到真实生效表单。</span>
             <em>${escapeHtml(`当前页面 ${rows.length} 个区块`)}</em>
           </div>
+          ${renderPageSectionNavCards(pageKey, rows, selectedSectionId, 'select-page-editor-section')}
           ${renderPageSectionsTable(pageKey, rows, selectedSectionId, 'select-page-editor-section')}
         </div>
         ${activeRow ? renderPageSectionFieldWorkbench(pageKey, page, activeRow) : ''}
@@ -1815,28 +2149,36 @@ function summarizeText(value, limit = 36) {
   return text.length > limit ? `${text.slice(0, limit)}...` : text;
 }
 
+function getSectionLocationText(scope, row) {
+  if (row?.location) return row.location;
+  return (row?.keys || []).map((key) => getScopedFieldLabel(scope, [key], key)).join(' / ');
+}
+
 function getPageSectionRows(pageKey, page = {}) {
   if (pageKey === 'questionBank') {
     return [
       {
         id: 'dailyQuestionCard',
         title: '每日一题页',
-        desc: page.dailyQuestionCard?.title || page.dailyQuestionCard?.desc || '小程序每日一题页标题与说明',
-        meta: page.dailyQuestionCard?.note || '固定题源提示',
+        desc: '对应小程序“每日一题”页面首屏标题和说明。',
+        meta: page.dailyQuestionCard?.title || page.dailyQuestionCard?.desc || '固定题源提示',
+        location: '页面标题 / 页面说明 / 补充提示',
         keys: ['dailyQuestionCard']
       },
       {
         id: 'pastPapersCard',
         title: '模拟题页',
-        desc: page.pastPapersCard?.title || page.pastPapersCard?.desc || '小程序模拟题页标题与说明',
-        meta: page.pastPapersCard?.note || 'CSV 热更新提示',
+        desc: '对应小程序“模拟题”页面首屏标题和说明。',
+        meta: page.pastPapersCard?.title || page.pastPapersCard?.desc || 'CSV 热更新提示',
+        location: '页面标题 / 页面说明 / 补充提示',
         keys: ['pastPapersCard']
       },
       {
         id: 'wrongBookCard',
         title: '错题本页',
-        desc: page.wrongBookCard?.title || page.wrongBookCard?.desc || '小程序错题本页标题与说明',
-        meta: page.wrongBookCard?.note || '复盘说明',
+        desc: '对应小程序“错题本”页面首屏标题和说明。',
+        meta: page.wrongBookCard?.title || page.wrongBookCard?.desc || '复盘说明',
+        location: '页面标题 / 页面说明 / 补充提示',
         keys: ['wrongBookCard']
       }
     ];
@@ -1850,35 +2192,63 @@ function getPageSectionRows(pageKey, page = {}) {
     return [
       {
         id: 'hero',
-        title: '首屏与入口',
-        desc: page.hero?.title || page.hero?.chip || '主标题、角标和入口按钮',
-        meta: `${statCount} 项统计 · ${quickLinkCount} 个快捷入口`,
-        keys: ['hero', 'overviewStats', 'quickLinks']
+        title: '首页大屏主视觉',
+        desc: '对应首页最上方第一屏的大标题、说明、标签和首个按钮。',
+        meta: page.hero?.title || page.hero?.chip || '标题 / 标签 / 按钮',
+        location: '首页大屏小角标 / 两行主标题 / 首页大屏说明 / 首页大屏按钮',
+        keys: ['hero']
       },
       {
-        id: 'core',
-        title: '首页主体',
-        desc: (page.advantages || []).slice(0, 2).map((item) => item?.title).filter(Boolean).join(' / ') || '学习支持与首页精选方向',
-        meta: `${advantageCount} 项学习支持 · ${(page.featuredDirectionIds || []).length} 个精选方向`,
-        keys: ['advantages', 'featuredDirectionIds']
+        id: 'stats',
+        title: '首屏数据卡',
+        desc: '对应首页首屏下方的 3 个数字信息卡。',
+        meta: (page.overviewStats || []).slice(0, 3).map((item) => item?.label).filter(Boolean).join(' / ') || `${statCount} 项数据卡`,
+        location: '数据卡数值 / 数据卡标签',
+        keys: ['overviewStats']
+      },
+      {
+        id: 'quickLinks',
+        title: '首页四个功能入口',
+        desc: '对应首页首屏下方的 4 个功能入口。',
+        meta: (page.quickLinks || []).slice(0, 4).map((item) => item?.label).filter(Boolean).join(' / ') || `${quickLinkCount} 个功能入口`,
+        location: '入口标题 / 跳转地址 / 跳转方式 / 图标标识',
+        keys: ['quickLinks']
+      },
+      {
+        id: 'directions',
+        title: '热门方向',
+        desc: '对应首页“热门方向”区块里展示的方向卡片。',
+        meta: (page.featuredDirectionIds || []).slice(0, 2).join(' / ') || `${(page.featuredDirectionIds || []).length} 个方向 ID`,
+        location: '热门方向展示 ID',
+        keys: ['featuredDirectionIds']
+      },
+      {
+        id: 'advantages',
+        title: '学习支持',
+        desc: '对应热门方向下方的两张学习支持卡片。',
+        meta: (page.advantages || []).slice(0, 2).map((item) => item?.title).filter(Boolean).join(' / ') || `${advantageCount} 项学习支持`,
+        location: '卡片标题 / 卡片说明 / 图标标识',
+        keys: ['advantages']
       },
       {
         id: 'environment',
-        title: '环境展示',
-        desc:
+        title: '校区环境',
+        desc: '对应底部咨询区上方的校区环境图片区。',
+        meta:
           (page.environmentSection?.cards || [])
             .slice(0, 2)
             .map((item) => item?.label)
             .filter(Boolean)
-            .join(' / ') || '首页环境图片区块',
-        meta: `${environmentCount} 张环境卡片`,
+            .join(' / ') || `${environmentCount} 张环境图片`,
+        location: '图片名称 / 图片 URL',
         keys: ['environmentSection']
       },
       {
         id: 'cta',
-        title: '底部 CTA',
-        desc: page.cta?.title || '底部转化区块',
-        meta: page.cta?.buttonText || '按钮文案',
+        title: '底部咨询区',
+        desc: '对应页面最下方的咨询转化区。',
+        meta: page.cta?.title || page.cta?.buttonText || '咨询按钮文案',
+        location: '咨询区标题 / 咨询区说明 / 咨询按钮文案',
         keys: ['cta']
       }
     ];
@@ -1907,8 +2277,9 @@ function getPageSectionRows(pageKey, page = {}) {
     return {
       id: section.id || `section-${index + 1}`,
       title: section.title || `区块 ${index + 1}`,
-      desc: primaryKey ? summarizeFieldPreview(primaryKey, page[primaryKey]) : '点击查看区块字段',
-      meta: `${sectionKeys.length} 组字段${labelPreview ? ` · ${labelPreview}` : ''}`,
+      desc: section.desc || '点击查看区块字段',
+      meta: primaryKey ? summarizeFieldPreview(primaryKey, page[primaryKey]) : `${sectionKeys.length} 组字段${labelPreview ? ` · ${labelPreview}` : ''}`,
+      location: sectionKeys.map((key) => getScopedFieldLabel(`page:${pageKey}`, [key], key)).join(' / '),
       keys: sectionKeys
     };
   });
@@ -1920,6 +2291,7 @@ function getPageSectionRows(pageKey, page = {}) {
       title: '补充字段',
       desc: '未归入主分组的内容',
       meta: `${remainderKeys.length} 组字段`,
+      location: remainderKeys.map((key) => getScopedFieldLabel(`page:${pageKey}`, [key], key)).join(' / '),
       keys: remainderKeys
     });
   }
@@ -2010,12 +2382,28 @@ function renderDirectSectionEditor(pageKey, page, section) {
   return `<div class="editor-subsection-shell directions-enter-modal-item" style="--enter-delay: 40ms;">
     <div class="workspace-compact-summary editor-subsection-summary">
       <strong>${escapeHtml(section.title)}</strong>
-      <span>这里展示的就是当前真实生效的字段，改完直接保存即可。</span>
+      <span>${escapeHtml(section.desc || '这里展示的就是当前真实生效的字段，改完直接保存即可。')}</span>
       <em>${escapeHtml(`区块字段 ${section.keys.length} 组`)}</em>
     </div>
     <div class="friendly-editor friendly-editor-pages">
       ${fields}
     </div>
+  </div>`;
+}
+
+function renderPageSectionNavCards(pageKey, rows, selectedSectionId, actionName) {
+  if (!rows.length) return '';
+
+  return `<div class="page-section-nav-grid directions-enter-modal-item" style="--enter-delay: 50ms;">
+    ${rows.map((row, index) => `<button class="page-section-nav-card${row.id === selectedSectionId ? ' active' : ''}" type="button" style="--enter-delay: ${70 + index * 16}ms;" data-action="${escapeHtml(actionName)}" data-page-key="${escapeHtml(pageKey)}" data-section-id="${escapeHtml(row.id)}">
+      <span class="page-section-nav-kicker">前端区块</span>
+      <strong>${escapeHtml(row.title)}</strong>
+      <p>${escapeHtml(row.desc || '点击查看对应表单')}</p>
+      <div class="page-section-nav-meta">
+        <span>${escapeHtml(row.meta || '待完善')}</span>
+        <em>${escapeHtml(getSectionLocationText(`page:${pageKey}`, row))}</em>
+      </div>
+    </button>`).join('')}
   </div>`;
 }
 
@@ -2089,7 +2477,7 @@ function renderPageSectionsTable(pageKey, rows, selectedSectionId, actionName) {
             <strong class="data-table-title">${escapeHtml(row.desc || '待完善')}</strong>
             <span class="data-table-sub">${escapeHtml(row.meta || '点击进入编辑')}</span>
           </td>
-          <td><span class="table-inline-summary">${escapeHtml(row.keys.map((key) => humanizeLabel(key)).join(' / '))}</span></td>
+          <td><span class="table-inline-summary">${escapeHtml(getSectionLocationText(`page:${pageKey}`, row))}</span></td>
           <td><button class="row-action" type="button" data-action="${escapeHtml(actionName)}" data-page-key="${escapeHtml(pageKey)}" data-section-id="${escapeHtml(row.id)}">编辑</button></td>
         </tr>`).join('')}
       </tbody>
@@ -2303,14 +2691,15 @@ function renderPageWorkspace(view, data) {
           <div class="panel-head workspace-enter" style="--enter-delay: 60ms;">
             <div>
               <h3>${escapeHtml(`${view.pageLabel || view.title}工作区`)}</h3>
-              <p>主区只显示每个区块的摘要信息，点击 row 后再进入对应表单。</p>
+              <p>主区先按前端区块列出摘要，你可以直接按页面从上到下定位并进入真实生效表单。</p>
             </div>
           </div>
           <div class="workspace-compact-summary workspace-enter" style="--enter-delay: 120ms;">
             <strong>${escapeHtml(selectedSectionId ? `当前焦点：${rows.find((item) => item.id === selectedSectionId)?.title || view.pageLabel || '页面配置'}` : `${view.pageLabel || '页面配置'}总览`)}</strong>
-            <span>${escapeHtml(`共 ${rows.length} 个核心区块，建议按从上到下的顺序逐块维护。`)}</span>
+            <span>${escapeHtml(`共 ${rows.length} 个核心区块，字段名称和前端展示位置已统一，建议按从上到下逐块维护。`)}</span>
             <em>${escapeHtml(`当前页面字段 ${Object.keys(data.page || {}).length} 个`)}</em>
           </div>
+          ${renderPageSectionNavCards(view.pageKey, rows, selectedSectionId, 'open-page-section-editor')}
           ${renderPageSectionsTable(view.pageKey, rows, selectedSectionId, 'open-page-section-editor')}
         </article>
         ${renderPageSectionOverlay(view.pageKey, view.pageLabel, data.page, rows)}
@@ -2332,7 +2721,7 @@ function renderPageSectionOverlay(pageKey, pageLabel, page, rows = getPageSectio
       <div class="panel-head editor-modal-head directions-enter-modal-item" style="--enter-delay: 0ms;">
         <div>
           <h3>${escapeHtml(`${pageLabel} · ${activeRow.title}`)}</h3>
-          <p>当前只展开这一组字段，改完保存即可，不会干扰其它区块。</p>
+          <p>${escapeHtml(activeRow.desc || '当前只展开这一组字段，改完保存即可，不会干扰其它区块。')}</p>
         </div>
         <div class="panel-actions">
           <button class="system-action" type="button" data-action="save-page" data-page-key="${escapeHtml(pageKey)}">保存页面</button>
@@ -2343,6 +2732,7 @@ function renderPageSectionOverlay(pageKey, pageLabel, page, rows = getPageSectio
         <div class="editor-meta directions-enter-modal-item" style="--enter-delay: 20ms;">
           <span class="meta-chip">区块 ${escapeHtml(activeRow.title)}</span>
           <span class="meta-chip">字段 ${escapeHtml(String(activeRow.keys.length))} 组</span>
+          <span class="meta-chip">前端位置 ${escapeHtml(getSectionLocationText(`page:${pageKey}`, activeRow))}</span>
           <span class="meta-chip">更新时间 ${escapeHtml(formatDateTime(getUpdatedAt(page)))}</span>
         </div>
         <div class="drawer-focus-bar directions-enter-modal-item" style="--enter-delay: 40ms;">

@@ -10,6 +10,19 @@ const DATA_FILE = path.join(ROOT, 'database', 'local-admin-data.json');
 const SEED_FILE = path.join(ROOT, 'database', 'seed-data.js');
 const CLOUD_CONFIG_FILE = path.join(ROOT, 'src', 'config', 'cloud.ts');
 const PORT = Number(process.env.ADMIN_WEB_PORT || 3200);
+const seedData = require(path.join(ROOT, 'database', 'seed-data.js'));
+
+const HOME_PORTAL_LINKS = [
+  { label: '机构介绍', desc: '看品牌介绍', url: '/pages/about/index', openType: 'navigate', icon: 'building' },
+  { label: '每日一题', desc: '在学每日打卡', url: '/pages/question-bank/daily-question/index', openType: 'navigate', icon: 'daily' },
+  { label: '模拟题', desc: '考前整卷冲刺', url: '/pages/question-bank/past-papers/index', openType: 'navigate', icon: 'paper' },
+  { label: '错题本', desc: '回看薄弱题', url: '/pages/question-bank/wrong-book/index', openType: 'navigate', icon: 'wrongbook' }
+];
+const HOME_HERO_FALLBACK = seedData.pages?.home?.hero || {};
+const HOME_STATS_FALLBACK = seedData.pages?.home?.overviewStats || [];
+const HOME_ADVANTAGES_FALLBACK = seedData.pages?.home?.advantages || [];
+const HOME_CTA_FALLBACK = seedData.pages?.home?.cta || {};
+const HOME_ENVIRONMENT_FALLBACK = seedData.pages?.home?.environmentSection || { cards: [] };
 
 function getNetworkHosts() {
   const hosts = new Set(['127.0.0.1']);
@@ -28,6 +41,117 @@ function getNetworkHosts() {
 
 function getServiceUrls() {
   return getNetworkHosts().map((host) => `http://${host}:${PORT}`);
+}
+
+function normalizeHomeHero(hero) {
+  if (!hero) return HOME_HERO_FALLBACK;
+
+  const isLegacyHero =
+    hero.chip === '江苏省专转本权威培训品牌' ||
+    hero.title === '乘帆启航' ||
+    hero.highlightTitle === '专注江苏专转本医护与高数精细化教研' ||
+    hero.primaryButton?.text === '了解机构实力';
+
+  if (!isLegacyHero) {
+    return hero;
+  }
+
+  return {
+    ...hero,
+    ...HOME_HERO_FALLBACK,
+    backgroundImageUrl: hero.backgroundImageUrl,
+    backgroundImageSeed: hero.backgroundImageSeed || HOME_HERO_FALLBACK.backgroundImageSeed
+  };
+}
+
+function normalizeHomeOverviewStats(stats) {
+  const isLegacyStats =
+    Array.isArray(stats) &&
+    stats.length === 3 &&
+    stats[0]?.value === '核心' &&
+    stats[1]?.value === '精品' &&
+    stats[2]?.value === '高';
+
+  return isLegacyStats ? HOME_STATS_FALLBACK : stats;
+}
+
+function normalizeHomeQuickLinks(quickLinks) {
+  if (!Array.isArray(quickLinks) || !quickLinks.length) {
+    return HOME_PORTAL_LINKS;
+  }
+
+  const normalizedLinks = quickLinks.slice(0, 4).map((item, index) => ({
+    ...HOME_PORTAL_LINKS[index],
+    ...item
+  }));
+  const labels = normalizedLinks.map((item) => String(item?.label || '').trim());
+  const joinedLabels = labels.join('|');
+  const legacyLabelSets = [
+    '热门方向|每日一题|模拟题|错题本',
+    '热门方向|每日一题|历年真题|错题本',
+    '机构介绍|开设方向|师资团队|办学成果'
+  ];
+  const shouldResetToPortalDefault =
+    normalizedLinks.length < 4 ||
+    legacyLabelSets.includes(joinedLabels) ||
+    labels.includes('热门方向') ||
+    labels.includes('历年真题');
+
+  return shouldResetToPortalDefault ? HOME_PORTAL_LINKS : normalizedLinks;
+}
+
+function normalizeHomeAdvantages(advantages) {
+  if (!Array.isArray(advantages) || !advantages.length) {
+    return HOME_ADVANTAGES_FALLBACK;
+  }
+
+  const legacyTitles = ['全职教研团队', '独立校区管理', '精细化教研', '督学管理'];
+  return advantages.some((item) => legacyTitles.includes(item?.title || ''))
+    ? HOME_ADVANTAGES_FALLBACK
+    : advantages;
+}
+
+function normalizeHomeCta(cta) {
+  if (!cta) {
+    return HOME_CTA_FALLBACK;
+  }
+
+  const isLegacyCta =
+    !cta.desc ||
+    cta.buttonText === '查看上岸学员案例' ||
+    cta.title === '还在纠结如何开始备考？';
+
+  return isLegacyCta ? { ...cta, ...HOME_CTA_FALLBACK } : cta;
+}
+
+function normalizeHomeEnvironmentSection(section) {
+  if (!section || !Array.isArray(section.cards) || !section.cards.length) {
+    return HOME_ENVIRONMENT_FALLBACK;
+  }
+
+  return {
+    ...section,
+    cards: section.cards.slice(0, 2).map((item, index) => ({
+      ...(HOME_ENVIRONMENT_FALLBACK.cards?.[index] || {}),
+      ...item
+    }))
+  };
+}
+
+function normalizePagePayload(pageKey, payload) {
+  if (!payload || pageKey !== 'home') {
+    return payload;
+  }
+
+  return {
+    ...payload,
+    hero: normalizeHomeHero(payload.hero),
+    overviewStats: normalizeHomeOverviewStats(payload.overviewStats),
+    quickLinks: normalizeHomeQuickLinks(payload.quickLinks),
+    advantages: normalizeHomeAdvantages(payload.advantages),
+    environmentSection: normalizeHomeEnvironmentSection(payload.environmentSection),
+    cta: normalizeHomeCta(payload.cta)
+  };
 }
 
 function parseEnvFile(filePath) {
@@ -922,7 +1046,8 @@ class LocalStore {
 
   async getPage(pageKey) {
     const data = readData();
-    return pageKey === 'site' ? data.site : data.pages[pageKey] || null;
+    const payload = pageKey === 'site' ? data.site : data.pages[pageKey] || null;
+    return normalizePagePayload(pageKey, payload);
   }
 
   async savePage(pageKey, payload) {
@@ -1009,7 +1134,7 @@ class CloudStore {
     const docId = PAGE_DOC_IDS[pageKey];
     if (!collection || !docId) throw new Error('未知页面');
     const result = await this.db.collection(collection).doc(docId).get();
-    return normalizeDocResult(result);
+    return normalizePagePayload(pageKey, normalizeDocResult(result));
   }
 
   async savePage(pageKey, payload) {

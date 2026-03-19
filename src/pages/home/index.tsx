@@ -1,6 +1,5 @@
 import { Image, Navigator, Text, View } from '@tarojs/components';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import PageCtaCard from '../../components/PageCtaCard';
 import PageSectionTitle from '../../components/PageSectionTitle';
 import SkeletonScreen from '../../components/SkeletonScreen';
 import fallbackContent from '../../data/contentFallback';
@@ -12,23 +11,26 @@ import { resolveMediaUrl } from '../../utils/media';
 const defaultHomePage = fallbackContent.pages.home;
 const defaultDirections = fallbackContent.directions;
 const heroPresentationFallback = {
-  chip: '江苏省专转本专业辅导',
-  title: '专转本，一次就上岸',
-  highlightTitle: '医护大类 & 高数专项 · 精细化教研体系',
-  desc: '医护大类 + 高数专项双主线，让备考更稳、更清晰',
-  tags: ['92%+ 上岸率', '全职答疑', '独立校区'],
+  chip: '护理 / 助产 / 医护背景同学',
+  title: '想冲江苏专转本？',
+  highlightTitle: '先判断方向，再安排课程',
+  desc: '新同学先看适合方向和课程安排，在学同学再进入每日一题、模拟题和错题本。',
+  tags: ['92.3% 上岸率', '1:8 小班跟进', '独立校区学习'],
   primaryButton: {
-    text: '查看上岸学员案例',
-    url: '/pages/success/index',
+    text: '了解课程安排',
+    url: '/pages/courses/index',
     openType: 'switchTab'
   },
-  secondaryNote: '真实数据 · 可验证'
+  secondaryNote: '先选方向，再做训练'
 };
 const overviewStatsPresentationFallback = [
   { value: '92.3%', label: '上岸率', note: '2025届实际数据' },
   { value: '1:8', label: '师生比', note: '小班精细化' },
   { value: '365天', label: '全年答疑', note: '全职坐班' }
 ];
+const advantagesPresentationFallback = defaultHomePage.advantages || [];
+const ctaPresentationFallback = defaultHomePage.cta || {};
+const environmentSectionPresentationFallback = defaultHomePage.environmentSection || { cards: [] };
 
 function normalizeHomeHero(hero) {
   if (!hero) return heroPresentationFallback;
@@ -62,13 +64,89 @@ function normalizeOverviewStats(stats) {
   return isLegacyStats ? overviewStatsPresentationFallback : stats;
 }
 
+function normalizeHomeQuickLinks(quickLinks) {
+  if (!Array.isArray(quickLinks) || !quickLinks.length) {
+    return HOME_PORTAL_LINKS;
+  }
+
+  const normalizedLinks = quickLinks.slice(0, 4).map((item, index) => ({
+    ...HOME_PORTAL_LINKS[index],
+    ...item
+  }));
+  const labels = normalizedLinks.map((item) => String(item?.label || '').trim());
+  const joinedLabels = labels.join('|');
+  const legacyLabelSets = [
+    '热门方向|每日一题|模拟题|错题本',
+    '热门方向|每日一题|历年真题|错题本',
+    '机构介绍|开设方向|师资团队|办学成果'
+  ];
+  const shouldResetToPortalDefault =
+    normalizedLinks.length < 4 ||
+    legacyLabelSets.includes(joinedLabels) ||
+    labels.includes('热门方向') ||
+    labels.includes('历年真题');
+
+  if (shouldResetToPortalDefault) {
+    return HOME_PORTAL_LINKS;
+  }
+
+  return normalizedLinks;
+}
+
+function normalizeHomeAdvantages(advantages) {
+  if (!Array.isArray(advantages) || !advantages.length) {
+    return advantagesPresentationFallback;
+  }
+
+  const legacyAdvantageTitles = ['全职教研团队', '独立校区管理', '精细化教研', '督学管理'];
+  const hasLegacyAdvantage = advantages.some((item) => legacyAdvantageTitles.includes(item?.title || ''));
+
+  return hasLegacyAdvantage ? advantagesPresentationFallback : advantages;
+}
+
+function normalizeHomeCta(cta) {
+  if (!cta) {
+    return ctaPresentationFallback;
+  }
+
+  const isLegacyCta =
+    !cta.desc ||
+    cta.buttonText === '查看上岸学员案例' ||
+    cta.title === '还在纠结如何开始备考？';
+
+  return isLegacyCta
+    ? {
+        ...cta,
+        ...ctaPresentationFallback
+      }
+    : cta;
+}
+
+function normalizeEnvironmentSection(section) {
+  if (!section || !Array.isArray(section.cards) || !section.cards.length) {
+    return environmentSectionPresentationFallback;
+  }
+
+  return {
+    ...section,
+    cards: section.cards.slice(0, 2).map((item, index) => ({
+      ...environmentSectionPresentationFallback.cards?.[index],
+      ...item
+    }))
+  };
+}
+
 function normalizeHomePagePresentation(page) {
   if (!page) return defaultHomePage;
 
   return {
     ...page,
     hero: normalizeHomeHero(page.hero),
-    overviewStats: normalizeOverviewStats(page.overviewStats)
+    overviewStats: normalizeOverviewStats(page.overviewStats),
+    quickLinks: normalizeHomeQuickLinks(page.quickLinks),
+    advantages: normalizeHomeAdvantages(page.advantages),
+    environmentSection: normalizeEnvironmentSection(page.environmentSection),
+    cta: normalizeHomeCta(page.cta)
   };
 }
 
@@ -88,15 +166,84 @@ function getDirectionMiniLabel(item) {
   return compactText(source.replace(/^适合/, ''), 10);
 }
 
+function getDirectionTone(index) {
+  const tones = [
+    {
+      tagColor: '#0f4c81',
+      tagBackground: 'linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(219,234,254,0.86) 100%)',
+      headerBackground: 'linear-gradient(180deg, rgba(255,255,255,0.94) 0%, rgba(240,249,255,0.76) 100%)',
+      iconColor: '#0284c7',
+      buttonBackground: 'linear-gradient(90deg, #0284c7 0%, #0ea5e9 100%)',
+      buttonTextColor: '#ffffff',
+      glowColor: 'rgba(14,165,233,0.10)',
+      cardBackground: 'linear-gradient(145deg, #fbfeff 0%, #eef9ff 24%, #c9ebff 65%, #97daff 100%)',
+      cardBorder: 'rgba(56,189,248,0.34)',
+      cardShadow: '0 34rpx 66rpx rgba(14,165,233,0.22), 0 12rpx 28rpx rgba(14,165,233,0.12)',
+      sideStripe: 'linear-gradient(180deg, #67e8f9 0%, #22d3ee 22%, #0ea5e9 66%, #0369a1 100%)',
+      topGlow: 'radial-gradient(circle at 28% 24%, rgba(255,255,255,0.95) 0%, rgba(186,230,253,0.54) 40%, rgba(14,165,233,0.10) 100%)',
+      bottomGlow: 'radial-gradient(circle at 32% 32%, rgba(255,255,255,0.84) 0%, rgba(125,211,252,0.34) 45%, rgba(14,165,233,0.06) 100%)',
+      edgeHighlight: 'linear-gradient(180deg, rgba(255,255,255,0.82) 0%, rgba(255,255,255,0.10) 100%)',
+      surfaceGlow: 'linear-gradient(120deg, rgba(255,255,255,0.75) 0%, rgba(255,255,255,0.10) 46%, rgba(255,255,255,0.00) 100%)',
+      panelBackground: 'linear-gradient(180deg, rgba(255,255,255,0.90) 0%, rgba(239,249,255,0.76) 100%)',
+      panelBorder: 'rgba(186,230,253,0.90)',
+      panelShadow: '0 18rpx 36rpx rgba(14,165,233,0.10), inset 0 1rpx 0 rgba(255,255,255,0.92)',
+      numberBackground: 'linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(224,242,254,0.78) 100%)',
+      numberBorder: 'rgba(125,211,252,0.95)',
+      numberShadow: '0 16rpx 28rpx rgba(14,165,233,0.12), inset 0 1rpx 0 rgba(255,255,255,0.96)',
+      numberColor: '#0369a1',
+      featureDot: '#0284c7',
+      chipBackground: 'linear-gradient(180deg, rgba(255,255,255,0.90) 0%, rgba(240,249,255,0.78) 100%)',
+      chipBorder: 'rgba(186,230,253,0.88)',
+      chipShadow: '0 12rpx 22rpx rgba(14,165,233,0.08)',
+      buttonShadow: '0 18rpx 32rpx rgba(14,165,233,0.26)',
+      buttonBorder: 'rgba(255,255,255,0.22)',
+      descriptionTitle: '#075985'
+    },
+    {
+      tagColor: '#1d4ed8',
+      tagBackground: 'linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(224,231,255,0.88) 100%)',
+      headerBackground: 'linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(238,242,255,0.78) 100%)',
+      iconColor: '#2563eb',
+      buttonBackground: 'linear-gradient(90deg, #3b82f6 0%, #6366f1 100%)',
+      buttonTextColor: '#ffffff',
+      glowColor: 'rgba(37,99,235,0.08)',
+      cardBackground: 'linear-gradient(145deg, #fdfdff 0%, #f4f7ff 24%, #dbe6ff 66%, #bdd0ff 100%)',
+      cardBorder: 'rgba(96,165,250,0.30)',
+      cardShadow: '0 30rpx 60rpx rgba(59,130,246,0.18), 0 12rpx 24rpx rgba(99,102,241,0.10)',
+      sideStripe: 'linear-gradient(180deg, #93c5fd 0%, #60a5fa 24%, #3b82f6 68%, #4f46e5 100%)',
+      topGlow: 'radial-gradient(circle at 28% 24%, rgba(255,255,255,0.95) 0%, rgba(199,210,254,0.52) 42%, rgba(59,130,246,0.10) 100%)',
+      bottomGlow: 'radial-gradient(circle at 32% 32%, rgba(255,255,255,0.84) 0%, rgba(165,180,252,0.34) 45%, rgba(99,102,241,0.06) 100%)',
+      edgeHighlight: 'linear-gradient(180deg, rgba(255,255,255,0.84) 0%, rgba(255,255,255,0.10) 100%)',
+      surfaceGlow: 'linear-gradient(120deg, rgba(255,255,255,0.76) 0%, rgba(255,255,255,0.10) 48%, rgba(255,255,255,0.00) 100%)',
+      panelBackground: 'linear-gradient(180deg, rgba(255,255,255,0.90) 0%, rgba(239,246,255,0.78) 100%)',
+      panelBorder: 'rgba(191,219,254,0.92)',
+      panelShadow: '0 18rpx 34rpx rgba(59,130,246,0.10), inset 0 1rpx 0 rgba(255,255,255,0.92)',
+      numberBackground: 'linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(224,231,255,0.80) 100%)',
+      numberBorder: 'rgba(191,219,254,0.94)',
+      numberShadow: '0 14rpx 26rpx rgba(59,130,246,0.12), inset 0 1rpx 0 rgba(255,255,255,0.96)',
+      numberColor: '#1d4ed8',
+      featureDot: '#3b82f6',
+      chipBackground: 'linear-gradient(180deg, rgba(255,255,255,0.90) 0%, rgba(239,246,255,0.80) 100%)',
+      chipBorder: 'rgba(191,219,254,0.90)',
+      chipShadow: '0 12rpx 22rpx rgba(59,130,246,0.08)',
+      buttonShadow: '0 18rpx 32rpx rgba(99,102,241,0.22)',
+      buttonBorder: 'rgba(255,255,255,0.24)',
+      descriptionTitle: '#1d4ed8'
+    }
+  ];
+
+  return tones[index % tones.length];
+}
+
 function getQuickLinkTone(icon, index) {
   const toneMap = {
-    compass: { accent: '#0369a1', background: '#e0f2fe' },
+    compass: { accent: '#0f4c81', background: '#dbeafe' },
     daily: { accent: '#0f766e', background: '#ecfeff' },
-    paper: { accent: '#115e59', background: '#ccfbf1' },
-    wrongbook: { accent: '#0f766e', background: '#ecfeff' },
-    building: { accent: '#7c3aed', background: '#f3e8ff' },
-    team: { accent: '#be185d', background: '#fce7f3' },
-    trophy: { accent: '#b45309', background: '#fef3c7' }
+    paper: { accent: '#1d4ed8', background: '#e0e7ff' },
+    wrongbook: { accent: '#0369a1', background: '#e0f2fe' },
+    building: { accent: '#0f4c81', background: '#dbeafe' },
+    team: { accent: '#1d4ed8', background: '#e0e7ff' },
+    trophy: { accent: '#0369a1', background: '#e0f2fe' }
   };
 
   return (
@@ -107,10 +254,10 @@ function getQuickLinkTone(icon, index) {
 }
 
 const HOME_PORTAL_LINKS = [
-  { label: '热门方向', url: '/pages/courses/index', openType: 'switchTab', icon: 'compass' },
-  { label: '每日一题', url: '/pages/question-bank/daily-question/index', openType: 'navigate', icon: 'daily' },
-  { label: '模拟题', url: '/pages/question-bank/past-papers/index', openType: 'navigate', icon: 'paper' },
-  { label: '错题本', url: '/pages/question-bank/wrong-book/index', openType: 'navigate', icon: 'wrongbook' }
+  { label: '机构介绍', desc: '看品牌介绍', url: '/pages/about/index', openType: 'navigate', icon: 'building' },
+  { label: '每日一题', desc: '在学每日打卡', url: '/pages/question-bank/daily-question/index', openType: 'navigate', icon: 'daily' },
+  { label: '模拟题', desc: '考前整卷冲刺', url: '/pages/question-bank/past-papers/index', openType: 'navigate', icon: 'paper' },
+  { label: '错题本', desc: '回看薄弱题', url: '/pages/question-bank/wrong-book/index', openType: 'navigate', icon: 'wrongbook' }
 ];
 
 function mapHomeDirections(page, allDirections) {
@@ -121,13 +268,10 @@ function mapHomeDirections(page, allDirections) {
         .filter(Boolean)
     : (allDirections || []).filter((item) => item.isFeatured);
 
-  return source.map((item) => ({
+  return source.map((item, index) => ({
+    ...getDirectionTone(index),
     title: item.name,
     tag: item.homeTag || item.featuredTag || '',
-    tagColor: item.homeCard?.tagColor || '#0f766e',
-    tagBackground: item.homeCard?.tagBackground || '#ecfeff',
-    headerBackground: item.homeCard?.headerBackground || '#f0fdfa',
-    iconColor: item.homeCard?.iconColor || '#0f766e',
     iconType: item.iconType === 'pulse' ? 'medical' : item.iconType,
     desc: item.summary || '',
     audience: item.audience || '',
@@ -1001,15 +1145,16 @@ export default function HomePage() {
   }
 
   const normalizedPage = normalizeHomePagePresentation(content.page || defaultHomePage);
+  const site = content.site || fallbackContent.site;
   const hero = normalizedPage.hero || defaultHomePage.hero;
-  const heroHasBackgroundImage = Boolean(hero.backgroundImageUrl);
-  const stats = normalizedPage.overviewStats || defaultHomePage.overviewStats;
-  const advantages = normalizedPage.advantages || defaultHomePage.advantages;
+  const heroImageUrl = hero.backgroundImageUrl || '';
+  const stats = (normalizedPage.overviewStats || defaultHomePage.overviewStats).slice(0, 3);
+  const advantages = (normalizedPage.advantages || defaultHomePage.advantages).slice(0, 2);
   const environmentCards = normalizedPage.environmentSection?.cards || defaultHomePage.environmentSection.cards;
   const cta = normalizedPage.cta || defaultHomePage.cta;
-  const heroDesc = heroHasBackgroundImage ? compactText(hero.desc, 20) : '医护 + 高数双主线';
-  const heroTags = (hero.tags || []).slice(0, 2);
-  const featuredAdvantages = advantages.slice(0, 2);
+  const heroDesc = compactText(hero.desc, 46);
+  const heroTags = (hero.tags || []).slice(0, 3);
+  const featuredAdvantages = advantages;
   const visibleEnvironmentCards = environmentCards.slice(0, 2);
   const quickLinksSource = (normalizedPage.quickLinks || []).slice(0, 4);
   const portalQuickLinks = (quickLinksSource.length ? quickLinksSource : HOME_PORTAL_LINKS).map((item, index) => ({
@@ -1017,13 +1162,13 @@ export default function HomePage() {
     ...getQuickLinkTone(item.icon, index)
   }));
   const homeTone = {
-    accent: '#0284c7',
-    accentStrong: '#0369a1',
+    accent: '#0ea5e9',
+    accentStrong: '#0f4c81',
     accentLine: '#38bdf8',
     accentSoft: '#e0f2fe',
-    accentSurface: '#f0f9ff',
-    accentBorder: 'rgba(14,165,233,0.16)',
-    accentShadow: 'rgba(56,189,248,0.16)',
+    accentSurface: '#f8fbff',
+    accentBorder: 'rgba(14,165,233,0.14)',
+    accentShadow: 'rgba(14,165,233,0.14)',
     titleSubtle: '#475569',
     note: '#64748b'
   };
@@ -1032,54 +1177,61 @@ export default function HomePage() {
     <View style={pageStyle}>
       <View
         style={{
-          overflow: 'hidden',
-          borderBottomLeftRadius: '32rpx',
-          borderBottomRightRadius: '32rpx',
-          background: heroHasBackgroundImage ? '#ffffff' : 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'
+          margin: '24rpx 24rpx 0'
         }}
       >
-        {heroHasBackgroundImage ? (
-          <Image
-            src={resolveMediaUrl({
-              url: hero.backgroundImageUrl,
-              seed: hero.backgroundImageSeed || 'university',
-              fallbackSize: '900/700'
-            })}
-            mode="aspectFit"
-            style={{
-              display: 'block',
-              width: '100%',
-              height: '620rpx',
-              backgroundColor: '#ffffff'
-            }}
-          />
-        ) : null}
-
         <View
           style={{
-            padding: heroHasBackgroundImage ? `30rpx ${ui.spacing.page} 52rpx` : `24rpx ${ui.spacing.page} 132rpx`
+            ...surfaceCardStyle,
+            overflow: 'hidden',
+            borderRadius: '32rpx',
+            padding: '30rpx 24rpx 32rpx',
+            background: 'linear-gradient(180deg, #ffffff 0%, #f4fbff 100%)',
+            border: `1rpx solid ${homeTone.accentBorder}`,
+            boxShadow: '0 18rpx 34rpx rgba(148,163,184,0.08)',
+            position: 'relative'
           }}
         >
+          {heroImageUrl ? (
+            <Image
+              src={resolveMediaUrl({
+                url: heroImageUrl,
+                fallbackSize: '900/700'
+              })}
+              mode="aspectFill"
+              style={{
+                position: 'absolute',
+                right: '-36rpx',
+                bottom: '-18rpx',
+                width: '300rpx',
+                height: '300rpx',
+                opacity: 0.14
+              }}
+            />
+          ) : null}
           <Text
             style={{
-              display: 'block',
-              fontSize: ui.type.chip,
-              color: heroHasBackgroundImage ? homeTone.accentStrong : '#dbeafe',
+              position: 'relative',
+              display: 'inline-block',
+              padding: '8rpx 18rpx',
+              borderRadius: '999rpx',
+              fontSize: ui.type.note,
+              color: homeTone.accentStrong,
               fontWeight: 700,
-              letterSpacing: '1.5rpx',
-              marginBottom: heroHasBackgroundImage ? '18rpx' : '26rpx'
+              backgroundColor: '#e0f2fe',
+              marginBottom: '20rpx'
             }}
           >
             {hero.chip}
           </Text>
 
-          <View style={{ marginBottom: '18rpx' }}>
+          <View style={{ position: 'relative', marginBottom: '18rpx' }}>
             <Text
               style={{
                 display: 'block',
-                fontSize: heroHasBackgroundImage ? '52rpx' : '50rpx',
+                fontSize: '52rpx',
                 lineHeight: 1.14,
-                color: heroHasBackgroundImage ? '#0f172a' : '#ffffff',
+                color: '#0f172a',
                 fontWeight: 900,
                 letterSpacing: '-1rpx'
               }}
@@ -1089,12 +1241,12 @@ export default function HomePage() {
             <Text
               style={{
                 display: 'block',
-                fontSize: heroHasBackgroundImage ? '38rpx' : '46rpx',
-                lineHeight: heroHasBackgroundImage ? 1.28 : 1.16,
-                color: heroHasBackgroundImage ? homeTone.accentStrong : '#67e8f9',
-                fontWeight: heroHasBackgroundImage ? 700 : 900,
+                fontSize: '38rpx',
+                lineHeight: 1.26,
+                color: homeTone.accentStrong,
+                fontWeight: 800,
                 letterSpacing: '-1rpx',
-                marginTop: heroHasBackgroundImage ? '12rpx' : '4rpx'
+                marginTop: '8rpx'
               }}
             >
               {hero.highlightTitle}
@@ -1103,37 +1255,33 @@ export default function HomePage() {
 
           <Text
             style={{
+              position: 'relative',
               display: 'block',
-              width: heroHasBackgroundImage ? '100%' : '500rpx',
+              width: '100%',
               maxWidth: '100%',
               fontSize: ui.type.meta,
-              lineHeight: heroHasBackgroundImage ? 1.9 : 1.8,
-              color: heroHasBackgroundImage ? homeTone.titleSubtle : '#d8e1f2',
-              marginBottom: heroHasBackgroundImage ? '28rpx' : '24rpx'
+              lineHeight: 1.8,
+              color: homeTone.titleSubtle,
+              marginBottom: '24rpx'
             }}
           >
             {heroDesc}
           </Text>
 
-          <View style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', marginBottom: '18rpx' }}>
+          <View style={{ position: 'relative', display: 'flex', alignItems: 'center', flexWrap: 'wrap', marginBottom: '20rpx' }}>
             <Navigator
-              url={hero.primaryButton?.url || '/pages/about/index'}
-              openType={hero.primaryButton?.openType || 'navigate'}
+              url={hero.primaryButton?.url || '/pages/courses/index'}
+              openType={hero.primaryButton?.openType || 'switchTab'}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                minWidth: '230rpx',
-                height: '78rpx',
-                padding: '0 28rpx',
+                minWidth: '240rpx',
+                height: '80rpx',
+                padding: '0 30rpx',
                 borderRadius: '24rpx',
-                background: heroHasBackgroundImage
-                  ? 'linear-gradient(90deg, #0ea5e9 0%, #06b6d4 100%)'
-                  : 'linear-gradient(90deg, #0ea5e9 0%, #06b6d4 100%)',
-                border: 'none',
-                boxShadow: heroHasBackgroundImage
-                  ? '0 12rpx 26rpx rgba(14,165,233,0.18)'
-                  : '0 12rpx 24rpx rgba(14,165,233,0.18)',
+                background: 'linear-gradient(90deg, #0284c7 0%, #0ea5e9 100%)',
+                boxShadow: '0 12rpx 24rpx rgba(14,165,233,0.18)',
                 boxSizing: 'border-box'
               }}
             >
@@ -1144,30 +1292,28 @@ export default function HomePage() {
                   fontWeight: 800
                 }}
               >
-                {hero.primaryButton?.text || '查看详情'}
+                {hero.primaryButton?.text || '了解课程安排'}
               </Text>
             </Navigator>
           </View>
 
-          <View style={{ display: 'flex', flexWrap: 'wrap' }}>
+          <View style={{ position: 'relative', display: 'flex', flexWrap: 'wrap' }}>
             {heroTags.map((item, index) => (
               <View
                 key={item}
                 style={{
                   marginRight: index === heroTags.length - 1 ? '0' : '12rpx',
                   marginBottom: '10rpx',
-                  padding: heroHasBackgroundImage ? '10rpx 16rpx' : '9rpx 14rpx',
+                  padding: '9rpx 16rpx',
                   borderRadius: '999rpx',
-                  backgroundColor: heroHasBackgroundImage ? '#f0f9ff' : 'rgba(255,255,255,0.10)',
-                  border: heroHasBackgroundImage
-                    ? '1rpx solid rgba(14,165,233,0.14)'
-                    : '1rpx solid rgba(255,255,255,0.12)'
+                  backgroundColor: '#f0f9ff',
+                  border: `1rpx solid ${homeTone.accentBorder}`
                 }}
               >
                 <Text
                   style={{
                     fontSize: ui.type.note,
-                    color: heroHasBackgroundImage ? homeTone.accentStrong : '#d7def0',
+                    color: homeTone.accentStrong,
                     fontWeight: 700
                   }}
                 >
@@ -1179,13 +1325,13 @@ export default function HomePage() {
         </View>
       </View>
 
-      <View style={{ margin: heroHasBackgroundImage ? '24rpx 24rpx 0' : '-60rpx 24rpx 0', position: 'relative', zIndex: 3 }}>
+      <View style={{ margin: '22rpx 24rpx 0', position: 'relative', zIndex: 3 }}>
         <View
           style={{
             ...surfaceCardStyle,
             borderRadius: '24rpx',
             padding: '18rpx 14rpx',
-            background: 'linear-gradient(180deg, #ffffff 0%, #f7fbff 100%)',
+            background: 'linear-gradient(180deg, #ffffff 0%, #f8fbff 100%)',
             border: `1rpx solid ${homeTone.accentBorder}`,
             boxShadow: '0 12rpx 24rpx rgba(148,163,184,0.08)'
           }}
@@ -1205,25 +1351,25 @@ export default function HomePage() {
                   style={{
                     display: 'block',
                     textAlign: 'center',
-                    fontSize: ui.type.note,
-                    color: ui.colors.textMuted,
-                    fontWeight: 700,
-                    marginBottom: '6rpx'
+                    fontSize: '38rpx',
+                    color: index === 0 ? homeTone.accentStrong : ui.colors.text,
+                    fontWeight: 900,
+                    lineHeight: 1.1,
+                    marginBottom: '8rpx'
                   }}
                 >
-                  {item.label}
+                  {item.value}
                 </Text>
                 <Text
                   style={{
                     display: 'block',
                     textAlign: 'center',
-                    fontSize: '38rpx',
-                    color: index === 0 ? homeTone.accentStrong : ui.colors.text,
-                    fontWeight: 900,
-                    lineHeight: 1.1
+                    fontSize: ui.type.note,
+                    color: ui.colors.textMuted,
+                    fontWeight: 700
                   }}
                 >
-                  {item.value}
+                  {item.label}
                 </Text>
               </View>
             ))}
@@ -1231,62 +1377,76 @@ export default function HomePage() {
         </View>
       </View>
 
-      <View style={{ margin: '34rpx 24rpx 0', display: 'flex', justifyContent: 'space-between' }}>
-        {portalQuickLinks.map((item) => (
-          <Navigator
-            key={item.url}
-            url={item.url}
-            openType={item.openType || 'navigate'}
-            hoverClass="none"
-            style={{
-              width: '23%',
-              display: 'block',
-              textAlign: 'center'
-            }}
-          >
-            <View
+      <View style={{ margin: '34rpx 24rpx 0' }}>
+        <View style={{ display: 'flex', justifyContent: 'space-between' }}>
+          {portalQuickLinks.map((item) => (
+            <Navigator
+              key={item.url}
+              url={item.url}
+              openType={item.openType || 'navigate'}
+              hoverClass="none"
               style={{
-                background: 'linear-gradient(180deg, #ffffff 0%, #f7fbff 100%)',
-                borderRadius: '24rpx',
-                padding: '20rpx 10rpx 18rpx',
-                boxShadow: '0 10rpx 18rpx rgba(148,163,184,0.05)',
-                border: `1rpx solid ${homeTone.accentBorder}`
+                width: '23.2%',
+                display: 'block'
               }}
             >
-              <QuickIcon type={item.icon} color={item.accent} background={item.background} />
-              <Text
+              <View
                 style={{
-                  display: 'block',
-                  fontSize: ui.type.body,
-                  color: '#0f172a',
-                  fontWeight: 700,
-                  marginBottom: '0'
+                  background: 'linear-gradient(180deg, #ffffff 0%, #f7fbff 100%)',
+                  borderRadius: '24rpx',
+                  padding: '20rpx 10rpx 18rpx',
+                  boxShadow: '0 10rpx 18rpx rgba(148,163,184,0.05)',
+                  border: `1rpx solid ${homeTone.accentBorder}`,
+                  minHeight: '160rpx',
+                  boxSizing: 'border-box'
                 }}
               >
-                {item.label}
-              </Text>
-            </View>
-          </Navigator>
-        ))}
+                <QuickIcon type={item.icon} color={item.accent} background={item.background} />
+                <Text
+                  style={{
+                    display: 'block',
+                    fontSize: ui.type.note,
+                    color: '#0f172a',
+                    fontWeight: 800,
+                    textAlign: 'center'
+                  }}
+                >
+                  {item.label}
+                </Text>
+              </View>
+            </Navigator>
+          ))}
+        </View>
       </View>
 
-      <View style={{ margin: '36rpx 20rpx 0' }}>
+      <View style={{ margin: '40rpx 20rpx 0' }}>
         <PageSectionTitle lineColor={homeTone.accentLine}>热门方向</PageSectionTitle>
+        <Text
+          style={{
+            display: 'block',
+            margin: '-2rpx 4rpx 18rpx',
+            fontSize: ui.type.note,
+            color: homeTone.note,
+            lineHeight: 1.7
+          }}
+        >
+          第一次了解专转本，可以先从这两条主线判断自己更适合哪一种备考路径。
+        </Text>
         {directions.map((item, index) => (
           <Navigator
             key={item.title}
             url="/pages/courses/index"
             openType="switchTab"
-            style={{ display: 'block', marginBottom: index === directions.length - 1 ? '0' : '18rpx' }}
+            style={{ display: 'block', marginBottom: index === directions.length - 1 ? '0' : '20rpx' }}
           >
             <View
               style={{
-                background: index === 0 ? 'linear-gradient(180deg, #ffffff 0%, #f7fbff 100%)' : '#ffffff',
-                borderRadius: '24rpx',
-                padding: '22rpx 20rpx 20rpx',
-                minHeight: '196rpx',
-                boxShadow: index === 0 ? `0 16rpx 30rpx ${homeTone.accentShadow}` : '0 10rpx 20rpx rgba(148,163,184,0.06)',
-                border: `1rpx solid ${homeTone.accentBorder}`,
+                background: item.cardBackground,
+                borderRadius: '30rpx',
+                padding: '28rpx 24rpx 24rpx',
+                minHeight: '324rpx',
+                boxShadow: item.cardShadow,
+                border: `1rpx solid ${item.cardBorder}`,
                 boxSizing: 'border-box',
                 display: 'flex',
                 flexDirection: 'column',
@@ -1295,103 +1455,246 @@ export default function HomePage() {
                 overflow: 'hidden'
               }}
             >
-              {index === 0 ? (
-                <View
-                  style={{
-                    position: 'absolute',
-                    right: '-20rpx',
-                    top: '-18rpx',
-                    width: '140rpx',
-                    height: '140rpx',
-                    borderRadius: '999rpx',
-                    backgroundColor: 'rgba(56,189,248,0.08)'
-                  }}
-                />
-              ) : null}
+              <View
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: '26rpx',
+                  bottom: '26rpx',
+                  width: '10rpx',
+                  borderRadius: '0 999rpx 999rpx 0',
+                  background: item.sideStripe,
+                  boxShadow: index === 0 ? '0 0 18rpx rgba(14,165,233,0.32)' : '0 0 18rpx rgba(99,102,241,0.22)'
+                }}
+              />
+              <View
+                style={{
+                  position: 'absolute',
+                  left: '24rpx',
+                  right: '24rpx',
+                  top: '0',
+                  height: '72rpx',
+                  background: item.surfaceGlow,
+                  opacity: 0.95
+                }}
+              />
+              <View
+                style={{
+                  position: 'absolute',
+                  left: '20rpx',
+                  top: '18rpx',
+                  width: '2rpx',
+                  bottom: '18rpx',
+                  background: item.edgeHighlight,
+                  opacity: 0.95
+                }}
+              />
+              <View
+                style={{
+                  position: 'absolute',
+                  right: '-34rpx',
+                  top: '-26rpx',
+                  width: '180rpx',
+                  height: '180rpx',
+                  borderRadius: '999rpx',
+                  background: item.topGlow
+                }}
+              />
+              <View
+                style={{
+                  position: 'absolute',
+                  right: '-22rpx',
+                  bottom: '-42rpx',
+                  width: '220rpx',
+                  height: '140rpx',
+                  borderRadius: '999rpx',
+                  background: item.bottomGlow
+                }}
+              />
+              <View
+                style={{
+                  position: 'absolute',
+                  left: '30rpx',
+                  bottom: '18rpx',
+                  width: '180rpx',
+                  height: '24rpx',
+                  borderRadius: '999rpx',
+                  background: index === 0 ? 'rgba(14,165,233,0.12)' : 'rgba(99,102,241,0.10)',
+                  boxShadow: index === 0 ? '0 0 18rpx rgba(14,165,233,0.18)' : '0 0 18rpx rgba(99,102,241,0.16)'
+                }}
+              />
               <View>
-                <View style={{ display: 'flex', alignItems: 'center', marginBottom: '12rpx' }}>
-                  <Text style={{ fontSize: ui.type.note, color: item.tagColor, fontWeight: 700 }}>
-                    {item.tag}
-                  </Text>
+                <View style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
+                  <View style={{ flex: 1, paddingRight: '18rpx' }}>
+                    {item.tag ? (
+                      <View style={{ display: 'flex', alignItems: 'center', marginBottom: '14rpx' }}>
+                        <View
+                          style={{
+                            padding: '8rpx 14rpx',
+                            borderRadius: '999rpx',
+                            background: item.tagBackground,
+                            border: '1rpx solid rgba(255,255,255,0.82)',
+                            boxShadow: '0 12rpx 24rpx rgba(255,255,255,0.34)'
+                          }}
+                        >
+                          <Text style={{ fontSize: ui.type.note, color: item.tagColor, fontWeight: 800 }}>
+                            {item.tag}
+                          </Text>
+                        </View>
+                      </View>
+                    ) : null}
+
+                    <View
+                      style={{
+                        background: item.headerBackground,
+                        borderRadius: '24rpx',
+                        padding: '16rpx 16rpx',
+                        position: 'relative',
+                        zIndex: 2,
+                        border: `1rpx solid ${item.panelBorder}`,
+                        boxShadow: item.panelShadow
+                      }}
+                    >
+                      <View style={{ display: 'flex', alignItems: 'center' }}>
+                        <View style={{ marginRight: '16rpx', flexShrink: 0 }}>
+                          <DirectionIcon type={item.iconType} color={item.iconColor} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ display: 'block', fontSize: '34rpx', color: '#0f172a', fontWeight: 900 }}>{item.title}</Text>
+                          <Text
+                            style={{
+                              display: 'block',
+                              marginTop: '8rpx',
+                              fontSize: ui.type.meta,
+                              color: homeTone.titleSubtle,
+                              lineHeight: 1.65
+                            }}
+                          >
+                            {compactText(item.audience || item.desc || '', 52)}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+
+                  <View
+                    style={{
+                      minWidth: '88rpx',
+                      padding: '12rpx 0 10rpx',
+                      borderRadius: '22rpx',
+                      background: item.numberBackground,
+                      border: `1rpx solid ${item.numberBorder}`,
+                      textAlign: 'center',
+                      boxShadow: item.numberShadow
+                    }}
+                  >
+                    <Text style={{ display: 'block', fontSize: '20rpx', color: homeTone.note, fontWeight: 700, textAlign: 'center' }}>热门</Text>
+                    <Text style={{ display: 'block', marginTop: '4rpx', fontSize: '36rpx', color: item.numberColor, fontWeight: 900, textAlign: 'center' }}>
+                      0{index + 1}
+                    </Text>
+                  </View>
                 </View>
 
                 <View
                   style={{
-                    backgroundColor: item.headerBackground,
-                    borderRadius: '20rpx',
-                    padding: '14rpx 14rpx',
+                    marginTop: '18rpx',
+                    borderRadius: '24rpx',
+                    padding: '18rpx 18rpx',
+                    background: item.panelBackground,
+                    border: `1rpx solid ${item.panelBorder}`,
                     position: 'relative',
-                    zIndex: 2
+                    zIndex: 2,
+                    boxShadow: item.panelShadow
                   }}
                 >
-                  <View style={{ display: 'flex', alignItems: 'center' }}>
-                    <View style={{ marginRight: '16rpx', flexShrink: 0 }}>
-                      <DirectionIcon type={item.iconType} color={item.iconColor} />
-                    </View>
-                    <Text style={{ fontSize: '30rpx', color: '#0f172a', fontWeight: 800, flex: 1 }}>{item.title}</Text>
-                  </View>
-                </View>
-                {item.chips?.length ? (
                   <View
                     style={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      marginTop: '4rpx',
-                      position: 'relative',
-                      zIndex: 2
+                      marginBottom: '12rpx',
+                      paddingBottom: '12rpx',
+                      borderBottom: '1rpx solid rgba(148,163,184,0.14)'
                     }}
                   >
-                    {item.chips.slice(0, 1).map((chip) => (
-                      <View
-                        key={chip}
-                        style={{
-                          marginTop: '10rpx',
-                          padding: '6rpx 10rpx',
-                          borderRadius: '999rpx',
-                          backgroundColor: '#f8fafc',
-                          border: `1rpx solid ${homeTone.accentBorder}`
-                        }}
-                      >
-                        <Text style={{ fontSize: ui.type.note, color: '#475569', fontWeight: 700 }}>{chip}</Text>
-                      </View>
-                    ))}
+                    <Text style={{ display: 'block', fontSize: ui.type.note, color: item.descriptionTitle, fontWeight: 800 }}>适合先从哪里下手</Text>
+                    <Text
+                      style={{
+                        display: 'block',
+                        marginTop: '8rpx',
+                        fontSize: ui.type.meta,
+                        color: '#334155',
+                        lineHeight: 1.72
+                      }}
+                    >
+                      {compactText(item.desc || item.audience || '', 54)}
+                    </Text>
                   </View>
-                ) : (
-                  <Text
-                    style={{
-                      display: 'block',
-                      marginTop: '10rpx',
-                      fontSize: ui.type.note,
-                      color: ui.colors.textMuted,
-                      position: 'relative',
-                      zIndex: 2
-                    }}
-                  >
-                    {getDirectionMiniLabel(item)}
-                  </Text>
-                )}
+                  {(item.features || []).slice(0, 2).map((feature) => (
+                    <View key={feature} style={{ display: 'flex', alignItems: 'flex-start', marginTop: '10rpx' }}>
+                      <View
+                        style={{
+                          width: '10rpx',
+                          height: '10rpx',
+                          borderRadius: '999rpx',
+                          backgroundColor: item.featureDot,
+                          marginTop: '12rpx',
+                          marginRight: '12rpx',
+                          flexShrink: 0,
+                          boxShadow: index === 0 ? '0 0 12rpx rgba(14,165,233,0.32)' : '0 0 12rpx rgba(59,130,246,0.26)'
+                        }}
+                      />
+                      <Text style={{ flex: 1, fontSize: ui.type.note, color: '#475569', lineHeight: 1.7 }}>
+                        {compactText(feature, 28)}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
               </View>
               <View
                 style={{
-                  marginTop: '14rpx',
+                  marginTop: '18rpx',
                   display: 'flex',
-                  justifyContent: 'flex-end'
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  position: 'relative',
+                  zIndex: 2
                 }}
               >
+                {item.chips?.length ? (
+                  <View
+                    style={{
+                      flex: 1,
+                      marginRight: '16rpx',
+                      padding: '10rpx 14rpx',
+                      borderRadius: '999rpx',
+                      background: item.chipBackground,
+                      border: `1rpx solid ${item.chipBorder}`,
+                      boxShadow: item.chipShadow
+                    }}
+                  >
+                    <Text style={{ fontSize: ui.type.note, color: '#334155', fontWeight: 700 }}>
+                      {compactText(item.chips[0], 16)}
+                    </Text>
+                  </View>
+                ) : (
+                  <Text style={{ flex: 1, fontSize: ui.type.note, color: homeTone.note, fontWeight: 700 }}>
+                    {getDirectionMiniLabel(item)}
+                  </Text>
+                )}
                 <View
                   style={{
-                    minWidth: '148rpx',
-                    height: '54rpx',
-                    padding: '0 18rpx',
+                    minWidth: '184rpx',
+                    height: '64rpx',
+                    padding: '0 22rpx',
                     borderRadius: '999rpx',
-                    background: index === 0 ? 'linear-gradient(90deg, #0ea5e9 0%, #06b6d4 100%)' : '#f0f9ff',
+                    background: item.buttonBackground,
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
+                    boxShadow: item.buttonShadow,
+                    border: `1rpx solid ${item.buttonBorder}`
                   }}
                 >
-                  <Text style={{ fontSize: ui.type.note, color: index === 0 ? '#ffffff' : homeTone.accentStrong, fontWeight: 800 }}>
-                    查看详情
+                  <Text style={{ fontSize: ui.type.note, color: item.buttonTextColor, fontWeight: 800 }}>
+                    去看课程安排
                   </Text>
                 </View>
               </View>
@@ -1403,67 +1706,252 @@ export default function HomePage() {
 
       <View style={{ margin: '36rpx 24rpx 0' }}>
         <PageSectionTitle lineColor={homeTone.accentLine}>学习支持</PageSectionTitle>
-        <View style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between' }}>
-          {featuredAdvantages.map((item) => (
+        <Text
+          style={{
+            display: 'block',
+            margin: '-2rpx 2rpx 18rpx',
+            fontSize: ui.type.note,
+            color: homeTone.note,
+            lineHeight: 1.7
+          }}
+        >
+          新同学第一次来了解时，最需要先确认的，通常不是课表，而是有没有人帮你判断方向、盯住节奏。
+        </Text>
+        <View>
+          {featuredAdvantages.map((item, index) => (
             <View
               key={item.title}
               style={{
-                width: '48.6%',
-                marginBottom: '0',
-                padding: '20rpx 18rpx 18rpx',
-                borderRadius: '20rpx',
-                background: '#ffffff',
-                boxShadow: '0 8rpx 16rpx rgba(148,163,184,0.05)',
+                marginBottom: index === featuredAdvantages.length - 1 ? '0' : '16rpx',
+                padding: '22rpx 20rpx 20rpx',
+                borderRadius: '24rpx',
+                background: 'linear-gradient(180deg, #ffffff 0%, #f8fbff 100%)',
+                boxShadow: '0 16rpx 28rpx rgba(148,163,184,0.08)',
                 border: `1rpx solid ${homeTone.accentBorder}`,
-                boxSizing: 'border-box'
+                boxSizing: 'border-box',
+                position: 'relative',
+                overflow: 'hidden'
               }}
             >
               <View
                 style={{
-                  width: '38rpx',
-                  height: '38rpx',
-                  borderRadius: '12rpx',
-                  backgroundColor: homeTone.accentSoft,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '14rpx'
+                  position: 'absolute',
+                  right: '-26rpx',
+                  top: '-30rpx',
+                  width: '128rpx',
+                  height: '128rpx',
+                  borderRadius: '999rpx',
+                  backgroundColor: index === 0 ? 'rgba(125,211,252,0.18)' : 'rgba(191,219,254,0.24)'
                 }}
-              >
-                <AdvantageIcon type={item.icon} />
+              />
+              <View style={{ position: 'relative', zIndex: 2 }}>
+                <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <View style={{ display: 'flex', alignItems: 'center', flex: 1, paddingRight: '16rpx' }}>
+                    <View
+                      style={{
+                        width: '54rpx',
+                        height: '54rpx',
+                        borderRadius: '18rpx',
+                        backgroundColor: '#ffffff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginRight: '14rpx',
+                        boxShadow: '0 10rpx 20rpx rgba(148,163,184,0.10)'
+                      }}
+                    >
+                      <AdvantageIcon type={item.icon} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={{
+                          display: 'block',
+                          fontSize: ui.type.body,
+                          color: ui.colors.text,
+                          fontWeight: 800
+                        }}
+                      >
+                        {item.title}
+                      </Text>
+                      <Text
+                        style={{
+                          display: 'block',
+                          marginTop: '8rpx',
+                          fontSize: ui.type.note,
+                          color: '#475569',
+                          lineHeight: 1.7
+                        }}
+                      >
+                        {compactText(item.desc || '', 46)}
+                      </Text>
+                    </View>
+                  </View>
+                  <View
+                    style={{
+                      minWidth: '78rpx',
+                      padding: '10rpx 0',
+                      borderRadius: '18rpx',
+                      backgroundColor: 'rgba(255,255,255,0.72)',
+                      border: `1rpx solid ${homeTone.accentBorder}`,
+                      textAlign: 'center'
+                    }}
+                  >
+                    <Text style={{ display: 'block', fontSize: '18rpx', color: homeTone.note, fontWeight: 700, textAlign: 'center' }}>支持</Text>
+                    <Text style={{ display: 'block', marginTop: '4rpx', fontSize: '30rpx', color: homeTone.accentStrong, fontWeight: 900, textAlign: 'center' }}>
+                      0{index + 1}
+                    </Text>
+                  </View>
+                </View>
               </View>
-              <Text
-                style={{
-                  display: 'block',
-                  fontSize: ui.type.body,
-                  color: ui.colors.text,
-                  fontWeight: 800,
-                  marginBottom: '0'
-                }}
-              >
-                {item.title}
-              </Text>
             </View>
           ))}
         </View>
       </View>
 
-      <PageCtaCard
-        title={cta.title}
-        buttonText={cta.buttonText}
-        margin="34rpx 24rpx 0"
-        background="linear-gradient(135deg, #0f3b7a 0%, #0c6abf 100%)"
-        orbColor="rgba(125,211,252,0.16)"
-        buttonBackground="linear-gradient(180deg, #ffffff 0%, #e0f2fe 100%)"
-        buttonTextColor="#0f3b7a"
-        buttonShadow="0 12rpx 24rpx rgba(14,165,233,0.18)"
-        compact
-      />
+      <View style={{ margin: '34rpx 24rpx 0' }}>
+        <View
+          style={{
+            borderRadius: '30rpx',
+            padding: '28rpx 24rpx 26rpx',
+            background: 'linear-gradient(135deg, #0f4c81 0%, #0284c7 100%)',
+            boxShadow: '0 20rpx 36rpx rgba(14,165,233,0.20)',
+            position: 'relative',
+            overflow: 'hidden'
+          }}
+        >
+          <View
+            style={{
+              position: 'absolute',
+              right: '-44rpx',
+              top: '-42rpx',
+              width: '210rpx',
+              height: '210rpx',
+              borderRadius: '999rpx',
+              backgroundColor: 'rgba(125,211,252,0.18)'
+            }}
+          />
+          <View
+            style={{
+              position: 'absolute',
+              left: '-30rpx',
+              bottom: '-68rpx',
+              width: '180rpx',
+              height: '180rpx',
+              borderRadius: '999rpx',
+              backgroundColor: 'rgba(255,255,255,0.06)'
+            }}
+          />
+          <View style={{ position: 'relative', zIndex: 2 }}>
+            <View
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                padding: '10rpx 16rpx',
+                borderRadius: '999rpx',
+                backgroundColor: 'rgba(255,255,255,0.18)',
+                marginBottom: '18rpx'
+              }}
+            >
+              <Text style={{ fontSize: ui.type.note, color: '#e0f2fe', fontWeight: 800 }}>先沟通，再决定怎么学</Text>
+            </View>
+            <Text
+              style={{
+                display: 'block',
+                fontSize: ui.type.section,
+                color: '#ffffff',
+                fontWeight: 900
+              }}
+            >
+              {cta.title}
+            </Text>
+            <Text
+              style={{
+                display: 'block',
+                marginTop: '14rpx',
+                fontSize: ui.type.note,
+                lineHeight: 1.78,
+                color: 'rgba(255,255,255,0.86)'
+              }}
+            >
+              {compactText(cta.desc || '', 72)}
+            </Text>
+            <View
+              style={{
+                marginTop: '20rpx',
+                display: 'flex',
+                flexWrap: 'wrap'
+              }}
+            >
+              {site.address ? (
+                <View
+                  style={{
+                    marginRight: '12rpx',
+                    marginBottom: '12rpx',
+                    padding: '10rpx 14rpx',
+                    borderRadius: '999rpx',
+                    backgroundColor: 'rgba(255,255,255,0.14)',
+                    border: '1rpx solid rgba(255,255,255,0.16)'
+                  }}
+                >
+                  <Text style={{ fontSize: ui.type.note, color: '#ffffff', fontWeight: 700 }}>
+                    {compactText(site.address, 16)}
+                  </Text>
+                </View>
+              ) : null}
+              {site.serviceHours ? (
+                <View
+                  style={{
+                    marginBottom: '12rpx',
+                    padding: '10rpx 14rpx',
+                    borderRadius: '999rpx',
+                    backgroundColor: 'rgba(255,255,255,0.14)',
+                    border: '1rpx solid rgba(255,255,255,0.16)'
+                  }}
+                >
+                  <Text style={{ fontSize: ui.type.note, color: '#ffffff', fontWeight: 700 }}>
+                    咨询时间 {site.serviceHours}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+            <Navigator
+              url="/pages/about/index"
+              openType="navigate"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minWidth: '220rpx',
+                height: '78rpx',
+                padding: '0 28rpx',
+                borderRadius: '999rpx',
+                background: 'linear-gradient(180deg, #ffffff 0%, #e0f2fe 100%)',
+                boxShadow: '0 12rpx 24rpx rgba(15,23,42,0.16)'
+              }}
+            >
+              <Text style={{ fontSize: ui.type.button, color: '#0f4c81', fontWeight: 800 }}>
+                {cta.buttonText}
+              </Text>
+            </Navigator>
+          </View>
+        </View>
+      </View>
 
       <View style={{ margin: '34rpx 24rpx 0' }}>
         <View style={{ marginBottom: '14rpx' }}>
-          <PageSectionTitle marginBottom="0" lineColor={homeTone.accentLine}>学习环境</PageSectionTitle>
+          <PageSectionTitle marginBottom="0" lineColor={homeTone.accentLine}>校区环境</PageSectionTitle>
         </View>
+        <Text
+          style={{
+            display: 'block',
+            margin: '-2rpx 2rpx 16rpx',
+            fontSize: ui.type.note,
+            color: homeTone.note,
+            lineHeight: 1.7
+          }}
+        >
+          {site.address ? `${compactText(site.address, 18)}校区环境，支持先了解学习与住宿安排。` : '先确认环境是否适合自己，再决定是否继续深入了解。'}
+        </Text>
 
         <View
           style={{
@@ -1473,27 +1961,62 @@ export default function HomePage() {
             background: 'linear-gradient(180deg, #ffffff 0%, #f8fbff 100%)'
           }}
         >
-          <View style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10rpx' }}>
-            {visibleEnvironmentCards.map((item) => (
+          <View>
+            {visibleEnvironmentCards.map((item, index) => (
               <View
                 key={item.label}
                 style={{
-                  width: '48.5%',
-                  height: '188rpx',
+                  width: '100%',
+                  height: '268rpx',
                   borderRadius: '20rpx',
                   overflow: 'hidden',
-                  position: 'relative'
+                  position: 'relative',
+                  marginBottom: index === visibleEnvironmentCards.length - 1 ? '0' : '14rpx',
+                  background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)'
                 }}
               >
-                <Image
-                  src={resolveMediaUrl({
-                    url: item.imageUrl,
-                    seed: item.imageSeed || item.seed,
-                    fallbackSize: '400/320'
-                  })}
-                  mode="aspectFill"
-                  style={{ width: '100%', height: '100%' }}
-                />
+                {item.imageUrl ? (
+                  <Image
+                    src={resolveMediaUrl({
+                      url: item.imageUrl,
+                      fallbackSize: '800/520'
+                    })}
+                    mode="aspectFill"
+                    style={{ width: '100%', height: '100%' }}
+                  />
+                ) : (
+                  <View
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <Text style={{ fontSize: ui.type.meta, color: homeTone.accentStrong, fontWeight: 700 }}>环境示意</Text>
+                  </View>
+                )}
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: '16rpx',
+                    left: '16rpx',
+                    padding: '6rpx 12rpx',
+                    borderRadius: '999rpx',
+                    backgroundColor: item.imageUrl ? 'rgba(255,255,255,0.88)' : 'rgba(15,76,129,0.10)'
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: ui.type.note,
+                      color: item.imageUrl ? '#0f172a' : homeTone.accentStrong,
+                      fontWeight: 700
+                    }}
+                  >
+                    {item.imageUrl ? '实拍环境' : '环境示意'}
+                  </Text>
+                </View>
                 <View
                   style={{
                     position: 'absolute',
@@ -1505,6 +2028,16 @@ export default function HomePage() {
                   }}
                 >
                   <Text style={{ color: '#ffffff', fontSize: ui.type.note, fontWeight: 700 }}>{item.label}</Text>
+                  <Text
+                    style={{
+                      display: 'block',
+                      marginTop: '8rpx',
+                      color: 'rgba(255,255,255,0.82)',
+                      fontSize: ui.type.meta
+                    }}
+                  >
+                    {site.address ? `${compactText(site.address, 16)} · 支持到校了解` : '学习与住宿环境一体了解'}
+                  </Text>
                 </View>
               </View>
             ))}

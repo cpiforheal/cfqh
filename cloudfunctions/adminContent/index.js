@@ -36,6 +36,48 @@ const ALLOWED_COLLECTIONS = new Set([
   'admin_users'
 ]);
 
+const HOME_PORTAL_LINKS = [
+  { label: '机构介绍', desc: '看品牌介绍', url: '/pages/about/index', openType: 'navigate', icon: 'building' },
+  { label: '每日一题', desc: '在学每日打卡', url: '/pages/question-bank/daily-question/index', openType: 'navigate', icon: 'daily' },
+  { label: '模拟题', desc: '考前整卷冲刺', url: '/pages/question-bank/past-papers/index', openType: 'navigate', icon: 'paper' },
+  { label: '错题本', desc: '回看薄弱题', url: '/pages/question-bank/wrong-book/index', openType: 'navigate', icon: 'wrongbook' }
+];
+const HOME_HERO_FALLBACK = {
+  chip: '护理 / 助产 / 医护背景同学',
+  title: '想冲江苏专转本？',
+  highlightTitle: '先判断方向，再安排课程',
+  desc: '新同学先看适合方向和课程安排，在学同学再进入每日一题、模拟题和错题本。',
+  tags: ['92.3% 上岸率', '1:8 小班跟进', '独立校区学习'],
+  primaryButton: {
+    text: '了解课程安排',
+    url: '/pages/courses/index',
+    openType: 'switchTab'
+  },
+  secondaryNote: '先选方向，再做训练',
+  backgroundImageSeed: 'university'
+};
+const HOME_STATS_FALLBACK = [
+  { value: '92.3%', label: '上岸率', note: '2025届实际数据' },
+  { value: '1:8', label: '师生比', note: '小班精细化' },
+  { value: '365天', label: '全年答疑', note: '全职坐班' }
+];
+const HOME_ADVANTAGES_FALLBACK = [
+  { icon: 'team', title: '答疑有人盯', desc: '第一次来了解也能先把基础、目标院校和卡点问清楚，问题当天就有人跟进。' },
+  { icon: 'building', title: '备考节奏更稳', desc: '课程、督学和住宿安排放在同一节奏里，适合想集中投入、少走弯路的同学。' }
+];
+const HOME_ENVIRONMENT_FALLBACK = {
+  cards: [
+    { label: '多媒体教室', imageSeed: 'classroom1' },
+    { label: '标准化宿舍', imageSeed: 'dorm1' }
+  ]
+};
+const HOME_CTA_FALLBACK = {
+  title: '先聊清楚，再决定报哪条线',
+  desc: '把当前专业、目标院校和备考时间说明白，我们会先帮你判断适合的方向，再给课程安排建议。',
+  buttonText: '预约咨询',
+  footnote: ''
+};
+
 async function ensureAdmin() {
   const { OPENID } = cloud.getWXContext();
 
@@ -74,6 +116,117 @@ function stripManagedFields(payload) {
   return data;
 }
 
+function normalizeHomeHero(hero) {
+  if (!hero) return HOME_HERO_FALLBACK;
+
+  const isLegacyHero =
+    hero.chip === '江苏省专转本权威培训品牌' ||
+    hero.title === '乘帆启航' ||
+    hero.highlightTitle === '专注江苏专转本医护与高数精细化教研' ||
+    hero.primaryButton?.text === '了解机构实力';
+
+  if (!isLegacyHero) {
+    return hero;
+  }
+
+  return {
+    ...hero,
+    ...HOME_HERO_FALLBACK,
+    backgroundImageUrl: hero.backgroundImageUrl,
+    backgroundImageSeed: hero.backgroundImageSeed || HOME_HERO_FALLBACK.backgroundImageSeed
+  };
+}
+
+function normalizeHomeOverviewStats(stats) {
+  const isLegacyStats =
+    Array.isArray(stats) &&
+    stats.length === 3 &&
+    stats[0]?.value === '核心' &&
+    stats[1]?.value === '精品' &&
+    stats[2]?.value === '高';
+
+  return isLegacyStats ? HOME_STATS_FALLBACK : stats;
+}
+
+function normalizeHomeQuickLinks(quickLinks) {
+  if (!Array.isArray(quickLinks) || !quickLinks.length) {
+    return HOME_PORTAL_LINKS;
+  }
+
+  const normalizedLinks = quickLinks.slice(0, 4).map((item, index) => ({
+    ...HOME_PORTAL_LINKS[index],
+    ...item
+  }));
+  const labels = normalizedLinks.map((item) => String(item?.label || '').trim());
+  const joinedLabels = labels.join('|');
+  const legacyLabelSets = [
+    '热门方向|每日一题|模拟题|错题本',
+    '热门方向|每日一题|历年真题|错题本',
+    '机构介绍|开设方向|师资团队|办学成果'
+  ];
+  const shouldResetToPortalDefault =
+    normalizedLinks.length < 4 ||
+    legacyLabelSets.includes(joinedLabels) ||
+    labels.includes('热门方向') ||
+    labels.includes('历年真题');
+
+  return shouldResetToPortalDefault ? HOME_PORTAL_LINKS : normalizedLinks;
+}
+
+function normalizeHomeAdvantages(advantages) {
+  if (!Array.isArray(advantages) || !advantages.length) {
+    return HOME_ADVANTAGES_FALLBACK;
+  }
+
+  const legacyTitles = ['全职教研团队', '独立校区管理', '精细化教研', '督学管理'];
+  return advantages.some((item) => legacyTitles.includes(item?.title || ''))
+    ? HOME_ADVANTAGES_FALLBACK
+    : advantages;
+}
+
+function normalizeHomeEnvironmentSection(section) {
+  if (!section || !Array.isArray(section.cards) || !section.cards.length) {
+    return HOME_ENVIRONMENT_FALLBACK;
+  }
+
+  return {
+    ...section,
+    cards: section.cards.slice(0, 2).map((item, index) => ({
+      ...(HOME_ENVIRONMENT_FALLBACK.cards[index] || {}),
+      ...item
+    }))
+  };
+}
+
+function normalizeHomeCta(cta) {
+  if (!cta) {
+    return HOME_CTA_FALLBACK;
+  }
+
+  const isLegacyCta =
+    !cta.desc ||
+    cta.buttonText === '查看上岸学员案例' ||
+    cta.title === '还在纠结如何开始备考？';
+
+  return isLegacyCta ? { ...cta, ...HOME_CTA_FALLBACK } : cta;
+}
+
+function normalizePagePayload(pageKey, payload) {
+  if (!payload || pageKey !== 'home') {
+    return payload;
+  }
+
+  return {
+    ...payload,
+    hero: normalizeHomeHero(payload.hero),
+    overviewStats: normalizeHomeOverviewStats(payload.overviewStats),
+    quickLinks: normalizeHomeQuickLinks(payload.quickLinks),
+    advantages: normalizeHomeAdvantages(payload.advantages),
+    environmentSection: normalizeHomeEnvironmentSection(payload.environmentSection),
+    cta: normalizeHomeCta(payload.cta)
+  };
+}
+
 exports.main = async (event) => {
   const startTime = Date.now();
   const action = event.action;
@@ -88,7 +241,7 @@ exports.main = async (event) => {
       const collection = PAGE_COLLECTIONS[pageKey];
       if (!collection) throw new Error('未知页面');
 
-      const data = await getDocument(collection, PAGE_DOC_IDS[pageKey]);
+      const data = normalizePagePayload(pageKey, await getDocument(collection, PAGE_DOC_IDS[pageKey]));
       const duration = Date.now() - startTime;
       console.log(`[adminContent] getPage 完成: pageKey=${pageKey}, 耗时=${duration}ms`);
       return { ok: true, data };
