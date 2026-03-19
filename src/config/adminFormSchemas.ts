@@ -128,7 +128,7 @@ export function getAdminPageFormSchema(pageKey) {
           { key: 'desc', label: '说明', type: 'textarea' }
         ],
         { icon: '', title: '', desc: '' },
-        { maxItems: 2, visibleItems: 2 }
+        { maxItems: 4, visibleItems: 4 }
       ),
       { key: 'featuredDirectionIds', label: '热门方向展示 ID', type: 'stringArray', defaultItem: '' },
       objectField('environmentSection', '校区环境（咨询区上方）', [
@@ -173,16 +173,17 @@ export function getAdminPageFormSchema(pageKey) {
 
   if (pageKey === 'courses') {
     return [
-      { key: 'title', label: '方向页主标题', type: 'text', required: true },
-      { key: 'subtitle', label: '方向页顶部说明', type: 'textarea', required: true },
-      { key: 'categories', label: '顶部筛选标签', type: 'stringArray', defaultItem: '' },
-      { key: 'suggestions', label: '报考建议列表', type: 'stringArray', defaultItem: '' },
-      { key: 'featuredDirectionIds', label: '方向列表展示 ID', type: 'stringArray', defaultItem: '' },
-      objectField('moreSection', '底部补充区块', [
+      { key: 'title', label: '判断首屏主标题', type: 'text', required: true },
+      { key: 'subtitle', label: '判断首屏说明', type: 'textarea', required: true },
+      { key: 'categories', label: '判断标签（3项）', type: 'stringArray', defaultItem: '' },
+      { key: 'suggestions', label: '判断提示（3条）', type: 'stringArray', defaultItem: '' },
+      { key: 'featuredDirectionIds', label: '两张重点方向卡片 ID', type: 'stringArray', defaultItem: '' },
+      objectField('moreSection', '底部补充说明', [
         { key: 'title', label: '区块标题', type: 'text', required: true },
         { key: 'tag', label: '区块标签', type: 'text' },
         { key: 'desc', label: '区块说明', type: 'textarea', required: true }
-      ])
+      ]),
+      objectField('cta', '底部咨询承接区', ctaFields)
     ];
   }
 

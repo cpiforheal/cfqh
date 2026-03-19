@@ -77,6 +77,27 @@ const HOME_CTA_FALLBACK = {
   buttonText: '预约咨询',
   footnote: ''
 };
+const COURSES_PAGE_FALLBACK = {
+  title: '先判断适合哪条备考线',
+  subtitle: '第一次了解专转本培训，先看自己更接近医护大类还是高数专项，再决定课程安排和备考节奏。',
+  categories: ['我是医护背景', '我数学薄弱', '我想先做评估'],
+  suggestions: [
+    '护理、助产、临床等专业，优先看医护大类方向。',
+    '理工、经管类且高数薄弱，优先看高数专项突破。',
+    '如果暂时拿不准方向，先做 1 对 1 学情评估。'
+  ],
+  moreSection: {
+    title: '更多方向补充',
+    tag: '持续完善',
+    desc: '经管、计算机等方向内容会逐步补充；如果你暂时不确定，也可以先做方向判断。'
+  },
+  cta: {
+    title: '拿不准该选哪条线？',
+    desc: '把当前专业、基础和目标院校告诉我们，我们会先帮你判断适合的方向，再给课程安排建议。',
+    buttonText: '先做方向判断',
+    footnote: '方向判断 · 课程安排 · 学情评估'
+  }
+};
 
 async function ensureAdmin() {
   const { OPENID } = cloud.getWXContext();
@@ -211,20 +232,88 @@ function normalizeHomeCta(cta) {
   return isLegacyCta ? { ...cta, ...HOME_CTA_FALLBACK } : cta;
 }
 
-function normalizePagePayload(pageKey, payload) {
-  if (!payload || pageKey !== 'home') {
+function normalizeCoursesCategories(categories) {
+  const legacyCategories = ['全部方向', '医护大类', '高数专项', '更多筹备'];
+  const isLegacyCategories =
+    !Array.isArray(categories) ||
+    categories.length < 3 ||
+    legacyCategories.every((item, index) => categories?.[index] === item);
+
+  return isLegacyCategories ? COURSES_PAGE_FALLBACK.categories : categories;
+}
+
+function normalizeCoursesSuggestions(suggestions) {
+  const isLegacySuggestions =
+    !Array.isArray(suggestions) ||
+    !suggestions.length ||
+    String(suggestions?.[0] || '').includes('护理/助产/临床背景');
+
+  return isLegacySuggestions ? COURSES_PAGE_FALLBACK.suggestions : suggestions;
+}
+
+function normalizeCoursesMoreSection(section) {
+  if (!section) {
+    return COURSES_PAGE_FALLBACK.moreSection;
+  }
+
+  const isLegacySection =
+    section.title === '更多专业方向' ||
+    section.tag === '筹备中' ||
+    String(section.desc || '').includes('教研团队正在组建中');
+
+  return isLegacySection ? { ...section, ...COURSES_PAGE_FALLBACK.moreSection } : section;
+}
+
+function normalizeCoursesCta(cta) {
+  if (!cta) {
+    return COURSES_PAGE_FALLBACK.cta;
+  }
+
+  const isLegacyCta = !cta.title || !cta.desc || !cta.buttonText;
+  return isLegacyCta ? { ...cta, ...COURSES_PAGE_FALLBACK.cta } : cta;
+}
+
+function normalizeCoursesPage(payload) {
+  if (!payload) {
     return payload;
   }
 
+  const legacyTitle = payload.title === '开设方向';
+  const legacySubtitle = String(payload.subtitle || '').includes('精细化教研');
+
   return {
     ...payload,
-    hero: normalizeHomeHero(payload.hero),
-    overviewStats: normalizeHomeOverviewStats(payload.overviewStats),
-    quickLinks: normalizeHomeQuickLinks(payload.quickLinks),
-    advantages: normalizeHomeAdvantages(payload.advantages),
-    environmentSection: normalizeHomeEnvironmentSection(payload.environmentSection),
-    cta: normalizeHomeCta(payload.cta)
+    title: legacyTitle ? COURSES_PAGE_FALLBACK.title : payload.title,
+    subtitle: legacySubtitle ? COURSES_PAGE_FALLBACK.subtitle : payload.subtitle,
+    categories: normalizeCoursesCategories(payload.categories),
+    suggestions: normalizeCoursesSuggestions(payload.suggestions),
+    moreSection: normalizeCoursesMoreSection(payload.moreSection),
+    cta: normalizeCoursesCta(payload.cta)
   };
+}
+
+function normalizePagePayload(pageKey, payload) {
+  if (!payload) {
+    return payload;
+  }
+
+  if (pageKey === 'home') {
+    return {
+      ...payload,
+      hero: normalizeHomeHero(payload.hero),
+      overviewStats: normalizeHomeOverviewStats(payload.overviewStats),
+      quickLinks: normalizeHomeQuickLinks(payload.quickLinks),
+      advantages: normalizeHomeAdvantages(payload.advantages),
+      environmentSection: normalizeHomeEnvironmentSection(payload.environmentSection),
+      cta: normalizeHomeCta(payload.cta)
+    };
+  }
+
+  if (pageKey === 'courses') {
+    return normalizeCoursesPage(payload);
+  }
+
+  return payload;
 }
 
 exports.main = async (event) => {

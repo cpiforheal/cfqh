@@ -16,7 +16,7 @@ export default defineConfig({
   framework: 'react',
   compiler: 'webpack5',
   cache: {
-    enable: false
+    enable: true
   },
   alias: {
     '@': path.resolve(__dirname, '..', 'src')

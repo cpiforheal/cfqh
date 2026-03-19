@@ -662,8 +662,14 @@ const QUESTION_BANK_EDITOR_HIDDEN_PATHS = new Set([
 const HOME_EDITOR_ARRAY_RULES = {
   overviewStats: { visibleItems: 3, maxItems: 3 },
   quickLinks: { visibleItems: 4, maxItems: 4 },
-  advantages: { visibleItems: 2, maxItems: 2 },
+  advantages: { visibleItems: 4, maxItems: 4 },
   'environmentSection.cards': { visibleItems: 2, maxItems: 2 }
+};
+
+const COURSES_EDITOR_ARRAY_RULES = {
+  categories: { visibleItems: 3, maxItems: 3 },
+  suggestions: { visibleItems: 3, maxItems: 3 },
+  featuredDirectionIds: { visibleItems: 2, maxItems: 2 }
 };
 
 const EDITOR_LAYOUTS = {
@@ -695,7 +701,7 @@ const EDITOR_LAYOUTS = {
       },
       {
         title: '学习支持',
-        desc: '对应热门方向下方的两张学习支持卡片。',
+        desc: '对应热门方向下方的 4 张学习支持卡片，最后一张会以更轻的学情评估样式展示。',
         keys: ['advantages']
       }
     ],
@@ -780,24 +786,34 @@ const EDITOR_LAYOUTS = {
   },
   'page:courses': {
     hero: {
-      title: '方向页核心配置',
-      desc: '这里维护的是方向列表页本身的标题、筛选项与引导内容，建议先改这些总配置。'
+      title: '方向页主配置',
+      desc: '这里维护的是开设方向页当前真实会显示的判断首屏、两张重点方向卡片和咨询承接区，保存后会直接对应前端页面。'
     },
     sections: [
       {
-        title: '页面主信息',
-        desc: '对应方向页顶部标题、筛选标签、报考建议和精选方向。',
-        keys: ['title', 'subtitle', 'categories', 'suggestions', 'featuredDirectionIds']
+        title: '方向判断首屏',
+        desc: '对应方向页最上方的主标题、说明、判断标签和 3 条判断提示。',
+        keys: ['title', 'subtitle', 'categories', 'suggestions']
+      },
+      {
+        title: '两张重点方向卡片',
+        desc: '对应页面中间两张重点方向大卡片，当前通过方向 ID 控制展示顺序。',
+        keys: ['featuredDirectionIds']
       }
     ],
     secondarySections: [
       {
-        title: '更多方向区块',
-        desc: '对应方向页底部“更多方向”区块的标题和说明。',
+        title: '底部咨询承接区',
+        desc: '对应方向页最下方的咨询承接卡片。',
+        keys: ['cta']
+      },
+      {
+        title: '底部补充说明',
+        desc: '对应方向页咨询区下方的轻量补充说明。',
         keys: ['moreSection']
       }
     ],
-    foldLabel: '页面补充区块'
+    foldLabel: '更多方向页区块'
   },
   'page:teachers': {
     hero: {
@@ -1070,15 +1086,20 @@ const SCOPED_FIELD_LABELS = {
     intro: '机构简介'
   },
   'page:courses': {
-    title: '方向页主标题',
-    subtitle: '方向页说明',
-    categories: '顶部筛选标签',
-    suggestions: '报考建议列表',
-    featuredDirectionIds: '精选方向卡片 ID',
-    moreSection: '更多方向区块',
-    'moreSection.title': '区块标题',
-    'moreSection.tag': '区块标签',
-    'moreSection.desc': '区块说明'
+    title: '判断首屏主标题',
+    subtitle: '判断首屏说明',
+    categories: '判断标签',
+    suggestions: '判断提示',
+    featuredDirectionIds: '两张重点方向卡片 ID',
+    moreSection: '底部补充说明',
+    'moreSection.title': '补充区标题',
+    'moreSection.tag': '补充区标签',
+    'moreSection.desc': '补充区说明',
+    cta: '底部咨询承接区',
+    'cta.title': '咨询区标题',
+    'cta.desc': '咨询区说明',
+    'cta.buttonText': '咨询按钮文案',
+    'cta.footnote': '咨询补充提示'
   },
   'page:teachers': {
     hero: '师资页首屏',
@@ -1510,8 +1531,17 @@ function shouldHideField(scope, path) {
 }
 
 function getArrayEditorRule(scope, path) {
-  if (!isHomePageScope(scope)) return null;
-  return HOME_EDITOR_ARRAY_RULES[normalizeEditorPath(path)] || null;
+  const normalizedPath = normalizeEditorPath(path);
+
+  if (isHomePageScope(scope)) {
+    return HOME_EDITOR_ARRAY_RULES[normalizedPath] || null;
+  }
+
+  if (scope === 'page:courses') {
+    return COURSES_EDITOR_ARRAY_RULES[normalizedPath] || null;
+  }
+
+  return null;
 }
 
 function renderPrimitiveInput(scope, path, fieldKey, value) {
@@ -2154,6 +2184,50 @@ function getSectionLocationText(scope, row) {
   return (row?.keys || []).map((key) => getScopedFieldLabel(scope, [key], key)).join(' / ');
 }
 
+function getPageSectionAction(row, fallbackAction) {
+  if (row?.linkOnly && row?.targetView) {
+    return 'open-linked-workspace';
+  }
+  return fallbackAction;
+}
+
+function getPageSectionActionLabel(row) {
+  if (row?.linkOnly && row?.actionLabel) {
+    return row.actionLabel;
+  }
+  if (row?.linkOnly) {
+    return '去修改';
+  }
+  return '编辑';
+}
+
+function getLinkedWorkspaceDataset(source = {}) {
+  return [
+    source.targetView ? `data-target-view="${escapeHtml(source.targetView)}"` : '',
+    source.targetCollectionKey ? `data-target-collection-key="${escapeHtml(source.targetCollectionKey)}"` : '',
+    source.targetPageKey ? `data-target-page-key="${escapeHtml(source.targetPageKey)}"` : '',
+    source.targetSectionId ? `data-target-section-id="${escapeHtml(source.targetSectionId)}"` : '',
+    source.targetItemId ? `data-target-item-id="${escapeHtml(source.targetItemId)}"` : '',
+    source.statusText ? `data-link-status="${escapeHtml(source.statusText)}"` : ''
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
+
+function renderLinkedSourceCards(linkedSources = []) {
+  if (!linkedSources.length) return '';
+
+  return `<div class="record-list compact-list editor-subsection-linked">
+    ${linkedSources.map((source, index) => `<button class="record-row workspace-row-enter" style="--enter-delay: ${50 + index * 10}ms;" type="button" data-action="open-linked-workspace" ${getLinkedWorkspaceDataset(source)}>
+      <span class="record-row-main">
+        <strong class="record-row-title">${escapeHtml(source.label || '关联内容')}</strong>
+        <span class="record-row-meta">${escapeHtml(source.desc || '该区块还有关联内容需要到其它工作区维护。')}</span>
+      </span>
+      <span class="record-pill">${escapeHtml(source.actionLabel || '去修改')}</span>
+    </button>`).join('')}
+  </div>`;
+}
+
 function getPageSectionRows(pageKey, page = {}) {
   if (pageKey === 'questionBank') {
     return [
@@ -2180,6 +2254,32 @@ function getPageSectionRows(pageKey, page = {}) {
         meta: page.wrongBookCard?.title || page.wrongBookCard?.desc || '复盘说明',
         location: '页面标题 / 页面说明 / 补充提示',
         keys: ['wrongBookCard']
+      },
+      {
+        id: 'pastPapersData',
+        title: '模拟题套卷数据',
+        desc: '对应模拟题页里每一套卷的标题、年份、说明和状态。',
+        meta: `${(state.currentData?.collections?.pastPapers || []).length} 套模拟题套卷`,
+        location: '模拟题套卷标题 / 年份 / 说明 / 状态',
+        keys: [],
+        linkOnly: true,
+        targetView: 'questionBank',
+        targetCollectionKey: 'pastPapers',
+        actionLabel: '去套卷列表修改',
+        statusText: '已跳转到模拟题套卷列表。'
+      },
+      {
+        id: 'medicalQuestionsData',
+        title: '模拟题题目数据',
+        desc: '对应模拟题套卷里的具体题目、答案、解析和题型。',
+        meta: `${(state.currentData?.collections?.medicalQuestions || []).length} 道模拟题题目`,
+        location: '题目内容 / 选项 / 答案 / 解析 / 题型',
+        keys: [],
+        linkOnly: true,
+        targetView: 'questionBank',
+        targetCollectionKey: 'medicalQuestions',
+        actionLabel: '去题目列表修改',
+        statusText: '已跳转到模拟题题目列表。'
       }
     ];
   }
@@ -2187,7 +2287,7 @@ function getPageSectionRows(pageKey, page = {}) {
   if (pageKey === 'home') {
     const statCount = Math.min((page.overviewStats || []).length, 3);
     const quickLinkCount = Math.min((page.quickLinks || []).length, 4);
-    const advantageCount = Math.min((page.advantages || []).length, 2);
+    const advantageCount = Math.min((page.advantages || []).length, 4);
     const environmentCount = Math.min((page.environmentSection?.cards || []).length, 2);
     return [
       {
@@ -2220,13 +2320,23 @@ function getPageSectionRows(pageKey, page = {}) {
         desc: '对应首页“热门方向”区块里展示的方向卡片。',
         meta: (page.featuredDirectionIds || []).slice(0, 2).join(' / ') || `${(page.featuredDirectionIds || []).length} 个方向 ID`,
         location: '热门方向展示 ID',
-        keys: ['featuredDirectionIds']
+        keys: ['featuredDirectionIds'],
+        linkedSources: [
+          {
+            label: '方向卡片文案与亮点',
+            desc: '两张热门方向卡的标题、摘要、适合人群、亮点和按钮内容来自“方向管理”里的方向条目。',
+            actionLabel: '去方向管理修改',
+            targetView: 'directions',
+            targetCollectionKey: 'directions',
+            statusText: '已跳转到方向管理，请在方向条目里修改热门方向卡片内容。'
+          }
+        ]
       },
       {
         id: 'advantages',
         title: '学习支持',
-        desc: '对应热门方向下方的两张学习支持卡片。',
-        meta: (page.advantages || []).slice(0, 2).map((item) => item?.title).filter(Boolean).join(' / ') || `${advantageCount} 项学习支持`,
+        desc: '对应热门方向下方的 4 张学习支持卡片，最后一张会以更轻的学情评估样式展示。',
+        meta: (page.advantages || []).slice(0, 4).map((item) => item?.title).filter(Boolean).join(' / ') || `${advantageCount} 项学习支持`,
         location: '卡片标题 / 卡片说明 / 图标标识',
         keys: ['advantages']
       },
@@ -2241,13 +2351,319 @@ function getPageSectionRows(pageKey, page = {}) {
             .filter(Boolean)
             .join(' / ') || `${environmentCount} 张环境图片`,
         location: '图片名称 / 图片 URL',
-        keys: ['environmentSection']
+        keys: ['environmentSection'],
+        linkedSources: [
+          {
+            label: '地址与到校信息',
+            desc: '校区环境下方补充的地址、咨询时间等公共信息来自“站点设置”。',
+            actionLabel: '去站点设置修改',
+            targetView: 'contact',
+            targetPageKey: 'site',
+            statusText: '已跳转到站点设置，请修改地址、电话、微信和服务时间。'
+          }
+        ]
       },
       {
         id: 'cta',
         title: '底部咨询区',
         desc: '对应页面最下方的咨询转化区。',
         meta: page.cta?.title || page.cta?.buttonText || '咨询按钮文案',
+        location: '咨询区标题 / 咨询区说明 / 咨询按钮文案',
+        keys: ['cta'],
+        linkedSources: [
+          {
+            label: '咨询联系方式',
+            desc: '底部咨询区里展示的电话、微信、地址和服务时间来自“站点设置”。',
+            actionLabel: '去站点设置修改',
+            targetView: 'contact',
+            targetPageKey: 'site',
+            statusText: '已跳转到站点设置，请修改底部咨询区使用的公共联系信息。'
+          }
+        ]
+      }
+    ];
+  }
+
+  if (pageKey === 'courses') {
+    const directionNameMap = Object.fromEntries(
+      ((state.currentData?.collections?.directions || [])).map((item) => [item._id, item.name || item._id])
+    );
+    const featuredNames = (page.featuredDirectionIds || []).map((id) => directionNameMap[id]).filter(Boolean);
+
+    return [
+      {
+        id: 'hero',
+        title: '方向判断首屏',
+        desc: '对应方向页最上方的主标题、说明、判断标签和 3 条判断提示。',
+        meta: page.title || page.subtitle || '判断主标题 / 判断说明',
+        location: '判断首屏主标题 / 判断首屏说明 / 判断标签 / 判断提示',
+        keys: ['title', 'subtitle', 'categories', 'suggestions']
+      },
+      {
+        id: 'featuredDirections',
+        title: '两张重点方向卡片',
+        desc: '对应页面中间两张重点方向大卡片。',
+        meta: featuredNames.slice(0, 2).join(' / ') || `${(page.featuredDirectionIds || []).length} 张重点方向卡片`,
+        location: '两张重点方向卡片 ID',
+        keys: ['featuredDirectionIds'],
+        linkedSources: [
+          {
+            label: '方向卡片内容',
+            desc: '两张重点方向卡片的标题、摘要、适合人群、亮点和标签来自“方向管理”里的方向条目。',
+            actionLabel: '去方向管理修改',
+            targetView: 'directions',
+            targetCollectionKey: 'directions',
+            statusText: '已跳转到方向管理，请在方向条目里修改重点方向卡内容。'
+          }
+        ]
+      },
+      {
+        id: 'cta',
+        title: '底部咨询承接区',
+        desc: '对应方向页两张重点方向卡片下方的咨询承接卡片。',
+        meta: page.cta?.title || page.cta?.buttonText || '咨询区标题 / 咨询按钮文案',
+        location: '咨询区标题 / 咨询区说明 / 咨询按钮文案',
+        keys: ['cta']
+      },
+      {
+        id: 'moreSection',
+        title: '底部补充说明',
+        desc: '对应方向页最下方的轻量补充说明。',
+        meta: page.moreSection?.title || page.moreSection?.desc || '补充区标题 / 补充区说明',
+        location: '补充区标题 / 补充区标签 / 补充区说明',
+        keys: ['moreSection']
+      }
+    ];
+  }
+
+  if (pageKey === 'teachers') {
+    return [
+      {
+        id: 'hero',
+        title: '师资页首屏',
+        desc: '对应师资页顶部标题、说明和标签。',
+        meta: page.hero?.title || page.hero?.desc || '首屏标题 / 说明',
+        location: '首屏标题 / 首屏说明 / 首屏标签',
+        keys: ['hero']
+      },
+      {
+        id: 'introCard',
+        title: '师资介绍卡',
+        desc: '对应师资页首屏下方的介绍卡片。',
+        meta: page.introCard?.title || page.introCard?.desc || '介绍卡标题 / 说明',
+        location: '介绍卡标题 / 介绍卡说明',
+        keys: ['introCard']
+      },
+      {
+        id: 'features',
+        title: '师资页优势点',
+        desc: '对应师资页中部的优势标签和补充说明。',
+        meta: `${(page.features || []).length} 项优势点`,
+        location: '优势标题 / 优势说明 / 图标标识',
+        keys: ['features']
+      },
+      {
+        id: 'teacherCollection',
+        title: '老师卡片条目',
+        desc: '对应师资页里每一位老师的头像、姓名、头衔、标签和简介。',
+        meta: `${(state.currentData?.collections?.teachers || []).length} 位老师`,
+        location: '老师头像 / 姓名 / 头衔 / 标签 / 简介',
+        keys: [],
+        linkOnly: true,
+        targetView: 'teachers',
+        targetCollectionKey: 'teachers',
+        actionLabel: '去师资列表修改',
+        statusText: '已跳转到师资列表，请修改老师卡片条目。'
+      },
+      {
+        id: 'cta',
+        title: '师资页底部咨询区',
+        desc: '对应师资页最下方的咨询承接区。',
+        meta: page.cta?.title || page.cta?.buttonText || '咨询区标题 / 按钮',
+        location: '咨询区标题 / 咨询区说明 / 咨询按钮文案',
+        keys: ['cta']
+      }
+    ];
+  }
+
+  if (pageKey === 'success') {
+    return [
+      {
+        id: 'hero',
+        title: '成果页首屏',
+        desc: '对应成果页顶部标题、说明和标签。',
+        meta: page.hero?.title || page.hero?.desc || '首屏标题 / 说明',
+        location: '首屏标题 / 首屏说明 / 首屏标签',
+        keys: ['hero']
+      },
+      {
+        id: 'stats',
+        title: '成果页数据卡',
+        desc: '对应成果页顶部的数据卡与成果摘要。',
+        meta: `${(page.stats || []).length} 项成果数据`,
+        location: '数据数值 / 数据标签 / 补充说明',
+        keys: ['stats']
+      },
+      {
+        id: 'successCases',
+        title: '上岸案例条目',
+        desc: '对应成果页案例卡片里的标题、年份、学校、简介和标签。',
+        meta: `${(state.currentData?.collections?.successCases || []).length} 个成果案例`,
+        location: '案例标题 / 学校 / 年份 / 摘要 / 标签',
+        keys: [],
+        linkOnly: true,
+        targetView: 'results',
+        targetCollectionKey: 'successCases',
+        actionLabel: '去案例列表修改',
+        statusText: '已跳转到成果案例列表，请修改上岸故事条目。'
+      },
+      {
+        id: 'cta',
+        title: '成果页底部咨询区',
+        desc: '对应成果页最下方的咨询承接区。',
+        meta: page.cta?.title || page.cta?.buttonText || '咨询区标题 / 按钮',
+        location: '咨询区标题 / 咨询区说明 / 咨询按钮文案',
+        keys: ['cta']
+      }
+    ];
+  }
+
+  if (pageKey === 'about') {
+    return [
+      {
+        id: 'hero',
+        title: '关于页首屏',
+        desc: '对应关于页顶部标题、说明和标签。',
+        meta: page.hero?.title || page.hero?.desc || '首屏标题 / 说明',
+        location: '首屏标题 / 首屏说明 / 首屏标签',
+        keys: ['hero']
+      },
+      {
+        id: 'introCard',
+        title: '机构介绍卡',
+        desc: '对应关于页的机构介绍卡片。',
+        meta: page.introCard?.title || page.introCard?.desc || '介绍卡标题 / 说明',
+        location: '介绍卡标题 / 介绍卡说明',
+        keys: ['introCard']
+      },
+      {
+        id: 'values',
+        title: '机构理念',
+        desc: '对应关于页理念卡片。',
+        meta: `${(page.values || []).length} 项机构理念`,
+        location: '理念标题 / 理念说明 / 图标标识',
+        keys: ['values']
+      },
+      {
+        id: 'environmentImages',
+        title: '环境图片区',
+        desc: '对应关于页的校区环境图片。',
+        meta: `${(page.environmentImages || []).length} 张环境图片`,
+        location: '图片标题 / 图片 URL',
+        keys: ['environmentImages']
+      },
+      {
+        id: 'contactInfo',
+        title: '联系方式与地址',
+        desc: '关于页下方联系方式卡片里的品牌名、电话、微信、地址、服务时间和二维码来自“站点设置”。',
+        meta: state.currentData?.pages?.site?.brandName || state.currentData?.pages?.site?.contactPhone || '品牌 / 电话 / 微信 / 地址',
+        location: '品牌名 / 电话 / 微信 / 地址 / 服务时间 / 二维码',
+        keys: [],
+        linkOnly: true,
+        targetView: 'contact',
+        targetPageKey: 'site',
+        actionLabel: '去站点设置修改',
+        statusText: '已跳转到站点设置，请修改关于页联系方式与地址信息。'
+      },
+      {
+        id: 'cta',
+        title: '关于页底部咨询区',
+        desc: '对应关于页最下方的咨询承接区。',
+        meta: page.cta?.title || page.cta?.buttonText || '咨询区标题 / 按钮',
+        location: '咨询区标题 / 咨询区说明 / 咨询按钮文案',
+        keys: ['cta']
+      }
+    ];
+  }
+
+  if (pageKey === 'materials') {
+    const seriesMap = Object.fromEntries(((state.currentData?.collections?.materialSeries || [])).map((item) => [item._id, item.name || item._id]));
+    const featuredSeriesNames = (page.featuredSeriesIds || []).map((id) => seriesMap[id]).filter(Boolean);
+
+    return [
+      {
+        id: 'hero',
+        title: '资料页首屏',
+        desc: '对应资料页顶部标题、说明和标签。',
+        meta: page.hero?.title || page.hero?.desc || '首屏标题 / 说明',
+        location: '首屏标题 / 首屏说明 / 首屏标签',
+        keys: ['hero']
+      },
+      {
+        id: 'tabs',
+        title: '顶部分类标签',
+        desc: '对应资料页顶部分类 tab。',
+        meta: `${(page.tabs || []).length} 个分类标签`,
+        location: '标签名称 / 标签说明',
+        keys: ['tabs']
+      },
+      {
+        id: 'overviewStats',
+        title: '资料页数据卡',
+        desc: '对应资料页顶部统计信息卡。',
+        meta: `${(page.overviewStats || []).length} 项统计数据`,
+        location: '数据数值 / 数据标签 / 补充说明',
+        keys: ['overviewStats']
+      },
+      {
+        id: 'featuredSeriesIds',
+        title: '精选资料套系',
+        desc: '对应资料页首页展示的精选资料套系。',
+        meta: featuredSeriesNames.join(' / ') || `${(page.featuredSeriesIds || []).length} 个精选套系`,
+        location: '精选套系 ID',
+        keys: ['featuredSeriesIds'],
+        linkedSources: [
+          {
+            label: '套系内容详情',
+            desc: '精选套系卡片里的名称、摘要、标签和封面来自“教材套系”列表。',
+            actionLabel: '去教材套系修改',
+            targetView: 'media',
+            targetCollectionKey: 'materialSeries',
+            statusText: '已跳转到教材套系列表，请修改精选资料套系内容。'
+          }
+        ]
+      },
+      {
+        id: 'materialSeries',
+        title: '教材套系列表',
+        desc: '对应资料页里的每个资料套系卡片。',
+        meta: `${(state.currentData?.collections?.materialSeries || []).length} 个资料套系`,
+        location: '套系名称 / 摘要 / 标签 / 封面',
+        keys: [],
+        linkOnly: true,
+        targetView: 'media',
+        targetCollectionKey: 'materialSeries',
+        actionLabel: '去教材套系修改',
+        statusText: '已跳转到教材套系列表。'
+      },
+      {
+        id: 'materialItems',
+        title: '教材单品条目',
+        desc: '对应资料页套系下方的具体资料单品。',
+        meta: `${(state.currentData?.collections?.materialItems || []).length} 个资料单品`,
+        location: '资料标题 / 类型 / 阶段 / 下载或跳转信息',
+        keys: [],
+        linkOnly: true,
+        targetView: 'media',
+        targetCollectionKey: 'materialItems',
+        actionLabel: '去教材单品修改',
+        statusText: '已跳转到教材单品列表。'
+      },
+      {
+        id: 'cta',
+        title: '资料页底部咨询区',
+        desc: '对应资料页最下方的咨询承接区。',
+        meta: page.cta?.title || page.cta?.buttonText || '咨询区标题 / 按钮',
         location: '咨询区标题 / 咨询区说明 / 咨询按钮文案',
         keys: ['cta']
       }
@@ -2373,6 +2789,7 @@ function renderDirectSectionEditor(pageKey, page, section) {
         <span>当前区块没有可编辑字段。</span>
         <em>${escapeHtml(`区块字段 ${section.keys.length} 组`)}</em>
       </div>
+      ${renderLinkedSourceCards(section.linkedSources || [])}
       <div class="friendly-editor friendly-editor-pages">
         <div class="empty-state">当前区块暂无可编辑内容。</div>
       </div>
@@ -2385,6 +2802,7 @@ function renderDirectSectionEditor(pageKey, page, section) {
       <span>${escapeHtml(section.desc || '这里展示的就是当前真实生效的字段，改完直接保存即可。')}</span>
       <em>${escapeHtml(`区块字段 ${section.keys.length} 组`)}</em>
     </div>
+    ${renderLinkedSourceCards(section.linkedSources || [])}
     <div class="friendly-editor friendly-editor-pages">
       ${fields}
     </div>
@@ -2395,7 +2813,7 @@ function renderPageSectionNavCards(pageKey, rows, selectedSectionId, actionName)
   if (!rows.length) return '';
 
   return `<div class="page-section-nav-grid directions-enter-modal-item" style="--enter-delay: 50ms;">
-    ${rows.map((row, index) => `<button class="page-section-nav-card${row.id === selectedSectionId ? ' active' : ''}" type="button" style="--enter-delay: ${70 + index * 16}ms;" data-action="${escapeHtml(actionName)}" data-page-key="${escapeHtml(pageKey)}" data-section-id="${escapeHtml(row.id)}">
+    ${rows.map((row, index) => `<button class="page-section-nav-card${row.id === selectedSectionId ? ' active' : ''}" type="button" style="--enter-delay: ${70 + index * 16}ms;" data-action="${escapeHtml(getPageSectionAction(row, actionName))}" data-page-key="${escapeHtml(pageKey)}" data-section-id="${escapeHtml(row.id)}" ${row.linkOnly ? getLinkedWorkspaceDataset(row) : ''}>
       <span class="page-section-nav-kicker">前端区块</span>
       <strong>${escapeHtml(row.title)}</strong>
       <p>${escapeHtml(row.desc || '点击查看对应表单')}</p>
@@ -2403,6 +2821,7 @@ function renderPageSectionNavCards(pageKey, rows, selectedSectionId, actionName)
         <span>${escapeHtml(row.meta || '待完善')}</span>
         <em>${escapeHtml(getSectionLocationText(`page:${pageKey}`, row))}</em>
       </div>
+      ${row.linkOnly ? `<div class="page-section-nav-meta"><span>${escapeHtml(row.actionLabel || '去修改')}</span><em>${escapeHtml('该区块内容来自其它工作区')}</em></div>` : ''}
     </button>`).join('')}
   </div>`;
 }
@@ -2471,14 +2890,14 @@ function renderPageSectionsTable(pageKey, rows, selectedSectionId, actionName) {
         </tr>
       </thead>
       <tbody>
-        ${rows.map((row, index) => `<tr class="workspace-row-enter ${row.id === selectedSectionId ? ' active' : ''}" style="--enter-delay: ${220 + index * 34}ms;" data-action="${escapeHtml(actionName)}" data-page-key="${escapeHtml(pageKey)}" data-section-id="${escapeHtml(row.id)}">
+        ${rows.map((row, index) => `<tr class="workspace-row-enter ${row.id === selectedSectionId ? ' active' : ''}" style="--enter-delay: ${220 + index * 34}ms;" data-action="${escapeHtml(getPageSectionAction(row, actionName))}" data-page-key="${escapeHtml(pageKey)}" data-section-id="${escapeHtml(row.id)}" ${row.linkOnly ? getLinkedWorkspaceDataset(row) : ''}>
           <td><strong class="data-table-title">${escapeHtml(row.title)}</strong></td>
           <td>
             <strong class="data-table-title">${escapeHtml(row.desc || '待完善')}</strong>
             <span class="data-table-sub">${escapeHtml(row.meta || '点击进入编辑')}</span>
           </td>
           <td><span class="table-inline-summary">${escapeHtml(getSectionLocationText(`page:${pageKey}`, row))}</span></td>
-          <td><button class="row-action" type="button" data-action="${escapeHtml(actionName)}" data-page-key="${escapeHtml(pageKey)}" data-section-id="${escapeHtml(row.id)}">编辑</button></td>
+          <td><button class="row-action" type="button" data-action="${escapeHtml(getPageSectionAction(row, actionName))}" data-page-key="${escapeHtml(pageKey)}" data-section-id="${escapeHtml(row.id)}" ${row.linkOnly ? getLinkedWorkspaceDataset(row) : ''}>${escapeHtml(getPageSectionActionLabel(row))}</button></td>
         </tr>`).join('')}
       </tbody>
     </table>
@@ -2733,6 +3152,7 @@ function renderPageSectionOverlay(pageKey, pageLabel, page, rows = getPageSectio
           <span class="meta-chip">区块 ${escapeHtml(activeRow.title)}</span>
           <span class="meta-chip">字段 ${escapeHtml(String(activeRow.keys.length))} 组</span>
           <span class="meta-chip">前端位置 ${escapeHtml(getSectionLocationText(`page:${pageKey}`, activeRow))}</span>
+          ${activeRow.linkedSources?.length ? `<span class="meta-chip">关联来源 ${escapeHtml(String(activeRow.linkedSources.length))} 处</span>` : ''}
           <span class="meta-chip">更新时间 ${escapeHtml(formatDateTime(getUpdatedAt(page)))}</span>
         </div>
         <div class="drawer-focus-bar directions-enter-modal-item" style="--enter-delay: 40ms;">
@@ -2818,19 +3238,24 @@ function getCoursesPageInsightCards(page) {
 
   return [
     {
-      label: '分类入口',
+      label: '判断标签',
       value: String((page.categories || []).length),
       note: (page.categories || []).slice(0, 2).join(' / ') || '尚未设置'
     },
     {
-      label: '报考建议',
+      label: '判断提示',
       value: String((page.suggestions || []).length),
       note: page.suggestions?.[0] || '尚未设置'
     },
     {
-      label: '首页推荐',
+      label: '重点方向',
       value: String((page.featuredDirectionIds || []).length),
       note: featuredNames.slice(0, 2).join(' / ') || '尚未设置'
+    },
+    {
+      label: '咨询承接',
+      value: page.cta?.buttonText ? '已配置' : '未配置',
+      note: page.cta?.title || page.cta?.buttonText || '尚未设置'
     }
   ];
 }
@@ -2845,11 +3270,11 @@ function getDirectionsWorkspaceRows(view, data) {
       kind: 'page',
       rowId: `page:${view.pageKey}`,
       title: page.title || view.pageLabel,
-      sub: page.subtitle || '方向页标题、分类与引导文案',
-      metaPrimary: `${(page.categories || []).length} 个分类`,
-      metaSecondary: `${(page.featuredDirectionIds || []).length} 个精选方向 · ${(page.suggestions || []).length} 条建议`,
-      placementPrimary: `${(page.featuredDirectionIds || []).length} 个首页推荐`,
-      placementSecondary: featuredNames.slice(0, 2).join(' / ') || '尚未设置推荐方向',
+      sub: page.subtitle || '判断首屏、两张重点方向卡片与咨询承接区',
+      metaPrimary: `${(page.categories || []).length} 个判断标签`,
+      metaSecondary: `${(page.featuredDirectionIds || []).length} 张重点方向卡片 · ${(page.suggestions || []).length} 条判断提示`,
+      placementPrimary: `${(page.featuredDirectionIds || []).length} 张重点方向卡片`,
+      placementSecondary: featuredNames.slice(0, 2).join(' / ') || '尚未设置重点方向',
       priorityLabel: '总控台',
       priorityTone: 'page',
       status: '页面配置',
@@ -2920,7 +3345,7 @@ function renderDirectionsWorkspace(view, data) {
   const categoryCount = (data.page?.categories || []).length;
   const activeSummary = activeRow
     ? (activeRow.kind === 'page'
-      ? `页面总控，含 ${categoryCount} 个分类入口和 ${featuredCount} 条首页推荐。`
+      ? `页面总控，含 ${categoryCount} 个判断标签和 ${(data.page?.featuredDirectionIds || []).length} 张重点方向卡片。`
       : `${activeRow.item?.category || '未分组'}，排序 ${activeRow.item?.sort || '-'}，${activeRow.item?.isFeatured ? '已推荐到首页。' : '未推荐到首页。'}`)
     : `共 ${rows.length} 行，已发布 ${publishedCount} 条，首页推荐 ${featuredCount} 条。`;
 
@@ -3767,6 +4192,29 @@ function bindGlobalActions() {
           ui.selectedIds[`page-field:${pageKey}:${sectionId}`] = fieldId;
         }
         renderModule(VIEW_CONFIG[state.activeView], state.currentData);
+        return;
+      }
+
+      if (action === 'open-linked-workspace' && targetView) {
+        await switchView(targetView);
+        const targetUi = getViewUi(targetView);
+        const targetCollectionKey = button.dataset.targetCollectionKey || '';
+        const targetPageKey = button.dataset.targetPageKey || '';
+        const targetSectionId = button.dataset.targetSectionId || '';
+        const targetItemId = button.dataset.targetItemId || '';
+
+        if (targetCollectionKey && targetItemId) {
+          targetUi.selectedIds[targetCollectionKey] = targetItemId;
+          targetUi.openEditors[targetCollectionKey] = true;
+        }
+
+        if (targetPageKey && targetSectionId) {
+          targetUi.selectedIds[`page-section:${targetPageKey}`] = targetSectionId;
+          targetUi.openEditors[getPageSectionEditorKey(targetPageKey, targetSectionId)] = true;
+        }
+
+        renderModule(VIEW_CONFIG[state.activeView], state.currentData);
+        setStatus(button.dataset.linkStatus || '已跳转到对应工作区。');
         return;
       }
 

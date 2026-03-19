@@ -101,7 +101,31 @@ function normalizeHomeAdvantages(advantages) {
   const legacyAdvantageTitles = ['全职教研团队', '独立校区管理', '精细化教研', '督学管理'];
   const hasLegacyAdvantage = advantages.some((item) => legacyAdvantageTitles.includes(item?.title || ''));
 
-  return hasLegacyAdvantage ? advantagesPresentationFallback : advantages;
+  if (hasLegacyAdvantage) {
+    return advantagesPresentationFallback;
+  }
+
+  if (advantages.length >= 4) {
+    return advantages;
+  }
+
+  const existingTitles = new Set(
+    advantages
+      .map((item) => String(item?.title || '').trim())
+      .filter(Boolean)
+  );
+
+  const merged = [...advantages];
+  advantagesPresentationFallback.forEach((item) => {
+    const title = String(item?.title || '').trim();
+    if (merged.length >= 4 || !title || existingTitles.has(title)) {
+      return;
+    }
+    existingTitles.add(title);
+    merged.push(item);
+  });
+
+  return merged;
 }
 
 function normalizeHomeCta(cta) {
@@ -173,30 +197,30 @@ function getDirectionTone(index) {
       tagBackground: 'linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(219,234,254,0.86) 100%)',
       headerBackground: 'linear-gradient(180deg, rgba(255,255,255,0.94) 0%, rgba(240,249,255,0.76) 100%)',
       iconColor: '#0284c7',
-      buttonBackground: 'linear-gradient(90deg, #0284c7 0%, #0ea5e9 100%)',
+      buttonBackground: 'linear-gradient(90deg, #3b82c4 0%, #60a5d8 100%)',
       buttonTextColor: '#ffffff',
       glowColor: 'rgba(14,165,233,0.10)',
-      cardBackground: 'linear-gradient(145deg, #fbfeff 0%, #eef9ff 24%, #c9ebff 65%, #97daff 100%)',
-      cardBorder: 'rgba(56,189,248,0.34)',
-      cardShadow: '0 34rpx 66rpx rgba(14,165,233,0.22), 0 12rpx 28rpx rgba(14,165,233,0.12)',
-      sideStripe: 'linear-gradient(180deg, #67e8f9 0%, #22d3ee 22%, #0ea5e9 66%, #0369a1 100%)',
-      topGlow: 'radial-gradient(circle at 28% 24%, rgba(255,255,255,0.95) 0%, rgba(186,230,253,0.54) 40%, rgba(14,165,233,0.10) 100%)',
-      bottomGlow: 'radial-gradient(circle at 32% 32%, rgba(255,255,255,0.84) 0%, rgba(125,211,252,0.34) 45%, rgba(14,165,233,0.06) 100%)',
+      cardBackground: 'linear-gradient(145deg, #fefeff 0%, #f4f9fd 26%, #e6f1f9 68%, #d7e8f5 100%)',
+      cardBorder: 'rgba(148, 186, 214, 0.56)',
+      cardShadow: '0 34rpx 64rpx rgba(148,163,184,0.28), 0 14rpx 28rpx rgba(148,163,184,0.16), inset 0 1rpx 0 rgba(255,255,255,0.96)',
+      sideStripe: 'linear-gradient(180deg, #c2e2f4 0%, #8dc3e5 32%, #669fcd 72%, #4b7ba9 100%)',
+      topGlow: 'radial-gradient(circle at 28% 24%, rgba(255,255,255,0.96) 0%, rgba(226,238,248,0.60) 42%, rgba(96,165,216,0.08) 100%)',
+      bottomGlow: 'radial-gradient(circle at 32% 32%, rgba(255,255,255,0.88) 0%, rgba(205,224,240,0.40) 45%, rgba(96,165,216,0.06) 100%)',
       edgeHighlight: 'linear-gradient(180deg, rgba(255,255,255,0.82) 0%, rgba(255,255,255,0.10) 100%)',
       surfaceGlow: 'linear-gradient(120deg, rgba(255,255,255,0.75) 0%, rgba(255,255,255,0.10) 46%, rgba(255,255,255,0.00) 100%)',
-      panelBackground: 'linear-gradient(180deg, rgba(255,255,255,0.90) 0%, rgba(239,249,255,0.76) 100%)',
-      panelBorder: 'rgba(186,230,253,0.90)',
-      panelShadow: '0 18rpx 36rpx rgba(14,165,233,0.10), inset 0 1rpx 0 rgba(255,255,255,0.92)',
-      numberBackground: 'linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(224,242,254,0.78) 100%)',
-      numberBorder: 'rgba(125,211,252,0.95)',
-      numberShadow: '0 16rpx 28rpx rgba(14,165,233,0.12), inset 0 1rpx 0 rgba(255,255,255,0.96)',
+      panelBackground: 'linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(244,249,253,0.80) 100%)',
+      panelBorder: 'rgba(210,224,236,0.96)',
+      panelShadow: '0 18rpx 34rpx rgba(148,163,184,0.12), inset 0 1rpx 0 rgba(255,255,255,0.94)',
+      numberBackground: 'linear-gradient(180deg, rgba(255,255,255,0.94) 0%, rgba(236,244,249,0.84) 100%)',
+      numberBorder: 'rgba(205,223,237,0.96)',
+      numberShadow: '0 16rpx 28rpx rgba(148,163,184,0.16), inset 0 1rpx 0 rgba(255,255,255,0.98)',
       numberColor: '#0369a1',
-      featureDot: '#0284c7',
-      chipBackground: 'linear-gradient(180deg, rgba(255,255,255,0.90) 0%, rgba(240,249,255,0.78) 100%)',
-      chipBorder: 'rgba(186,230,253,0.88)',
-      chipShadow: '0 12rpx 22rpx rgba(14,165,233,0.08)',
-      buttonShadow: '0 18rpx 32rpx rgba(14,165,233,0.26)',
-      buttonBorder: 'rgba(255,255,255,0.22)',
+      featureDot: '#5f95be',
+      chipBackground: 'linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(244,249,253,0.82) 100%)',
+      chipBorder: 'rgba(210,224,236,0.92)',
+      chipShadow: '0 12rpx 22rpx rgba(148,163,184,0.10)',
+      buttonShadow: '0 18rpx 32rpx rgba(96,132,160,0.24)',
+      buttonBorder: 'rgba(255,255,255,0.34)',
       descriptionTitle: '#075985'
     },
     {
@@ -204,30 +228,30 @@ function getDirectionTone(index) {
       tagBackground: 'linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(224,231,255,0.88) 100%)',
       headerBackground: 'linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(238,242,255,0.78) 100%)',
       iconColor: '#2563eb',
-      buttonBackground: 'linear-gradient(90deg, #3b82f6 0%, #6366f1 100%)',
+      buttonBackground: 'linear-gradient(90deg, #5d7ec7 0%, #7f8ed9 100%)',
       buttonTextColor: '#ffffff',
       glowColor: 'rgba(37,99,235,0.08)',
-      cardBackground: 'linear-gradient(145deg, #fdfdff 0%, #f4f7ff 24%, #dbe6ff 66%, #bdd0ff 100%)',
-      cardBorder: 'rgba(96,165,250,0.30)',
-      cardShadow: '0 30rpx 60rpx rgba(59,130,246,0.18), 0 12rpx 24rpx rgba(99,102,241,0.10)',
-      sideStripe: 'linear-gradient(180deg, #93c5fd 0%, #60a5fa 24%, #3b82f6 68%, #4f46e5 100%)',
-      topGlow: 'radial-gradient(circle at 28% 24%, rgba(255,255,255,0.95) 0%, rgba(199,210,254,0.52) 42%, rgba(59,130,246,0.10) 100%)',
-      bottomGlow: 'radial-gradient(circle at 32% 32%, rgba(255,255,255,0.84) 0%, rgba(165,180,252,0.34) 45%, rgba(99,102,241,0.06) 100%)',
+      cardBackground: 'linear-gradient(145deg, #fffefe 0%, #f7f7fd 26%, #ebedfa 66%, #dfe3f3 100%)',
+      cardBorder: 'rgba(180, 189, 225, 0.54)',
+      cardShadow: '0 34rpx 64rpx rgba(148,163,184,0.26), 0 14rpx 28rpx rgba(148,163,184,0.14), inset 0 1rpx 0 rgba(255,255,255,0.96)',
+      sideStripe: 'linear-gradient(180deg, #d7def8 0%, #aebce9 34%, #7f94cf 72%, #6377b6 100%)',
+      topGlow: 'radial-gradient(circle at 28% 24%, rgba(255,255,255,0.96) 0%, rgba(231,233,247,0.62) 44%, rgba(129,140,248,0.08) 100%)',
+      bottomGlow: 'radial-gradient(circle at 32% 32%, rgba(255,255,255,0.88) 0%, rgba(219,223,241,0.38) 45%, rgba(129,140,248,0.06) 100%)',
       edgeHighlight: 'linear-gradient(180deg, rgba(255,255,255,0.84) 0%, rgba(255,255,255,0.10) 100%)',
       surfaceGlow: 'linear-gradient(120deg, rgba(255,255,255,0.76) 0%, rgba(255,255,255,0.10) 48%, rgba(255,255,255,0.00) 100%)',
-      panelBackground: 'linear-gradient(180deg, rgba(255,255,255,0.90) 0%, rgba(239,246,255,0.78) 100%)',
-      panelBorder: 'rgba(191,219,254,0.92)',
-      panelShadow: '0 18rpx 34rpx rgba(59,130,246,0.10), inset 0 1rpx 0 rgba(255,255,255,0.92)',
-      numberBackground: 'linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(224,231,255,0.80) 100%)',
-      numberBorder: 'rgba(191,219,254,0.94)',
-      numberShadow: '0 14rpx 26rpx rgba(59,130,246,0.12), inset 0 1rpx 0 rgba(255,255,255,0.96)',
+      panelBackground: 'linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(246,247,252,0.82) 100%)',
+      panelBorder: 'rgba(222,226,241,0.96)',
+      panelShadow: '0 18rpx 34rpx rgba(148,163,184,0.12), inset 0 1rpx 0 rgba(255,255,255,0.94)',
+      numberBackground: 'linear-gradient(180deg, rgba(255,255,255,0.94) 0%, rgba(239,241,249,0.86) 100%)',
+      numberBorder: 'rgba(221,225,240,0.96)',
+      numberShadow: '0 14rpx 26rpx rgba(148,163,184,0.16), inset 0 1rpx 0 rgba(255,255,255,0.98)',
       numberColor: '#1d4ed8',
-      featureDot: '#3b82f6',
-      chipBackground: 'linear-gradient(180deg, rgba(255,255,255,0.90) 0%, rgba(239,246,255,0.80) 100%)',
-      chipBorder: 'rgba(191,219,254,0.90)',
-      chipShadow: '0 12rpx 22rpx rgba(59,130,246,0.08)',
-      buttonShadow: '0 18rpx 32rpx rgba(99,102,241,0.22)',
-      buttonBorder: 'rgba(255,255,255,0.24)',
+      featureDot: '#7b8eca',
+      chipBackground: 'linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(246,247,252,0.84) 100%)',
+      chipBorder: 'rgba(222,226,241,0.92)',
+      chipShadow: '0 12rpx 22rpx rgba(148,163,184,0.10)',
+      buttonShadow: '0 18rpx 32rpx rgba(109,119,161,0.22)',
+      buttonBorder: 'rgba(255,255,255,0.34)',
       descriptionTitle: '#1d4ed8'
     }
   ];
@@ -1148,8 +1172,9 @@ export default function HomePage() {
   const site = content.site || fallbackContent.site;
   const hero = normalizedPage.hero || defaultHomePage.hero;
   const heroImageUrl = hero.backgroundImageUrl || '';
+  const heroHasImage = Boolean(heroImageUrl);
   const stats = (normalizedPage.overviewStats || defaultHomePage.overviewStats).slice(0, 3);
-  const advantages = (normalizedPage.advantages || defaultHomePage.advantages).slice(0, 2);
+  const advantages = (normalizedPage.advantages || defaultHomePage.advantages).slice(0, 4);
   const environmentCards = normalizedPage.environmentSection?.cards || defaultHomePage.environmentSection.cards;
   const cta = normalizedPage.cta || defaultHomePage.cta;
   const heroDesc = compactText(hero.desc, 46);
@@ -1192,22 +1217,112 @@ export default function HomePage() {
             position: 'relative'
           }}
         >
-          {heroImageUrl ? (
-            <Image
-              src={resolveMediaUrl({
-                url: heroImageUrl,
-                fallbackSize: '900/700'
-              })}
-              mode="aspectFill"
+          {heroHasImage ? (
+            <View
               style={{
-                position: 'absolute',
-                right: '-36rpx',
-                bottom: '-18rpx',
-                width: '300rpx',
-                height: '300rpx',
-                opacity: 0.14
+                position: 'relative',
+                margin: '-30rpx -24rpx 28rpx',
+                padding: '26rpx 22rpx 18rpx',
+                height: '432rpx',
+                overflow: 'hidden',
+                background:
+                  'linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(240,249,255,0.86) 42%, rgba(232,244,253,0.72) 100%)'
               }}
-            />
+            >
+              <View
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background:
+                    'radial-gradient(circle at 50% 10%, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.72) 32%, rgba(255,255,255,0) 72%)'
+                }}
+              />
+              <Image
+                src={resolveMediaUrl({
+                  url: heroImageUrl,
+                  fallbackSize: '1200/760'
+                })}
+                mode="aspectFit"
+                style={{
+                  position: 'relative',
+                  zIndex: 2,
+                  width: '100%',
+                  height: '100%',
+                  transform: 'scale(1.02)'
+                }}
+              />
+              <View
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background:
+                    'linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.00) 48%, rgba(255,255,255,0.18) 76%, rgba(244,250,255,0.94) 100%)'
+                }}
+              />
+              <View
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: '42rpx',
+                  background:
+                    'linear-gradient(90deg, rgba(244,250,255,0.98) 0%, rgba(244,250,255,0.56) 52%, rgba(244,250,255,0.00) 100%)'
+                }}
+              />
+              <View
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: '42rpx',
+                  background:
+                    'linear-gradient(270deg, rgba(244,250,255,0.98) 0%, rgba(244,250,255,0.56) 52%, rgba(244,250,255,0.00) 100%)'
+                }}
+              />
+              <View
+                style={{
+                  position: 'absolute',
+                  left: '24rpx',
+                  right: '24rpx',
+                  bottom: '18rpx',
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between'
+                }}
+              >
+                <View
+                  style={{
+                    padding: '10rpx 18rpx',
+                    borderRadius: '999rpx',
+                    backgroundColor: 'rgba(255,255,255,0.84)',
+                    boxShadow: '0 8rpx 16rpx rgba(15,76,129,0.08)'
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: ui.type.note,
+                      color: '#0f4c81',
+                      fontWeight: 700
+                    }}
+                  >
+                    校区实景与学习氛围
+                  </Text>
+                </View>
+                <View
+                  style={{
+                    width: '76rpx',
+                    height: '76rpx',
+                    borderRadius: '38rpx',
+                    backgroundColor: 'rgba(255,255,255,0.24)',
+                    border: '1rpx solid rgba(255,255,255,0.42)',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </View>
+            </View>
           ) : null}
           <Text
             style={{
@@ -1718,15 +1833,22 @@ export default function HomePage() {
           新同学第一次来了解时，最需要先确认的，通常不是课表，而是有没有人帮你判断方向、盯住节奏。
         </Text>
         <View>
-          {featuredAdvantages.map((item, index) => (
+          {featuredAdvantages.map((item, index) => {
+            const isCompactAssessment = /学情评估/.test(String(item?.title || ''));
+
+            return (
             <View
               key={item.title}
               style={{
                 marginBottom: index === featuredAdvantages.length - 1 ? '0' : '16rpx',
-                padding: '22rpx 20rpx 20rpx',
-                borderRadius: '24rpx',
-                background: 'linear-gradient(180deg, #ffffff 0%, #f8fbff 100%)',
-                boxShadow: '0 16rpx 28rpx rgba(148,163,184,0.08)',
+                padding: isCompactAssessment ? '18rpx 18rpx 16rpx' : '22rpx 20rpx 20rpx',
+                borderRadius: isCompactAssessment ? '22rpx' : '24rpx',
+                background: isCompactAssessment
+                  ? 'linear-gradient(180deg, #ffffff 0%, #fbfdff 100%)'
+                  : 'linear-gradient(180deg, #ffffff 0%, #f8fbff 100%)',
+                boxShadow: isCompactAssessment
+                  ? '0 12rpx 22rpx rgba(148,163,184,0.06)'
+                  : '0 16rpx 28rpx rgba(148,163,184,0.08)',
                 border: `1rpx solid ${homeTone.accentBorder}`,
                 boxSizing: 'border-box',
                 position: 'relative',
@@ -1741,7 +1863,11 @@ export default function HomePage() {
                   width: '128rpx',
                   height: '128rpx',
                   borderRadius: '999rpx',
-                  backgroundColor: index === 0 ? 'rgba(125,211,252,0.18)' : 'rgba(191,219,254,0.24)'
+                  backgroundColor: isCompactAssessment
+                    ? 'rgba(226,232,240,0.22)'
+                    : index === 0
+                      ? 'rgba(125,211,252,0.18)'
+                      : 'rgba(191,219,254,0.24)'
                 }}
               />
               <View style={{ position: 'relative', zIndex: 2 }}>
@@ -1749,15 +1875,17 @@ export default function HomePage() {
                   <View style={{ display: 'flex', alignItems: 'center', flex: 1, paddingRight: '16rpx' }}>
                     <View
                       style={{
-                        width: '54rpx',
-                        height: '54rpx',
-                        borderRadius: '18rpx',
+                        width: isCompactAssessment ? '48rpx' : '54rpx',
+                        height: isCompactAssessment ? '48rpx' : '54rpx',
+                        borderRadius: isCompactAssessment ? '16rpx' : '18rpx',
                         backgroundColor: '#ffffff',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         marginRight: '14rpx',
-                        boxShadow: '0 10rpx 20rpx rgba(148,163,184,0.10)'
+                        boxShadow: isCompactAssessment
+                          ? '0 8rpx 16rpx rgba(148,163,184,0.08)'
+                          : '0 10rpx 20rpx rgba(148,163,184,0.10)'
                       }}
                     >
                       <AdvantageIcon type={item.icon} />
@@ -1766,7 +1894,7 @@ export default function HomePage() {
                       <Text
                         style={{
                           display: 'block',
-                          fontSize: ui.type.body,
+                          fontSize: isCompactAssessment ? ui.type.note : ui.type.body,
                           color: ui.colors.text,
                           fontWeight: 800
                         }}
@@ -1782,29 +1910,46 @@ export default function HomePage() {
                           lineHeight: 1.7
                         }}
                       >
-                        {compactText(item.desc || '', 46)}
+                        {compactText(item.desc || '', isCompactAssessment ? 40 : 46)}
                       </Text>
                     </View>
                   </View>
-                  <View
-                    style={{
-                      minWidth: '78rpx',
-                      padding: '10rpx 0',
-                      borderRadius: '18rpx',
-                      backgroundColor: 'rgba(255,255,255,0.72)',
-                      border: `1rpx solid ${homeTone.accentBorder}`,
-                      textAlign: 'center'
-                    }}
-                  >
-                    <Text style={{ display: 'block', fontSize: '18rpx', color: homeTone.note, fontWeight: 700, textAlign: 'center' }}>支持</Text>
-                    <Text style={{ display: 'block', marginTop: '4rpx', fontSize: '30rpx', color: homeTone.accentStrong, fontWeight: 900, textAlign: 'center' }}>
-                      0{index + 1}
-                    </Text>
-                  </View>
+                  {isCompactAssessment ? (
+                    <View
+                      style={{
+                        minWidth: '104rpx',
+                        padding: '10rpx 14rpx',
+                        borderRadius: '999rpx',
+                        background: 'rgba(255,255,255,0.78)',
+                        border: `1rpx solid ${homeTone.accentBorder}`,
+                        textAlign: 'center'
+                      }}
+                    >
+                      <Text style={{ display: 'block', fontSize: '18rpx', color: homeTone.accentStrong, fontWeight: 800, textAlign: 'center' }}>
+                        新同学先看
+                      </Text>
+                    </View>
+                  ) : (
+                    <View
+                      style={{
+                        minWidth: '78rpx',
+                        padding: '10rpx 0',
+                        borderRadius: '18rpx',
+                        backgroundColor: 'rgba(255,255,255,0.72)',
+                        border: `1rpx solid ${homeTone.accentBorder}`,
+                        textAlign: 'center'
+                      }}
+                    >
+                      <Text style={{ display: 'block', fontSize: '18rpx', color: homeTone.note, fontWeight: 700, textAlign: 'center' }}>支持</Text>
+                      <Text style={{ display: 'block', marginTop: '4rpx', fontSize: '30rpx', color: homeTone.accentStrong, fontWeight: 900, textAlign: 'center' }}>
+                        0{index + 1}
+                      </Text>
+                    </View>
+                  )}
                 </View>
               </View>
             </View>
-          ))}
+          )})}
         </View>
       </View>
 

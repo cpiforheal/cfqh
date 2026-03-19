@@ -23,6 +23,8 @@ const HOME_STATS_FALLBACK = seedData.pages?.home?.overviewStats || [];
 const HOME_ADVANTAGES_FALLBACK = seedData.pages?.home?.advantages || [];
 const HOME_CTA_FALLBACK = seedData.pages?.home?.cta || {};
 const HOME_ENVIRONMENT_FALLBACK = seedData.pages?.home?.environmentSection || { cards: [] };
+const COURSES_PAGE_FALLBACK = seedData.pages?.courses || {};
+const COURSES_CTA_FALLBACK = seedData.pages?.courses?.cta || {};
 
 function getNetworkHosts() {
   const hosts = new Set(['127.0.0.1']);
@@ -138,20 +140,88 @@ function normalizeHomeEnvironmentSection(section) {
   };
 }
 
-function normalizePagePayload(pageKey, payload) {
-  if (!payload || pageKey !== 'home') {
+function normalizeCoursesCategories(categories) {
+  const legacyCategories = ['全部方向', '医护大类', '高数专项', '更多筹备'];
+  const isLegacyCategories =
+    !Array.isArray(categories) ||
+    categories.length < 3 ||
+    legacyCategories.every((item, index) => categories?.[index] === item);
+
+  return isLegacyCategories ? COURSES_PAGE_FALLBACK.categories : categories;
+}
+
+function normalizeCoursesSuggestions(suggestions) {
+  const isLegacySuggestions =
+    !Array.isArray(suggestions) ||
+    !suggestions.length ||
+    String(suggestions?.[0] || '').includes('护理/助产/临床背景');
+
+  return isLegacySuggestions ? COURSES_PAGE_FALLBACK.suggestions : suggestions;
+}
+
+function normalizeCoursesMoreSection(section) {
+  if (!section) {
+    return COURSES_PAGE_FALLBACK.moreSection;
+  }
+
+  const isLegacySection =
+    section.title === '更多专业方向' ||
+    section.tag === '筹备中' ||
+    String(section.desc || '').includes('教研团队正在组建中');
+
+  return isLegacySection ? { ...section, ...COURSES_PAGE_FALLBACK.moreSection } : section;
+}
+
+function normalizeCoursesCta(cta) {
+  if (!cta) {
+    return COURSES_CTA_FALLBACK;
+  }
+
+  const isLegacyCta = !cta.title || !cta.desc || !cta.buttonText;
+  return isLegacyCta ? { ...cta, ...COURSES_CTA_FALLBACK } : cta;
+}
+
+function normalizeCoursesPage(payload) {
+  if (!payload) {
     return payload;
   }
 
+  const legacyTitle = payload.title === '开设方向';
+  const legacySubtitle = String(payload.subtitle || '').includes('精细化教研');
+
   return {
     ...payload,
-    hero: normalizeHomeHero(payload.hero),
-    overviewStats: normalizeHomeOverviewStats(payload.overviewStats),
-    quickLinks: normalizeHomeQuickLinks(payload.quickLinks),
-    advantages: normalizeHomeAdvantages(payload.advantages),
-    environmentSection: normalizeHomeEnvironmentSection(payload.environmentSection),
-    cta: normalizeHomeCta(payload.cta)
+    title: legacyTitle ? COURSES_PAGE_FALLBACK.title : payload.title,
+    subtitle: legacySubtitle ? COURSES_PAGE_FALLBACK.subtitle : payload.subtitle,
+    categories: normalizeCoursesCategories(payload.categories),
+    suggestions: normalizeCoursesSuggestions(payload.suggestions),
+    moreSection: normalizeCoursesMoreSection(payload.moreSection),
+    cta: normalizeCoursesCta(payload.cta)
   };
+}
+
+function normalizePagePayload(pageKey, payload) {
+  if (!payload) {
+    return payload;
+  }
+
+  if (pageKey === 'home') {
+    return {
+      ...payload,
+      hero: normalizeHomeHero(payload.hero),
+      overviewStats: normalizeHomeOverviewStats(payload.overviewStats),
+      quickLinks: normalizeHomeQuickLinks(payload.quickLinks),
+      advantages: normalizeHomeAdvantages(payload.advantages),
+      environmentSection: normalizeHomeEnvironmentSection(payload.environmentSection),
+      cta: normalizeHomeCta(payload.cta)
+    };
+  }
+
+  if (pageKey === 'courses') {
+    return normalizeCoursesPage(payload);
+  }
+
+  return payload;
 }
 
 function parseEnvFile(filePath) {

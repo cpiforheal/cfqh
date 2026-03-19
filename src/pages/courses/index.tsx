@@ -1,6 +1,6 @@
-import { ScrollView, Text, View } from '@tarojs/components';
+import { Text, View } from '@tarojs/components';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import CmsSyncBadge from '../../components/CmsSyncBadge';
+import PageCtaCard from '../../components/PageCtaCard';
 import PageSectionTitle from '../../components/PageSectionTitle';
 import fallbackContent from '../../data/contentFallback';
 import { useCmsAutoRefresh } from '../../hooks/useCmsAutoRefresh';
@@ -10,143 +10,59 @@ import { pageStyle, surfaceCardStyle, ui } from '../../styles/ui';
 const defaultCoursesPage = fallbackContent.pages.courses;
 const defaultDirections = fallbackContent.directions;
 
+function normalizeCoursesPage(page) {
+  if (!page) return defaultCoursesPage;
+
+  const legacyCategories = ['全部方向', '医护大类', '高数专项', '更多筹备'];
+  const legacyTitle = page.title === '开设方向';
+  const legacySubtitle = String(page.subtitle || '').includes('精细化教研');
+  const legacyCategoriesUsed =
+    !Array.isArray(page.categories) ||
+    page.categories.length < 3 ||
+    legacyCategories.every((item, index) => page.categories?.[index] === item);
+  const legacySuggestions =
+    !Array.isArray(page.suggestions) ||
+    !page.suggestions.length ||
+    String(page.suggestions?.[0] || '').includes('护理/助产/临床背景');
+  const legacyMoreSection =
+    !page.moreSection ||
+    page.moreSection.title === '更多专业方向' ||
+    page.moreSection.tag === '筹备中';
+  const missingCta = !page.cta?.title || !page.cta?.desc || !page.cta?.buttonText;
+
+  return {
+    ...page,
+    title: legacyTitle ? defaultCoursesPage.title : page.title,
+    subtitle: legacySubtitle ? defaultCoursesPage.subtitle : page.subtitle,
+    categories: legacyCategoriesUsed ? defaultCoursesPage.categories : page.categories,
+    suggestions: legacySuggestions ? defaultCoursesPage.suggestions : page.suggestions,
+    moreSection: legacyMoreSection ? defaultCoursesPage.moreSection : page.moreSection,
+    cta: missingCta ? { ...(page.cta || {}), ...defaultCoursesPage.cta } : page.cta
+  };
+}
+
 function mapCourseCards(directions) {
-  return (directions || []).map((item) => ({
+  return (directions || []).map((item, index) => ({
     style: item.coursesCard?.style || 'light',
     tag: item.coursesCard?.tag || item.featuredTag || '',
     title: item.name,
+    summary: item.summary || '',
     audience: item.audience || '',
-    features: item.features || [],
-    chips: item.chips || [],
-    accent: item.coursesCard?.accent || '#334155',
+    features: (item.features || []).slice(0, 3),
+    chips: (item.chips || []).slice(0, 3),
+    accent: item.coursesCard?.accent || '#4f7cff',
     background: item.coursesCard?.background || '#ffffff',
-    iconBg: item.coursesCard?.iconBg || '#eef2f7',
-    iconType: item.coursesCard?.iconType || 'grid'
+    iconBg: item.coursesCard?.iconBg || '#eef4ff',
+    iconType: item.coursesCard?.iconType || 'grid',
+    actionLabel: index === 0 ? '优先了解这条线' : '先看这条线'
   }));
 }
 
 function getInitialCoursesState() {
   return {
-    page: defaultCoursesPage,
+    page: normalizeCoursesPage(defaultCoursesPage),
     directions: defaultDirections
   };
-}
-
-function FilterScroller(props) {
-  return (
-    <View
-      style={{
-        ...surfaceCardStyle,
-        borderRadius: ui.radius.lg,
-        padding: '24rpx 20rpx 22rpx',
-        boxShadow: ui.shadow.cardRaised
-      }}
-    >
-      <ScrollView scrollX>
-        <View style={{ display: 'flex', whiteSpace: 'nowrap', marginBottom: '16rpx' }}>
-          {(props.categories || []).map((item, index) => (
-            <View
-              key={item}
-              style={{
-                marginRight: '14rpx',
-                padding: '16rpx 28rpx',
-                borderRadius: '22rpx',
-                backgroundColor: index === 0 ? ui.colors.text : '#eef2f7'
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: ui.type.body,
-                  color: index === 0 ? '#ffffff' : ui.colors.textSubtle,
-                  fontWeight: 800
-                }}
-              >
-                {item}
-              </Text>
-            </View>
-          ))}
-        </View>
-      </ScrollView>
-
-      <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Text style={{ fontSize: '22rpx', color: '#94a3b8' }}>◀</Text>
-        <View
-          style={{
-            flex: 1,
-            height: '14rpx',
-            borderRadius: ui.radius.pill,
-            backgroundColor: '#d1d5db',
-            margin: '0 14rpx',
-            overflow: 'hidden'
-          }}
-        >
-          <View
-            style={{
-              width: '84%',
-              height: '100%',
-              borderRadius: ui.radius.pill,
-              backgroundColor: '#8b8f97'
-            }}
-          />
-        </View>
-        <Text style={{ fontSize: '22rpx', color: '#94a3b8' }}>▶</Text>
-      </View>
-    </View>
-  );
-}
-
-function SuggestionCard(props) {
-  return (
-    <View
-      style={{
-        background: 'linear-gradient(180deg, #edf1ff 0%, #e9eeff 100%)',
-        borderRadius: ui.radius.lg,
-        padding: '30rpx 28rpx 26rpx',
-        border: '1rpx solid rgba(181,195,255,0.55)',
-        boxShadow: ui.shadow.card
-      }}
-    >
-      <View style={{ display: 'flex', alignItems: 'center', marginBottom: '16rpx' }}>
-        <View
-          style={{
-            width: '34rpx',
-            height: '34rpx',
-            borderRadius: ui.radius.pill,
-            border: `3rpx solid ${ui.colors.accent}`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginRight: '12rpx',
-            boxSizing: 'border-box'
-          }}
-        >
-          <Text style={{ fontSize: ui.type.meta, color: ui.colors.accent, fontWeight: 800 }}>?</Text>
-        </View>
-        <Text style={{ fontSize: ui.type.cardTitle, color: ui.colors.text, fontWeight: 800 }}>不知道如何规划专业方向？</Text>
-      </View>
-
-      {(props.suggestions || []).map((item) => (
-        <View key={item} style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '12rpx' }}>
-          <Text style={{ fontSize: ui.type.body, color: ui.colors.accent, marginRight: '10rpx', marginTop: '4rpx' }}>•</Text>
-          <Text style={{ flex: 1, fontSize: ui.type.body, color: '#4f46e5', lineHeight: 1.8 }}>{item}</Text>
-        </View>
-      ))}
-
-      <View
-        style={{
-          marginTop: '18rpx',
-          backgroundColor: '#ffffff',
-          borderRadius: ui.radius.sm,
-          padding: '22rpx 20rpx',
-          border: '1rpx solid rgba(226,232,240,0.9)'
-        }}
-      >
-        <Text style={{ textAlign: 'center', fontSize: ui.type.body, color: ui.colors.accent, fontWeight: 800 }}>
-          免费获取 1对1 专业规划 〉
-        </Text>
-      </View>
-    </View>
-  );
 }
 
 function DirectionIcon(props) {
@@ -161,7 +77,7 @@ function DirectionIcon(props) {
             width: '8rpx',
             height: '3rpx',
             borderRadius: '999rpx',
-            backgroundColor: '#ffffff'
+            backgroundColor: props.color
           }}
         />
         <View
@@ -174,7 +90,7 @@ function DirectionIcon(props) {
             borderTopWidth: '3rpx',
             borderRightWidth: '3rpx',
             borderStyle: 'solid',
-            borderColor: '#ffffff',
+            borderColor: props.color,
             transform: 'rotate(25deg)'
           }}
         />
@@ -186,7 +102,7 @@ function DirectionIcon(props) {
             width: '6rpx',
             height: '3rpx',
             borderRadius: '999rpx',
-            backgroundColor: '#ffffff'
+            backgroundColor: props.color
           }}
         />
         <View
@@ -199,7 +115,7 @@ function DirectionIcon(props) {
             borderTopWidth: '3rpx',
             borderRightWidth: '3rpx',
             borderStyle: 'solid',
-            borderColor: '#ffffff',
+            borderColor: props.color,
             transform: 'rotate(-25deg)'
           }}
         />
@@ -211,7 +127,7 @@ function DirectionIcon(props) {
             width: '9rpx',
             height: '3rpx',
             borderRadius: '999rpx',
-            backgroundColor: '#ffffff'
+            backgroundColor: props.color
           }}
         />
       </View>
@@ -225,7 +141,7 @@ function DirectionIcon(props) {
         height: '34rpx',
         borderWidth: '3rpx',
         borderStyle: 'solid',
-        borderColor: '#64748b',
+        borderColor: props.color,
         borderRadius: '6rpx',
         boxSizing: 'border-box',
         position: 'relative'
@@ -238,131 +154,107 @@ function DirectionIcon(props) {
           top: '5rpx',
           width: '3rpx',
           height: '3rpx',
-          backgroundColor: '#64748b',
-          boxShadow:
-            '7rpx 0 0 #64748b, 14rpx 0 0 #64748b, 0 7rpx 0 #64748b, 7rpx 7rpx 0 #64748b, 14rpx 7rpx 0 #64748b, 0 14rpx 0 #64748b, 7rpx 14rpx 0 #64748b, 14rpx 14rpx 0 #64748b'
+          backgroundColor: props.color,
+          boxShadow: `7rpx 0 0 ${props.color}, 14rpx 0 0 ${props.color}, 0 7rpx 0 ${props.color}, 7rpx 7rpx 0 ${props.color}, 14rpx 7rpx 0 ${props.color}, 0 14rpx 0 ${props.color}, 7rpx 14rpx 0 ${props.color}, 14rpx 14rpx 0 ${props.color}`
         }}
       />
     </View>
   );
 }
 
-function DetailCard(props) {
-  const isDark = props.style === 'dark';
-
+function DecisionHero(props) {
   return (
     <View
       style={{
-        marginBottom: props.isLast ? '0' : '26rpx',
-        background: isDark ? props.background : ui.colors.surface,
+        ...surfaceCardStyle,
         borderRadius: ui.radius.xl,
-        padding: '28rpx 26rpx 26rpx',
-        border: isDark ? '1rpx solid rgba(91,77,255,0.22)' : '1rpx solid rgba(226,232,240,0.9)',
-        boxShadow: isDark
-          ? '0 18rpx 34rpx rgba(15,23,42,0.18)'
-          : '0 16rpx 30rpx rgba(148,163,184,0.12)'
+        padding: '34rpx 30rpx 30rpx',
+        boxShadow: '0 20rpx 44rpx rgba(140, 174, 230, 0.16)',
+        border: '1rpx solid rgba(209, 226, 255, 0.96)',
+        overflow: 'hidden',
+        position: 'relative'
       }}
     >
-      <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '22rpx' }}>
-        <View
-          style={{
-            display: 'inline-flex',
-            padding: '8rpx 14rpx',
-            borderRadius: '12rpx',
-            backgroundColor: isDark ? 'rgba(91,77,255,0.18)' : '#eef2f7'
-          }}
-        >
-          <Text
-            style={{
-              fontSize: '18rpx',
-              color: isDark ? '#c7caff' : '#64748b',
-              fontWeight: 700
-            }}
-          >
-            {props.tag}
-          </Text>
-        </View>
-        <View
-          style={{
-            width: '74rpx',
-            height: '74rpx',
-            borderRadius: ui.radius.pill,
-            backgroundColor: props.iconBg,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-        >
-          <DirectionIcon type={props.iconType} />
-        </View>
-      </View>
-
-      <Text
-        style={{
-          display: 'block',
-          fontSize: '48rpx',
-          lineHeight: 1.08,
-          color: isDark ? '#ffffff' : '#0f172a',
-          fontWeight: 900,
-          marginBottom: '26rpx'
-        }}
-      >
-        {props.title}
-      </Text>
-
       <View
         style={{
-          backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#f8fafc',
-          borderRadius: ui.radius.sm,
-          padding: '22rpx 22rpx 20rpx',
-          border: isDark ? '1rpx solid rgba(255,255,255,0.08)' : '1rpx solid rgba(226,232,240,0.9)',
-          marginBottom: '26rpx'
+          position: 'absolute',
+          right: '-46rpx',
+          top: '-56rpx',
+          width: '250rpx',
+          height: '250rpx',
+          borderRadius: ui.radius.pill,
+          background: 'radial-gradient(circle, rgba(172,208,255,0.42) 0%, rgba(172,208,255,0) 72%)'
+        }}
+      />
+      <View
+        style={{
+          display: 'inline-flex',
+          padding: '10rpx 18rpx',
+          borderRadius: ui.radius.pill,
+          backgroundColor: '#ebf4ff',
+          marginBottom: '18rpx'
         }}
       >
-        <View style={{ display: 'flex', alignItems: 'center', marginBottom: '12rpx' }}>
-          <Text style={{ fontSize: ui.type.body, color: isDark ? '#b5c0ff' : ui.colors.textMuted, marginRight: '8rpx' }}>◎</Text>
-          <Text style={{ fontSize: ui.type.body, color: isDark ? '#b5c0ff' : ui.colors.textMuted, fontWeight: 700 }}>适合学员</Text>
-        </View>
-        <Text style={{ display: 'block', fontSize: ui.type.body, lineHeight: 1.85, color: isDark ? '#ffffff' : ui.colors.text }}>
-          {props.audience}
-        </Text>
+        <Text style={{ fontSize: ui.type.meta, color: '#3b82f6', fontWeight: 800 }}>方向判断</Text>
       </View>
 
-      <View style={{ marginBottom: '22rpx' }}>
-        <Text style={{ display: 'block', fontSize: ui.type.body, color: isDark ? '#b5c0ff' : ui.colors.textMuted, fontWeight: 700, marginBottom: '18rpx' }}>
-          培养方式与内容
-        </Text>
-        {props.features.map((feature) => (
-          <View key={feature} style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '14rpx' }}>
-            <Text style={{ fontSize: ui.type.body, color: props.accent, marginRight: '10rpx', marginTop: '4rpx' }}>⊙</Text>
-            <Text style={{ flex: 1, fontSize: ui.type.body, lineHeight: 1.75, color: isDark ? '#e2e8f0' : ui.colors.textSubtle }}>
-              {feature}
-            </Text>
+      <Text style={{ display: 'block', fontSize: ui.type.hero, lineHeight: 1.14, color: ui.colors.text, fontWeight: 900, marginBottom: '14rpx' }}>
+        {props.title}
+      </Text>
+      <Text style={{ display: 'block', fontSize: ui.type.body, lineHeight: 1.78, color: ui.colors.textMuted, marginBottom: '24rpx' }}>
+        {props.subtitle}
+      </Text>
+
+      <View style={{ display: 'flex', flexWrap: 'wrap', marginBottom: '22rpx' }}>
+        {(props.categories || []).slice(0, 3).map((item, index) => (
+          <View
+            key={item}
+            style={{
+              marginRight: '14rpx',
+              marginBottom: '12rpx',
+              padding: index === 2 ? '16rpx 20rpx' : '18rpx 22rpx',
+              borderRadius: '22rpx',
+              background: index === 2 ? '#f8fbff' : 'linear-gradient(180deg, #f7fbff 0%, #edf5ff 100%)',
+              border: index === 2 ? '1rpx solid rgba(217,227,240,0.95)' : '1rpx solid rgba(196,220,255,0.9)',
+              boxShadow: index === 2 ? 'none' : '0 12rpx 22rpx rgba(161, 190, 230, 0.10)'
+            }}
+          >
+            <Text style={{ fontSize: ui.type.body, color: index === 2 ? ui.colors.textMuted : ui.colors.text, fontWeight: 800 }}>{item}</Text>
           </View>
         ))}
       </View>
 
       <View
         style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          paddingTop: '20rpx',
-          borderTop: isDark ? '1rpx solid rgba(255,255,255,0.08)' : '1rpx solid rgba(226,232,240,0.9)'
+          background: 'linear-gradient(180deg, #fbfdff 0%, #f3f8ff 100%)',
+          borderRadius: ui.radius.lg,
+          padding: '24rpx 22rpx',
+          border: '1rpx solid rgba(218,231,250,0.95)'
         }}
       >
-        {props.chips.map((chip) => (
+        {(props.suggestions || []).slice(0, 3).map((item, index) => (
           <View
-            key={chip}
+            key={item}
             style={{
-              marginRight: '12rpx',
-              marginBottom: '10rpx',
-              padding: '12rpx 16rpx',
-              borderRadius: '16rpx',
-              backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#f8fafc',
-              border: isDark ? '1rpx solid rgba(255,255,255,0.06)' : '1rpx solid rgba(226,232,240,0.9)'
+              display: 'flex',
+              alignItems: 'flex-start',
+              marginBottom: index === Math.min((props.suggestions || []).length, 3) - 1 ? '0' : '16rpx'
             }}
           >
-            <Text style={{ fontSize: ui.type.meta, color: isDark ? '#dbe4ff' : ui.colors.textMuted, fontWeight: 700 }}>{chip}</Text>
+            <View
+              style={{
+                width: '16rpx',
+                height: '16rpx',
+                borderRadius: ui.radius.pill,
+                backgroundColor: index === 2 ? '#cbd5e1' : '#60a5fa',
+                marginRight: '14rpx',
+                marginTop: '10rpx',
+                flexShrink: 0
+              }}
+            />
+            <Text style={{ flex: 1, fontSize: ui.type.body, lineHeight: 1.78, color: index === 2 ? ui.colors.textMuted : ui.colors.textSoft }}>
+              {item}
+            </Text>
           </View>
         ))}
       </View>
@@ -370,9 +262,174 @@ function DetailCard(props) {
   );
 }
 
+function DetailCard(props) {
+  return (
+    <View
+      style={{
+        position: 'relative',
+        marginBottom: props.isLast ? '0' : '26rpx',
+        borderRadius: ui.radius.xl,
+        padding: '32rpx 28rpx 28rpx',
+        background: 'linear-gradient(180deg, #ffffff 0%, #f6fbff 100%)',
+        border: '1rpx solid rgba(214,229,248,0.96)',
+        boxShadow: '0 24rpx 50rpx rgba(148,163,184,0.14)',
+        overflow: 'hidden'
+      }}
+    >
+      <View
+        style={{
+          position: 'absolute',
+          inset: '0',
+          background: `linear-gradient(135deg, ${props.background} 0%, rgba(255,255,255,0) 70%)`,
+          opacity: 0.14
+        }}
+      />
+      <View
+        style={{
+          position: 'absolute',
+          left: '0',
+          top: '34rpx',
+          bottom: '34rpx',
+          width: '10rpx',
+          borderRadius: '0 999rpx 999rpx 0',
+          background: `linear-gradient(180deg, ${props.accent} 0%, rgba(255,255,255,0.5) 100%)`
+        }}
+      />
+
+      <View style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '22rpx' }}>
+        <View
+          style={{
+            display: 'inline-flex',
+            padding: '10rpx 16rpx',
+            borderRadius: '14rpx',
+            backgroundColor: '#edf5ff'
+          }}
+        >
+          <Text style={{ fontSize: ui.type.meta, color: props.accent, fontWeight: 800 }}>{props.tag}</Text>
+        </View>
+        <View
+          style={{
+            width: '78rpx',
+            height: '78rpx',
+            borderRadius: ui.radius.pill,
+            backgroundColor: props.iconBg,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: `0 14rpx 28rpx ${props.accent}1a`
+          }}
+        >
+          <DirectionIcon type={props.iconType} color={props.accent} />
+        </View>
+      </View>
+
+      <Text style={{ display: 'block', fontSize: '46rpx', lineHeight: 1.14, color: ui.colors.text, fontWeight: 900, marginBottom: '12rpx' }}>
+        {props.title}
+      </Text>
+      <Text style={{ display: 'block', fontSize: ui.type.body, lineHeight: 1.78, color: ui.colors.textMuted, marginBottom: '22rpx' }}>
+        {props.summary}
+      </Text>
+
+      <View
+        style={{
+          position: 'relative',
+          background: 'linear-gradient(180deg, #fbfdff 0%, #f4f8ff 100%)',
+          borderRadius: ui.radius.lg,
+          padding: '22rpx 20rpx',
+          border: '1rpx solid rgba(218,231,250,0.95)',
+          marginBottom: '22rpx'
+        }}
+      >
+        <Text style={{ display: 'block', fontSize: ui.type.meta, color: props.accent, fontWeight: 800, marginBottom: '12rpx' }}>适合这类同学</Text>
+        <Text style={{ display: 'block', fontSize: ui.type.body, lineHeight: 1.8, color: ui.colors.text }}>{props.audience}</Text>
+      </View>
+
+      <View style={{ marginBottom: '22rpx' }}>
+        <Text style={{ display: 'block', fontSize: ui.type.meta, color: ui.colors.textMuted, fontWeight: 800, marginBottom: '16rpx' }}>你会重点解决这些问题</Text>
+        {(props.features || []).map((feature) => (
+          <View key={feature} style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '14rpx' }}>
+            <View
+              style={{
+                width: '14rpx',
+                height: '14rpx',
+                borderRadius: ui.radius.pill,
+                backgroundColor: props.accent,
+                marginRight: '12rpx',
+                marginTop: '10rpx',
+                flexShrink: 0,
+                boxShadow: `0 0 0 6rpx ${props.accent}14`
+              }}
+            />
+            <Text style={{ flex: 1, fontSize: ui.type.body, lineHeight: 1.76, color: ui.colors.textSoft }}>{feature}</Text>
+          </View>
+        ))}
+      </View>
+
+      <View style={{ display: 'flex', flexWrap: 'wrap', marginBottom: '22rpx' }}>
+        {(props.chips || []).map((chip) => (
+          <View
+            key={chip}
+            style={{
+              marginRight: '12rpx',
+              marginBottom: '12rpx',
+              padding: '12rpx 16rpx',
+              borderRadius: '16rpx',
+              backgroundColor: '#ffffff',
+              border: '1rpx solid rgba(221,231,242,0.95)'
+            }}
+          >
+            <Text style={{ fontSize: ui.type.meta, color: ui.colors.textMuted, fontWeight: 700 }}>{chip}</Text>
+          </View>
+        ))}
+      </View>
+
+      <View
+        style={{
+          position: 'relative',
+          borderTop: '1rpx solid rgba(226,232,240,0.96)',
+          paddingTop: '20rpx',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}
+      >
+        <Text style={{ fontSize: ui.type.body, color: ui.colors.textSoft, fontWeight: 700 }}>建议下一步：先看课程安排，再确认是否要做学情评估</Text>
+        <Text style={{ fontSize: ui.type.body, color: props.accent, fontWeight: 800 }}>{props.actionLabel} 〉</Text>
+      </View>
+    </View>
+  );
+}
+
+function MoreSection(props) {
+  return (
+    <View
+      style={{
+        margin: `22rpx ${ui.spacing.pageCompact} 40rpx`,
+        borderRadius: ui.radius.xl,
+        padding: '24rpx 24rpx 22rpx',
+        background: 'linear-gradient(180deg, #fcfdff 0%, #f7f9fc 100%)',
+        border: '1rpx solid rgba(230,236,244,0.96)'
+      }}
+    >
+      <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14rpx' }}>
+        <Text style={{ fontSize: ui.type.section, color: ui.colors.textSoft, fontWeight: 800 }}>{props.title}</Text>
+        <View
+          style={{
+            padding: '8rpx 16rpx',
+            borderRadius: ui.radius.pill,
+            backgroundColor: '#eef2f7'
+          }}
+        >
+          <Text style={{ fontSize: ui.type.meta, color: ui.colors.textMuted, fontWeight: 700 }}>{props.tag}</Text>
+        </View>
+      </View>
+      <Text style={{ display: 'block', fontSize: ui.type.body, lineHeight: 1.76, color: ui.colors.textMuted }}>{props.desc}</Text>
+    </View>
+  );
+}
+
 export default function CoursesPage() {
   const [content, setContent] = useState(getInitialCoursesState());
-  const [loadState, setLoadState] = useState({ source: 'fallback', error: '', updatedAt: '', revision: '' });
 
   const loadContent = useCallback(() => {
     let mounted = true;
@@ -381,24 +438,13 @@ export default function CoursesPage() {
       .then((payload) => {
         if (!mounted || !payload) return;
         setContent({
-          page: payload.page || defaultCoursesPage,
-          directions: (payload.directions && payload.directions.length ? payload.directions : defaultDirections)
-        });
-        setLoadState({
-          source: payload.__meta?.source || 'cloud',
-          error: '',
-          updatedAt: payload.__meta?.updatedAt || '',
-          revision: payload.__meta?.revision || ''
+          page: normalizeCoursesPage(payload.page || defaultCoursesPage),
+          directions: payload.directions && payload.directions.length ? payload.directions : defaultDirections
         });
       })
-      .catch((error) => {
+      .catch(() => {
         if (!mounted) return;
-        setLoadState({
-          source: 'error',
-          error: error && error.message ? error.message : '云端内容读取失败',
-          updatedAt: '',
-          revision: ''
-        });
+        setContent(getInitialCoursesState());
       });
 
     return () => {
@@ -409,92 +455,53 @@ export default function CoursesPage() {
   useEffect(() => {
     const cleanup = loadContent();
     return cleanup;
-  }, []);
+  }, [loadContent]);
 
   useCmsAutoRefresh(loadContent);
 
-  const categories = content.page?.categories || defaultCoursesPage.categories;
-  const suggestions = content.page?.suggestions || defaultCoursesPage.suggestions;
+  const page = content.page || defaultCoursesPage;
   const directionCards = useMemo(() => {
-    const featuredIds = content.page?.featuredDirectionIds || [];
+    const featuredIds = page.featuredDirectionIds || [];
     const source = featuredIds.length
-      ? featuredIds
-          .map((id) => (content.directions || []).find((item) => item._id === id))
-          .filter(Boolean)
+      ? featuredIds.map((id) => (content.directions || []).find((item) => item._id === id)).filter(Boolean)
       : content.directions || [];
 
     return mapCourseCards(source);
-  }, [content]);
-  const moreSection = content.page?.moreSection || defaultCoursesPage.moreSection;
+  }, [content.directions, page.featuredDirectionIds]);
 
   return (
     <View style={pageStyle}>
-      {loadState.error ? (
-        <View
-          style={{
-            margin: '18rpx 24rpx 0',
-            padding: '16rpx 18rpx',
-            borderRadius: '18rpx',
-            backgroundColor: '#fff7ed',
-            border: '1rpx solid #fdba74'
-          }}
-        >
-          <Text style={{ fontSize: ui.type.meta, color: '#9a3412', fontWeight: 700 }}>
-            云端内容未加载成功：{loadState.error}
-          </Text>
-        </View>
-      ) : null}
-
-      <View style={{ padding: `28rpx ${ui.spacing.page} 0` }}>
-        <Text style={{ display: 'block', fontSize: ui.type.hero, lineHeight: 1.12, color: ui.colors.text, fontWeight: 900, marginBottom: '10rpx' }}>
-          {content.page?.title || defaultCoursesPage.title}
-        </Text>
-        <Text style={{ display: 'block', fontSize: ui.type.body, lineHeight: 1.75, color: ui.colors.textMuted }}>
-          {content.page?.subtitle || defaultCoursesPage.subtitle}
-        </Text>
+      <View style={{ margin: `28rpx ${ui.spacing.page} 0` }}>
+        <DecisionHero title={page.title} subtitle={page.subtitle} categories={page.categories} suggestions={page.suggestions} />
       </View>
 
-      <CmsSyncBadge source={loadState.source} updatedAt={loadState.updatedAt} revision={loadState.revision} />
-
-      <View style={{ margin: `26rpx ${ui.spacing.page} 0` }}>
-        <FilterScroller categories={categories} />
+      <View style={{ marginTop: '34rpx' }}>
+        <PageSectionTitle
+          title='两条重点备考线'
+          subtitle='先看自己更接近哪一条，再决定课程安排和训练节奏。'
+        />
       </View>
 
-      <View style={{ margin: `34rpx ${ui.spacing.page} 0` }}>
-        <SuggestionCard suggestions={suggestions} />
-      </View>
-
-      <View style={{ margin: `34rpx ${ui.spacing.pageCompact} 0` }}>
+      <View style={{ margin: `10rpx ${ui.spacing.pageCompact} 0` }}>
         {directionCards.map((item, index) => (
           <DetailCard key={item.title} {...item} isLast={index === directionCards.length - 1} />
         ))}
       </View>
 
-      <View
-        style={{
-          margin: `26rpx ${ui.spacing.pageCompact} 0`,
-          background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
-          borderRadius: ui.radius.xl,
-          padding: '34rpx 30rpx 30rpx',
-          border: '1rpx solid rgba(226,232,240,0.95)'
-        }}
-      >
-        <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18rpx' }}>
-          <Text style={{ fontSize: ui.type.section, color: ui.colors.textSoft, fontWeight: 800 }}>{moreSection.title}</Text>
-          <View
-            style={{
-              padding: '10rpx 18rpx',
-              borderRadius: ui.radius.pill,
-              backgroundColor: '#e2e8f0'
-            }}
-          >
-            <Text style={{ fontSize: ui.type.meta, color: ui.colors.textMuted, fontWeight: 700 }}>{moreSection.tag}</Text>
-          </View>
-        </View>
-        <Text style={{ display: 'block', width: '88%', fontSize: ui.type.body, lineHeight: 1.85, color: ui.colors.textSoft }}>
-          {moreSection.desc}
-        </Text>
-      </View>
+      <PageCtaCard
+        margin={`30rpx ${ui.spacing.page} 0`}
+        title={page.cta?.title}
+        desc={page.cta?.desc}
+        buttonText={page.cta?.buttonText}
+        footnote={page.cta?.footnote}
+        background='linear-gradient(180deg, #102f6a 0%, #164494 100%)'
+        orbColor='rgba(125, 185, 255, 0.18)'
+        buttonBackground='linear-gradient(180deg, #ffffff 0%, #eef6ff 100%)'
+        buttonTextColor='#0f3a81'
+        buttonShadow='0 14rpx 28rpx rgba(8, 37, 82, 0.18)'
+      />
+
+      <MoreSection {...(page.moreSection || defaultCoursesPage.moreSection)} />
     </View>
   );
 }
