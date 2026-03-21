@@ -24,7 +24,7 @@ export const listCollectionMap = {
   directions: 'directions',
   teachers: 'teachers',
   successCases: 'success_cases',
-  materialSeries: 'material_series',
+  materialPackages: 'material_packages',
   materialItems: 'material_items',
   mediaAssets: 'media_assets',
   adminUsers: 'admin_users'
@@ -45,8 +45,8 @@ export const adminListOptions = [
   { key: 'directions', label: '方向列表', collection: 'directions' },
   { key: 'teachers', label: '师资列表', collection: 'teachers' },
   { key: 'successCases', label: '成果案例', collection: 'success_cases' },
-  { key: 'materialSeries', label: '教材套系', collection: 'material_series' },
-  { key: 'materialItems', label: '教材单品', collection: 'material_items' },
+  { key: 'materialPackages', label: '主推套系包', collection: 'material_packages' },
+  { key: 'materialItems', label: '货架资料卡', collection: 'material_items' },
   { key: 'mediaAssets', label: '媒体资源', collection: 'media_assets' },
   { key: 'adminUsers', label: '管理员', collection: 'admin_users' }
 ];

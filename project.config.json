@@ -33,5 +33,6 @@
     "include": []
   },
   "cloudfunctionRoot": "cloudfunctions/",
-  "cloudfunctionTemplateRoot": "cloudfunctionTemplate/"
+  "cloudfunctionTemplateRoot": "cloudfunctionTemplate/",
+  "libVersion": "3.14.3"
 }

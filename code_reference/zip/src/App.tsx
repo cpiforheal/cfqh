@@ -1,372 +1,520 @@
-import React from 'react';
-import { motion } from 'motion/react';
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  LayoutDashboard, 
-  Compass, 
-  Users, 
+  BookOpen, 
+  FileText, 
+  Target, 
   Award, 
-  Info, 
-  Phone, 
-  Image as ImageIcon,
-  Settings,
-  RefreshCw,
-  ChevronRight,
-  Bell,
-  Search
+  MessageCircle, 
+  ChevronRight, 
+  ChevronLeft,
+  CheckCircle2, 
+  Sparkles, 
+  Search, 
+  BookMarked, 
+  GraduationCap,
+  Headphones,
+  LayoutGrid,
+  Eye
 } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 // --- Mock Data ---
-const trendData = [
-  { name: 'Mon', views: 4000, updates: 2400 },
-  { name: 'Tue', views: 3000, updates: 1398 },
-  { name: 'Wed', views: 2000, updates: 9800 },
-  { name: 'Thu', views: 2780, updates: 3908 },
-  { name: 'Fri', views: 1890, updates: 4800 },
-  { name: 'Sat', views: 2390, updates: 3800 },
-  { name: 'Sun', views: 3490, updates: 4300 },
-];
-
-const healthData = [
-  { name: '首页配置', status: 'healthy', value: 100 },
-  { name: '师资团队', status: 'warning', value: 85 },
-  { name: '开设方向', status: 'healthy', value: 98 },
-  { name: '媒体资源', status: 'healthy', value: 92 },
-];
-
-const recentUpdates = [
-  { id: 1, title: '更新了"2024秋季招生简章"', module: '首页配置', time: '10分钟前', user: 'Admin' },
-  { id: 2, title: '新增了3位特聘教授信息', module: '师资团队', time: '2小时前', user: 'Editor_Li' },
-  { id: 3, title: '修改了联系方式电话', module: '联系方式', time: '5小时前', user: 'Admin' },
-  { id: 4, title: '上传了校园风光宣传片', module: '媒体资源', time: '昨天 14:30', user: 'Editor_Wang' },
-];
-
-// --- Components ---
-
-const Sidebar = () => {
-  const navItems = [
-    { icon: LayoutDashboard, label: '总览', active: true },
-    { icon: Compass, label: '方向' },
-    { icon: Users, label: '师资' },
-    { icon: Award, label: '成果' },
-    { icon: Info, label: '关于' },
-    { icon: Phone, label: '联系' },
-    { icon: ImageIcon, label: '媒体' },
-  ];
-
-  return (
-    <aside className="w-20 flex-shrink-0 flex flex-col items-center py-6 glass-panel border-l-0 border-y-0 rounded-none rounded-r-3xl z-20">
-      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-200 mb-8">
-        <span className="text-white font-bold text-xl">E</span>
-      </div>
-      
-      <nav className="flex-1 flex flex-col gap-4 w-full px-3">
-        {navItems.map((item, idx) => (
-          <button 
-            key={idx}
-            className={`w-full aspect-square flex flex-col items-center justify-center gap-1 rounded-2xl transition-all duration-300 group relative
-              ${item.active 
-                ? 'bg-white shadow-[0_4px_12px_rgba(0,0,0,0.05),inset_0_1px_1px_rgba(255,255,255,1)] border border-white/80' 
-                : 'hover:bg-white/40 hover:shadow-[0_2px_8px_rgba(0,0,0,0.02)] border border-transparent'}`}
-          >
-            <item.icon className={`w-5 h-5 ${item.active ? 'text-indigo-600' : 'text-slate-500 group-hover:text-slate-700'}`} strokeWidth={item.active ? 2.5 : 2} />
-            <span className={`text-[10px] font-medium ${item.active ? 'text-indigo-700' : 'text-slate-500'}`}>{item.label}</span>
-            {item.active && (
-              <motion.div layoutId="active-indicator" className="absolute left-0 w-1 h-6 bg-indigo-500 rounded-r-full" />
-            )}
-          </button>
-        ))}
-      </nav>
-
-      <div className="mt-auto flex flex-col gap-4 w-full px-3">
-        <button className="w-full aspect-square flex items-center justify-center rounded-2xl hover:bg-white/40 transition-all text-slate-500 hover:text-slate-700 border border-transparent">
-          <Settings className="w-5 h-5" />
-        </button>
-        <div className="w-10 h-10 rounded-full bg-slate-200 border-2 border-white shadow-sm overflow-hidden mx-auto cursor-pointer">
-          <img src="https://picsum.photos/seed/admin/100/100" alt="User" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-        </div>
-      </div>
-    </aside>
-  );
+const packageData = {
+  math: {
+    foundation: {
+      main: {
+        id: 'm-f-1',
+        title: '2027版 高数全程通关尊享包',
+        badge: '零基础首选',
+        target: '基础薄弱、跨考、需要从零系统构建知识体系的同学',
+        solves: '知识点零散无从下手、缺乏系统训练、做题没思路',
+        features: ['名师主编', '阶梯式训练', '全真模拟'],
+        contents: [
+          { 
+            type: '核心教材', 
+            name: '高数核心考点精编 (上/下册)', 
+            desc: '涵盖100%大纲考点，通俗易懂', 
+            coverColor: 'from-blue-500 to-blue-700',
+            details: '本书由前命题组专家联合编写，针对专转本考试大纲，将高等数学分为12个核心模块。包含知识点精讲、例题剖析、易错点提示等板块。上册主讲函数、极限、微积分基础；下册主讲多元函数、微分方程等进阶内容。全书采用双色印刷，重点突出。'
+          },
+          { 
+            type: '配套习题', 
+            name: '基础必刷1000题', 
+            desc: '按章节分层训练，夯实基础', 
+            coverColor: 'from-indigo-500 to-indigo-700',
+            details: '与《核心考点精编》完全同步，分为“基础过关”、“能力提升”、“历年真题”三个梯度。每道题均配有详细的解析过程，部分重难点题目配有视频讲解二维码，扫码即可观看名师解题思路。'
+          },
+          { 
+            type: '阶段测评', 
+            name: '模块通关测评卷 (6套)', 
+            desc: '检验阶段学习成果，查漏补缺', 
+            coverColor: 'from-emerald-500 to-emerald-700',
+            details: '包含6套严格按照真实考试难度命制的阶段性测试卷。建议在完成每个大模块学习后进行限时闭卷测试。附赠答题卡与评分标准，帮助考生提前适应考场节奏，精准定位薄弱环节。'
+          }
+        ]
+      },
+      secondary: {
+        id: 'm-f-2',
+        title: '高数基础精讲包',
+        badge: '夯实基础',
+        target: '有一定基础，只需巩固核心考点的同学',
+        contents: ['高数核心考点精编', '基础必刷1000题']
+      }
+    },
+    reinforcement: {
+      main: {
+        id: 'm-r-1',
+        title: '高数强化提分突击包',
+        badge: '突破瓶颈',
+        target: '基础已过完，需要掌握解题技巧、提高做题速度的同学',
+        solves: '做题慢、遇到综合题没思路、容易掉入陷阱',
+        features: ['题型归纳', '秒杀技巧', '重难点突破'],
+        contents: [
+          { 
+            type: '强化教材', 
+            name: '高数题型与技巧精粹', 
+            desc: '120种常考题型全面归纳', 
+            coverColor: 'from-blue-600 to-indigo-800',
+            details: '打破传统章节顺序，按“题型”重新串联知识点。总结了120种专转本常考题型及对应的“秒杀”技巧。'
+          },
+          { 
+            type: '真题演练', 
+            name: '历年真题分类汇编', 
+            desc: '近10年真题深度解析', 
+            coverColor: 'from-amber-500 to-orange-600',
+            details: '收录近10年真实考卷，按考点分类汇编，洞悉命题规律。'
+          },
+          { 
+            type: '专项突破', 
+            name: '易错题与压轴题集', 
+            desc: '攻克失分重灾区', 
+            coverColor: 'from-rose-500 to-red-700',
+            details: '专门针对历年考生得分率低于30%的题目进行专项特训。'
+          }
+        ]
+      }
+    },
+    sprint: {
+      main: {
+        id: 'm-s-1',
+        title: '高数考前冲刺押题包',
+        badge: '考前必刷',
+        target: '即将参加考试，需要全真模拟、调整应试状态的同学',
+        solves: '时间分配不合理、缺乏临场经验、对最新考情不敏感',
+        features: ['全真模拟', '名师押题', '考前点拨'],
+        contents: [
+          { 
+            type: '冲刺卷', 
+            name: '考前全真模拟卷 (8套)', 
+            desc: '严格按照真题难度与题型命制', 
+            coverColor: 'from-blue-500 to-cyan-600',
+            details: '8套高质量模拟卷，难度与真题高度一致。'
+          },
+          { 
+            type: '押题卷', 
+            name: '名师终极密押卷 (3套)', 
+            desc: '直击今年命题趋势', 
+            coverColor: 'from-purple-600 to-purple-800',
+            details: '教研团队结合最新考纲与命题动向，精心打磨的3套押题卷。'
+          },
+          { 
+            type: '背诵手册', 
+            name: '考前必背公式与定理', 
+            desc: '口袋书，随时随地记忆', 
+            coverColor: 'from-emerald-500 to-teal-700',
+            details: '浓缩全书精华，便携式口袋书设计。'
+          }
+        ]
+      }
+    }
+  },
+  medical: {
+    foundation: {
+      main: {
+        id: 'med-f-1',
+        title: '医护综合系统精讲包',
+        badge: '跨考福音',
+        target: '护理/医学类专业，需要系统掌握解剖、生理等基础知识的同学',
+        solves: '医学名词难记、知识点繁杂、缺乏临床联系',
+        features: ['图文并茂', '口诀记忆', '考纲全覆盖'],
+        contents: [
+          { 
+            type: '核心教材', 
+            name: '医护综合核心考点 (全彩版)', 
+            desc: '全彩图解，直观易懂', 
+            coverColor: 'from-teal-500 to-teal-700',
+            details: '采用全彩印刷，包含大量高清解剖图与生理机制示意图。'
+          },
+          { 
+            type: '配套习题', 
+            name: '章节同步练习册', 
+            desc: '学练结合，加深记忆', 
+            coverColor: 'from-cyan-500 to-blue-600',
+            details: '与主教材完美同步的课后练习。'
+          },
+          { 
+            type: '记忆手册', 
+            name: '高频考点速记手册', 
+            desc: '独家记忆口诀', 
+            coverColor: 'from-blue-400 to-indigo-600',
+            details: '教研团队总结的数百个顺口溜与记忆口诀。'
+          }
+        ]
+      }
+    }
+  }
 };
 
-const Header = () => {
-  return (
-    <header className="h-20 px-8 flex items-center justify-between z-10 sticky top-0 backdrop-blur-md bg-slate-50/50 border-b border-slate-200/50">
-      <div className="flex items-center gap-4">
-        <div className="flex items-center text-sm font-medium text-slate-500">
-          <span>CMS</span>
-          <ChevronRight className="w-4 h-4 mx-1 opacity-50" />
-          <span className="text-slate-800">Dashboard</span>
-        </div>
-        <h1 className="text-2xl font-semibold text-slate-800 ml-4 tracking-tight">总览</h1>
-      </div>
-
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-100/50 text-emerald-600 text-xs font-medium shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)]">
-          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          系统运行正常
-        </div>
-        
-        <div className="flex items-center gap-2 ml-4">
-          <button className="p-2 rounded-xl glass-button text-slate-500 hover:text-slate-800">
-            <Search className="w-4 h-4" />
-          </button>
-          <button className="p-2 rounded-xl glass-button text-slate-500 hover:text-slate-800 relative">
-            <Bell className="w-4 h-4" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 border-2 border-white" />
-          </button>
-          <button className="p-2 rounded-xl glass-button text-slate-500 hover:text-slate-800">
-            <RefreshCw className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-    </header>
-  );
-};
-
-const StatCard = ({ title, value, subValue, trend, icon: Icon, colorClass }: any) => (
-  <motion.div 
-    initial={{ opacity: 0, y: 10 }}
-    animate={{ opacity: 1, y: 0 }}
-    className="glass-panel p-5 flex flex-col gap-3 relative overflow-hidden group"
-  >
-    <div className={`absolute -right-4 -top-4 w-24 h-24 rounded-full opacity-20 blur-2xl transition-all duration-500 group-hover:scale-150 ${colorClass}`} />
-    
-    <div className="flex justify-between items-start relative z-10">
-      <span className="text-sm font-medium text-slate-500">{title}</span>
-      <div className={`p-2 rounded-xl bg-white/60 shadow-sm border border-white/80 ${colorClass.replace('bg-', 'text-').replace('-500', '-600')}`}>
-        <Icon className="w-4 h-4" />
-      </div>
-    </div>
-    
-    <div className="relative z-10 mt-1">
-      <div className="flex items-baseline gap-2">
-        <span className="text-3xl font-semibold text-slate-800 tracking-tight">{value}</span>
-        {subValue && <span className="text-sm text-slate-500 font-medium">/ {subValue}</span>}
-      </div>
-      {trend && (
-        <div className="mt-2 flex items-center gap-1.5 text-xs font-medium">
-          <span className={trend > 0 ? 'text-emerald-600' : 'text-rose-600'}>
-            {trend > 0 ? '+' : ''}{trend}%
-          </span>
-          <span className="text-slate-400">较上周</span>
-        </div>
-      )}
-    </div>
-  </motion.div>
-);
-
-const TrendChart = () => (
-  <div className="glass-panel p-6 flex flex-col gap-6">
-    <div className="flex justify-between items-center">
-      <div>
-        <h3 className="text-base font-semibold text-slate-800">访问与更新趋势</h3>
-        <p className="text-xs text-slate-500 mt-1">过去 7 天的门户访问量与内容更新频次</p>
-      </div>
-      <div className="flex gap-2 p-1 rounded-lg bg-slate-100/50 border border-slate-200/50">
-        <button className="px-3 py-1 text-xs font-medium rounded-md bg-white shadow-sm text-slate-800">7天</button>
-        <button className="px-3 py-1 text-xs font-medium rounded-md text-slate-500 hover:text-slate-700">30天</button>
-      </div>
-    </div>
-    
-    <div className="h-56 w-full neo-inset p-4">
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={trendData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
-          <defs>
-            <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
-              <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
-            </linearGradient>
-            <linearGradient id="colorUpdates" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3}/>
-              <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" opacity={0.5} />
-          <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={10} />
-          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
-          <Tooltip 
-            contentStyle={{ borderRadius: '12px', border: '1px solid rgba(255,255,255,0.8)', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)', backgroundColor: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(8px)' }}
-            itemStyle={{ fontSize: '13px', fontWeight: 500 }}
-            labelStyle={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}
-          />
-          <Area type="monotone" dataKey="views" stroke="#6366f1" strokeWidth={2} fillOpacity={1} fill="url(#colorViews)" activeDot={{ r: 6, strokeWidth: 0 }} />
-          <Area type="monotone" dataKey="updates" stroke="#0ea5e9" strokeWidth={2} fillOpacity={1} fill="url(#colorUpdates)" activeDot={{ r: 6, strokeWidth: 0 }} />
-        </AreaChart>
-      </ResponsiveContainer>
-    </div>
-  </div>
-);
-
-const HealthModule = () => (
-  <div className="glass-panel p-6 flex flex-col gap-5 h-full">
-    <div>
-      <h3 className="text-base font-semibold text-slate-800">模块健康度</h3>
-      <p className="text-xs text-slate-500 mt-1">各内容模块的信息完整度</p>
-    </div>
-    
-    <div className="flex flex-col gap-4 flex-1 justify-center">
-      {healthData.map((item, idx) => (
-        <div key={idx} className="flex items-center gap-3 group">
-          <div className="w-20 text-sm font-medium text-slate-600 group-hover:text-slate-900 transition-colors">{item.name}</div>
-          <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner">
-            <motion.div 
-              initial={{ width: 0 }}
-              animate={{ width: `${item.value}%` }}
-              transition={{ duration: 1, delay: idx * 0.1 }}
-              className={`h-full rounded-full ${item.status === 'healthy' ? 'bg-emerald-400' : 'bg-amber-400'}`}
-            />
-          </div>
-          <div className="w-10 text-right text-xs font-semibold text-slate-500">{item.value}%</div>
-        </div>
-      ))}
-    </div>
-  </div>
-);
-
-const RecentUpdatesList = () => (
-  <div className="glass-panel p-6 flex flex-col gap-5 h-full">
-    <div className="flex justify-between items-center">
-      <div>
-        <h3 className="text-base font-semibold text-slate-800">最近更新</h3>
-        <p className="text-xs text-slate-500 mt-1">团队协作动态</p>
-      </div>
-      <button className="text-xs font-medium text-indigo-600 hover:text-indigo-700">查看全部</button>
-    </div>
-    
-    <div className="flex flex-col gap-4 relative mt-2">
-      <div className="absolute left-[11px] top-2 bottom-2 w-px bg-slate-200/60" />
-      {recentUpdates.map((update) => (
-        <div key={update.id} className="flex gap-4 relative z-10">
-          <div className="w-6 h-6 rounded-full bg-white border-2 border-indigo-100 flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm">
-            <div className="w-2 h-2 rounded-full bg-indigo-400" />
-          </div>
-          <div className="flex flex-col gap-1 pb-1">
-            <p className="text-sm font-medium text-slate-800 leading-snug">{update.title}</p>
-            <div className="flex items-center gap-2 text-xs text-slate-500">
-              <span className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200/50">{update.module}</span>
-              <span>•</span>
-              <span>{update.user}</span>
-              <span>•</span>
-              <span>{update.time}</span>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-);
-
-const SystemOverview = () => (
-  <div className="glass-panel p-6 flex flex-col gap-5 h-full">
-    <h3 className="text-base font-semibold text-slate-800">运行概况</h3>
-    
-    <div className="grid grid-cols-2 gap-4 flex-1">
-      <div className="neo-inset p-4 flex flex-col justify-center gap-2">
-        <span className="text-xs font-medium text-slate-500">存储空间</span>
-        <div className="flex items-end gap-1">
-          <span className="text-2xl font-semibold text-slate-700">45</span>
-          <span className="text-sm text-slate-500 mb-0.5">/ 100 GB</span>
-        </div>
-        <div className="h-1.5 w-full bg-slate-200 rounded-full mt-1 overflow-hidden">
-          <div className="h-full bg-indigo-400 w-[45%] rounded-full" />
-        </div>
-      </div>
-      
-      <div className="neo-inset p-4 flex flex-col justify-center gap-2">
-        <span className="text-xs font-medium text-slate-500">数据库负载</span>
-        <div className="flex items-end gap-1">
-          <span className="text-2xl font-semibold text-slate-700">12</span>
-          <span className="text-sm text-slate-500 mb-0.5">%</span>
-        </div>
-        <div className="h-1.5 w-full bg-slate-200 rounded-full mt-1 overflow-hidden">
-          <div className="h-full bg-emerald-400 w-[12%] rounded-full" />
-        </div>
-      </div>
-    </div>
-    
-    <div className="mt-2 flex gap-2">
-      <button className="flex-1 py-2 rounded-xl glass-button text-sm font-medium text-slate-700 flex items-center justify-center gap-2">
-        <span>清理缓存</span>
-      </button>
-      <button className="flex-1 py-2 rounded-xl glass-button text-sm font-medium text-slate-700 flex items-center justify-center gap-2">
-        <span>备份数据</span>
-      </button>
-    </div>
-  </div>
-);
+type Direction = 'math' | 'medical';
+type Stage = 'foundation' | 'reinforcement' | 'sprint';
 
 export default function App() {
+  const [direction, setDirection] = useState<Direction>('math');
+  const [stage, setStage] = useState<Stage>('foundation');
+  const [selectedMaterial, setSelectedMaterial] = useState<any>(null);
+
+  // Fallback to foundation if a stage doesn't exist for a direction
+  const currentData = packageData[direction][stage] || packageData[direction]['foundation'];
+
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50/50">
-      <Sidebar />
-      
-      <main className="flex-1 flex flex-col h-full overflow-y-auto overflow-x-hidden relative">
-        <Header />
+    <div className="min-h-screen bg-slate-100 flex justify-center font-sans text-slate-900">
+      {/* Mobile App Container */}
+      <div className="w-full max-w-md bg-slate-50 min-h-screen shadow-2xl relative overflow-hidden flex flex-col">
         
-        <div className="p-8 max-w-[1600px] mx-auto w-full flex flex-col gap-6">
-          {/* Top Stats Row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <StatCard title="内容总数" value="1,284" trend={12} icon={LayoutDashboard} colorClass="bg-indigo-500" />
-            <StatCard title="已发布 / 草稿" value="1,042" subValue="242" icon={Compass} colorClass="bg-emerald-500" />
-            <StatCard title="媒体资源" value="3,492" trend={5} icon={ImageIcon} colorClass="bg-sky-500" />
-            <StatCard title="今日更新" value="24" trend={-2} icon={RefreshCw} colorClass="bg-purple-500" />
+        {/* --- Header --- */}
+        <header className="bg-white px-5 pt-12 pb-4 sticky top-0 z-20 shadow-sm">
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-xl font-bold tracking-tight">教材资料库</h1>
+            <button className="p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors">
+              <Search size={20} />
+            </button>
           </div>
 
-          {/* Middle Row: Chart & Health */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              <TrendChart />
-            </div>
-            <div className="lg:col-span-1">
-              <HealthModule />
-            </div>
+          {/* 1. Direction Selection (Top Level) */}
+          <div className="flex bg-slate-100 p-1 rounded-xl mb-4">
+            <button
+              onClick={() => setDirection('math')}
+              className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all flex items-center justify-center gap-2 ${
+                direction === 'math' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <LayoutGrid size={16} />
+              高等数学
+            </button>
+            <button
+              onClick={() => setDirection('medical')}
+              className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all flex items-center justify-center gap-2 ${
+                direction === 'medical' ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <GraduationCap size={16} />
+              医护综合
+            </button>
           </div>
 
-          {/* Bottom Row: Updates & System */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-8">
-            <div className="lg:col-span-2">
-              <RecentUpdatesList />
-            </div>
-            <div className="lg:col-span-1">
-              <SystemOverview />
-            </div>
+          {/* 2. Stage Selection (Second Level) */}
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            {[
+              { id: 'foundation', label: '基础阶段', desc: '打牢根基' },
+              { id: 'reinforcement', label: '强化阶段', desc: '突破重难点' },
+              { id: 'sprint', label: '冲刺阶段', desc: '考前模拟' }
+            ].map((s) => (
+              <button
+                key={s.id}
+                onClick={() => setStage(s.id as Stage)}
+                className={`flex-shrink-0 px-4 py-2 rounded-full text-sm border transition-all ${
+                  stage === s.id 
+                    ? direction === 'math' 
+                      ? 'bg-blue-50 border-blue-200 text-blue-700 font-medium'
+                      : 'bg-teal-50 border-teal-200 text-teal-700 font-medium'
+                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
           </div>
-          
-          {/* Design Explanation Section (For the prompt requirement) */}
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="mt-8 p-8 glass-panel border-indigo-100/50 relative overflow-hidden"
-          >
-            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-indigo-100/40 to-transparent rounded-bl-full pointer-events-none" />
-            <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-              <Info className="w-5 h-5 text-indigo-500" />
-              设计说明 (Design Rationale)
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm text-slate-600 leading-relaxed">
-              <div>
-                <h4 className="font-semibold text-slate-800 mb-2">1. 布局逻辑 (Layout Logic)</h4>
-                <p>采用经典的左窄右宽结构。左侧细窄导航保持安静，不抢夺视线；顶部 Header 承载全局状态与操作；内容区采用栅格布局（4-2-1/3-2-1），首屏高度控制在 1080p 下无需滚动即可总览全局。横向趋势图高度被刻意压低（h-56），避免图表喧宾夺主，确保下方辅助模块（最近更新、运行概况）能在首屏露出。</p>
-              </div>
-              <div>
-                <h4 className="font-semibold text-slate-800 mb-2">2. 卡片层级逻辑 (Card Hierarchy)</h4>
-                <p>底层为带微弱网格渐变的浅色背景（Base）；中层为统一的玻璃态面板（Glass Panel），承载各个独立模块；顶层为轻拟物凹陷区域（Neo-inset）或凸起按钮，用于包裹图表、进度条或具体数据。层级通过极轻的阴影（0.02-0.03透明度）和 1px 的白色内发光（inset shadow）来区分，而非生硬的边框。</p>
-              </div>
-              <div>
-                <h4 className="font-semibold text-slate-800 mb-2">3. 材质与渐变应用 (Materials & Gradients)</h4>
-                <p><strong>毛玻璃：</strong>应用于所有主卡片（bg-white/65 + backdrop-blur-xl），透出底层微弱的冷色渐变。<br/><strong>轻拟态：</strong>应用于图表容器、运行概况的小卡片（bg-slate-50/50 + inset shadow），形成“挖空”的视觉错觉。<br/><strong>渐变：</strong>极其克制地用作卡片右上角的模糊光晕（blur-2xl），以及趋势图的柔和填充，颜色选用雾蓝、淡紫、冰青，避免高饱和度。</p>
-              </div>
-              <div>
-                <h4 className="font-semibold text-slate-800 mb-2">4. 懒加载与自然过渡 (Lazy Loading & Transitions)</h4>
-                <p><strong>懒加载：</strong>趋势图（Recharts）和底部的最近更新列表适合做懒加载（Intersection Observer），在进入视口时渲染。<br/><strong>自然过渡：</strong>卡片入场采用错落的向上浮现（y: 10 -&gt; 0, opacity: 0 -&gt; 1）；健康度进度条采用宽度缓动（duration: 1s）；左侧导航激活状态使用 Framer Motion 的 layoutId 实现指示器的平滑滑动（Magic Motion）。</p>
-              </div>
+        </header>
+
+        {/* --- Main Content --- */}
+        <main className="flex-1 overflow-y-auto pb-24 px-4 pt-4">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`${direction}-${stage}`}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-6"
+            >
+              
+              {/* --- Main Recommended Package --- */}
+              {currentData.main && (
+                <section>
+                  <div className="flex items-center gap-2 mb-3 px-1">
+                    <Sparkles className={direction === 'math' ? 'text-blue-500' : 'text-teal-500'} size={18} />
+                    <h2 className="text-lg font-bold text-slate-800">核心主推套系</h2>
+                    <span className="text-xs text-slate-400 font-normal ml-auto">最适合当前阶段</span>
+                  </div>
+
+                  <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    {/* Card Header */}
+                    <div className={`p-5 ${direction === 'math' ? 'bg-gradient-to-br from-blue-50 to-indigo-50/30' : 'bg-gradient-to-br from-teal-50 to-emerald-50/30'}`}>
+                      <div className="flex justify-between items-start mb-3">
+                        <span className={`text-xs font-bold px-2.5 py-1 rounded-md ${direction === 'math' ? 'bg-blue-600 text-white' : 'bg-teal-600 text-white'}`}>
+                          {currentData.main.badge}
+                        </span>
+                      </div>
+                      <h3 className="text-xl font-extrabold text-slate-900 mb-2 leading-tight">
+                        {currentData.main.title}
+                      </h3>
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {currentData.main.features.map((feat, idx) => (
+                          <span key={idx} className="flex items-center text-xs text-slate-600 bg-white/60 px-2 py-1 rounded-md border border-white/40">
+                            <CheckCircle2 size={12} className={direction === 'math' ? 'text-blue-500 mr-1' : 'text-teal-500 mr-1'} />
+                            {feat}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Target & Solves */}
+                    <div className="px-5 py-4 border-b border-slate-50 bg-slate-50/50">
+                      <div className="mb-3">
+                        <div className="text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1">
+                          <Target size={12} /> 适合人群
+                        </div>
+                        <p className="text-sm text-slate-700 leading-relaxed">
+                          {currentData.main.target}
+                        </p>
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1">
+                          <Award size={12} /> 解决问题
+                        </div>
+                        <p className="text-sm text-slate-700 leading-relaxed">
+                          {currentData.main.solves}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Included Contents (The "What's inside" section - Shelf View) */}
+                    <div className="pt-5 pb-6">
+                      <div className="text-sm font-bold text-slate-800 mb-3 px-5 flex justify-between items-end">
+                        <span>套系包含以下资料：</span>
+                        <span className="text-xs font-normal text-slate-400 flex items-center gap-1">
+                          左右滑动查看 <ChevronRight size={12} />
+                        </span>
+                      </div>
+                      
+                      {/* Horizontal Scroll Shelf */}
+                      <div className="flex gap-4 overflow-x-auto pb-4 pt-2 snap-x scrollbar-hide px-5">
+                        {currentData.main.contents.map((item: any, idx: number) => (
+                          <div 
+                            key={idx} 
+                            onClick={() => setSelectedMaterial(item)}
+                            className="min-w-[140px] w-[140px] snap-start flex flex-col gap-3 group cursor-pointer"
+                          >
+                            {/* Book Cover Simulation */}
+                            <div className={`aspect-[3/4] rounded-r-lg rounded-l-sm shadow-md bg-gradient-to-br ${item.coverColor} relative overflow-hidden flex flex-col justify-between p-3 border-l-[6px] border-white/20 group-hover:-translate-y-1 transition-transform duration-300`}>
+                              <div className="flex justify-between items-start">
+                                <span className="text-white/90 text-[10px] font-medium bg-black/20 px-1.5 py-0.5 rounded backdrop-blur-sm">
+                                  {item.type}
+                                </span>
+                              </div>
+                              <h4 className="text-white font-bold text-sm leading-snug drop-shadow-md">
+                                {item.name}
+                              </h4>
+                              {/* Decorative elements for book cover */}
+                              <div className="absolute bottom-0 right-0 w-16 h-16 bg-white/10 rounded-tl-full blur-xl"></div>
+                              <div className="absolute top-1/2 left-0 w-full h-px bg-white/10"></div>
+                            </div>
+                            
+                            {/* Text Info Below Cover */}
+                            <div>
+                              <h4 className="text-sm font-bold text-slate-800 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors">
+                                {item.name}
+                              </h4>
+                              <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
+                                {item.desc}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="px-5 mt-2">
+                        <button className={`w-full py-3.5 rounded-xl font-bold text-white flex items-center justify-center gap-2 shadow-md transition-transform active:scale-[0.98] ${
+                          direction === 'math' ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/20' : 'bg-teal-600 hover:bg-teal-700 shadow-teal-600/20'
+                        }`}>
+                          获取完整套系
+                          <ChevronRight size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              )}
+
+              {/* --- Secondary Package (Optional) --- */}
+              {currentData.secondary && (
+                <section className="pt-2">
+                  <h2 className="text-sm font-bold text-slate-500 mb-3 px-1">其他精选方案</h2>
+                  <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between active:bg-slate-50 transition-colors">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-bold text-slate-800">{currentData.secondary.title}</h3>
+                        <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium">
+                          {currentData.secondary.badge}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 line-clamp-1">{currentData.secondary.target}</p>
+                      <div className="flex gap-2 mt-2">
+                        {currentData.secondary.contents.map((c: string, i: number) => (
+                          <span key={i} className="text-[10px] text-slate-400 border border-slate-200 px-1.5 py-0.5 rounded">
+                            {c}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <ChevronRight size={20} className="text-slate-300 shrink-0" />
+                  </div>
+                </section>
+              )}
+
+              {/* Bottom padding for scroll */}
+              <div className="h-8"></div>
+            </motion.div>
+          </AnimatePresence>
+        </main>
+
+        {/* --- Bottom Consultation Bar --- */}
+        <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-slate-100 p-4 shadow-[0_-10px_20px_rgba(0,0,0,0.03)] z-20">
+          <div className="flex items-center gap-3">
+            <div className="flex-1">
+              <p className="text-sm font-bold text-slate-800">不知道怎么选？</p>
+              <p className="text-xs text-slate-500">专业老师为您1对1定制资料方案</p>
             </div>
-          </motion.div>
+            <button className="bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-full text-sm font-bold flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-transform active:scale-95">
+              <Headphones size={16} />
+              免费咨询
+            </button>
+          </div>
         </div>
-      </main>
+
+        {/* --- Material Detail Overlay --- */}
+        <AnimatePresence>
+          {selectedMaterial && (
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed inset-0 z-50 bg-slate-50 flex flex-col"
+            >
+              {/* Overlay Header */}
+              <div className="bg-white px-4 pt-12 pb-4 flex items-center justify-between shadow-sm z-10">
+                <button 
+                  onClick={() => setSelectedMaterial(null)}
+                  className="p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-full transition-colors flex items-center gap-1"
+                >
+                  <ChevronLeft size={24} />
+                  <span className="text-sm font-medium">返回</span>
+                </button>
+                <div className="font-bold text-slate-800">资料详情</div>
+                <div className="w-10"></div> {/* Spacer for centering */}
+              </div>
+
+              {/* Overlay Content */}
+              <div className="flex-1 overflow-y-auto pb-24">
+                {/* Big Book Cover Presentation */}
+                <div className="bg-slate-100 py-10 flex justify-center items-center px-8 border-b border-slate-200">
+                  <motion.div 
+                    initial={{ scale: 0.9, y: 20 }}
+                    animate={{ scale: 1, y: 0 }}
+                    className={`w-48 aspect-[3/4] rounded-r-xl rounded-l-sm shadow-2xl bg-gradient-to-br ${selectedMaterial.coverColor} relative overflow-hidden flex flex-col justify-between p-5 border-l-[8px] border-white/20`}
+                  >
+                    <span className="text-white/90 text-xs font-medium bg-black/20 px-2 py-1 rounded backdrop-blur-sm self-start">
+                      {selectedMaterial.type}
+                    </span>
+                    <h4 className="text-white font-bold text-xl leading-snug drop-shadow-lg">
+                      {selectedMaterial.name}
+                    </h4>
+                    <div className="absolute bottom-0 right-0 w-24 h-24 bg-white/10 rounded-tl-full blur-2xl"></div>
+                  </motion.div>
+                </div>
+
+                {/* Details Section */}
+                <div className="p-6 bg-white">
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                        {selectedMaterial.type}
+                      </span>
+                    </div>
+                    <h2 className="text-2xl font-extrabold text-slate-900 mb-2 leading-tight">
+                      {selectedMaterial.name}
+                    </h2>
+                    <p className="text-slate-500 text-sm">
+                      {selectedMaterial.desc}
+                    </p>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-800 mb-2 flex items-center gap-2">
+                        <BookOpen size={16} className="text-slate-400" />
+                        内容简介
+                      </h3>
+                      <p className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-4 rounded-xl">
+                        {selectedMaterial.details}
+                      </p>
+                    </div>
+
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+                        <Eye size={16} className="text-slate-400" />
+                        资料亮点
+                      </h3>
+                      <ul className="space-y-2">
+                        {[
+                          '紧扣最新专转本考试大纲',
+                          '名师团队历时1年精心打磨',
+                          '配套线上答疑与视频解析'
+                        ].map((highlight, idx) => (
+                          <li key={idx} className="flex items-start gap-2 text-sm text-slate-600">
+                            <CheckCircle2 size={16} className="text-emerald-500 shrink-0 mt-0.5" />
+                            {highlight}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Overlay Bottom Action */}
+              <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-slate-100 p-4 shadow-[0_-10px_20px_rgba(0,0,0,0.03)] flex gap-3">
+                <button 
+                  onClick={() => setSelectedMaterial(null)}
+                  className="flex-1 py-3.5 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
+                >
+                  返回套系
+                </button>
+                <button className="flex-1 py-3.5 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-transform active:scale-[0.98]">
+                  咨询此资料
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+      </div>
     </div>
   );
 }

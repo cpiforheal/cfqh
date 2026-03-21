@@ -18,7 +18,7 @@ const LIST_COLLECTIONS = {
   directions: 'directions',
   teachers: 'teachers',
   successCases: 'success_cases',
-  materialSeries: 'material_series',
+  materialPackages: 'material_packages',
   materialItems: 'material_items',
   mediaAssets: 'media_assets'
 };

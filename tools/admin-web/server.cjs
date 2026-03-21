@@ -1,4 +1,5 @@
 const http = require('http');
+const crypto = require('crypto');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -11,6 +12,23 @@ const SEED_FILE = path.join(ROOT, 'database', 'seed-data.js');
 const CLOUD_CONFIG_FILE = path.join(ROOT, 'src', 'config', 'cloud.ts');
 const PORT = Number(process.env.ADMIN_WEB_PORT || 3200);
 const seedData = require(path.join(ROOT, 'database', 'seed-data.js'));
+const SESSION_COOKIE_NAME = 'cfqh_admin_session';
+const SESSION_TTL_MS = 1000 * 60 * 60 * 12;
+const sessionStore = new Map();
+const ROLE_LABELS = {
+  viewer: '查看者',
+  editor: '编辑老师',
+  publisher: '发布老师',
+  admin: '管理员',
+  owner: '系统所有者'
+};
+const ROLE_PERMISSIONS = {
+  viewer: new Set(['cms.read']),
+  editor: new Set(['cms.read', 'cms.write']),
+  publisher: new Set(['cms.read', 'cms.write', 'cms.publish']),
+  admin: new Set(['cms.read', 'cms.write', 'cms.publish', 'cms.manageUsers', 'cms.reset']),
+  owner: new Set(['cms.read', 'cms.write', 'cms.publish', 'cms.manageUsers', 'cms.reset'])
+};
 
 const HOME_PORTAL_LINKS = [
   { label: '机构介绍', desc: '看品牌介绍', url: '/pages/about/index', openType: 'navigate', icon: 'building' },
@@ -25,6 +43,7 @@ const HOME_CTA_FALLBACK = seedData.pages?.home?.cta || {};
 const HOME_ENVIRONMENT_FALLBACK = seedData.pages?.home?.environmentSection || { cards: [] };
 const COURSES_PAGE_FALLBACK = seedData.pages?.courses || {};
 const COURSES_CTA_FALLBACK = seedData.pages?.courses?.cta || {};
+const MATERIALS_PAGE_FALLBACK = seedData.pages?.materials || {};
 
 function getNetworkHosts() {
   const hosts = new Set(['127.0.0.1']);
@@ -200,6 +219,25 @@ function normalizeCoursesPage(payload) {
   };
 }
 
+function normalizeMaterialsPage(payload) {
+  if (!payload) {
+    return payload;
+  }
+
+  const isLegacyPage = !payload.header || !Array.isArray(payload.directionTabs) || !Array.isArray(payload.stageTabs);
+  if (isLegacyPage) {
+    return MATERIALS_PAGE_FALLBACK;
+  }
+
+  return {
+    ...payload,
+    header: { ...(MATERIALS_PAGE_FALLBACK.header || {}), ...(payload.header || {}) },
+    mainSection: { ...(MATERIALS_PAGE_FALLBACK.mainSection || {}), ...(payload.mainSection || {}) },
+    shelfSection: { ...(MATERIALS_PAGE_FALLBACK.shelfSection || {}), ...(payload.shelfSection || {}) },
+    consultBar: { ...(MATERIALS_PAGE_FALLBACK.consultBar || {}), ...(payload.consultBar || {}) }
+  };
+}
+
 function normalizePagePayload(pageKey, payload) {
   if (!payload) {
     return payload;
@@ -219,6 +257,10 @@ function normalizePagePayload(pageKey, payload) {
 
   if (pageKey === 'courses') {
     return normalizeCoursesPage(payload);
+  }
+
+  if (pageKey === 'materials') {
+    return normalizeMaterialsPage(payload);
   }
 
   return payload;
@@ -297,9 +339,10 @@ const listOptions = [
   { key: 'questionImports', label: '纯文本导入' },
   { key: 'teachers', label: '师资列表' },
   { key: 'successCases', label: '成果案例' },
-  { key: 'materialSeries', label: '教材套系' },
-  { key: 'materialItems', label: '教材单品' },
-  { key: 'mediaAssets', label: '媒体资源' }
+  { key: 'materialPackages', label: '主推套系包' },
+  { key: 'materialItems', label: '货架资料卡' },
+  { key: 'mediaAssets', label: '媒体资源' },
+  { key: 'adminUsers', label: '角色成员' }
 ];
 
 const PAGE_COLLECTIONS = {
@@ -331,10 +374,267 @@ const LIST_COLLECTIONS = {
   questionImports: 'question_imports',
   teachers: 'teachers',
   successCases: 'success_cases',
-  materialSeries: 'material_series',
+  materialPackages: 'material_packages',
   materialItems: 'material_items',
-  mediaAssets: 'media_assets'
+  mediaAssets: 'media_assets',
+  adminUsers: 'admin_users'
 };
+
+function normalizeAdminRole(role) {
+  const normalized = String(role || '').trim().toLowerCase();
+  if (normalized === 'owner') return 'owner';
+  if (normalized === 'admin') return 'admin';
+  if (normalized === 'publisher') return 'publisher';
+  if (normalized === 'viewer') return 'viewer';
+  return 'editor';
+}
+
+function normalizeAdminStatus(status) {
+  return String(status || '').trim().toLowerCase() === 'disabled' ? 'disabled' : 'active';
+}
+
+function normalizeLoginAccount(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function hashPassword(password = '') {
+  return crypto.createHash('sha256').update(`cfqh-admin:${String(password)}`).digest('hex');
+}
+
+function sanitizeAdminUser(admin) {
+  if (!admin) return null;
+  return {
+    _id: admin._id,
+    name: admin.name || '',
+    role: normalizeAdminRole(admin.role),
+    roleLabel: ROLE_LABELS[normalizeAdminRole(admin.role)] || ROLE_LABELS.editor,
+    status: normalizeAdminStatus(admin.status),
+    loginAccount: normalizeLoginAccount(admin.loginAccount),
+    hasPassword: Boolean(admin.passwordHash),
+    authChannels: Array.isArray(admin.authChannels) ? admin.authChannels : [],
+    lastLoginAt: admin.lastLoginAt || '',
+    updatedAt: admin.updatedAt || '',
+    createdAt: admin.createdAt || ''
+  };
+}
+
+function getRolePermissions(role) {
+  return ROLE_PERMISSIONS[normalizeAdminRole(role)] || ROLE_PERMISSIONS.editor;
+}
+
+function getPermissionSummary(admin) {
+  const permissions = getRolePermissions(admin?.role);
+  return {
+    canRead: permissions.has('cms.read'),
+    canWrite: permissions.has('cms.write'),
+    canPublish: permissions.has('cms.publish'),
+    canManageUsers: permissions.has('cms.manageUsers'),
+    canReset: permissions.has('cms.reset')
+  };
+}
+
+function parseCookies(req) {
+  const header = req.headers.cookie || '';
+  return Object.fromEntries(
+    header
+      .split(';')
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .map((item) => {
+        const index = item.indexOf('=');
+        if (index <= 0) return [item, ''];
+        return [item.slice(0, index), decodeURIComponent(item.slice(index + 1))];
+      })
+  );
+}
+
+function createSessionCookie(sessionId, maxAgeMs = SESSION_TTL_MS) {
+  return `${SESSION_COOKIE_NAME}=${encodeURIComponent(sessionId)}; Max-Age=${Math.floor(maxAgeMs / 1000)}; Path=/; HttpOnly; SameSite=Lax`;
+}
+
+function clearSessionCookie() {
+  return `${SESSION_COOKIE_NAME}=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax`;
+}
+
+function cleanupSessions() {
+  const now = Date.now();
+  for (const [sessionId, session] of sessionStore.entries()) {
+    if (!session || session.expiresAt <= now) {
+      sessionStore.delete(sessionId);
+    }
+  }
+}
+
+function createAdminSession(admin) {
+  cleanupSessions();
+  const sessionId = crypto.randomBytes(24).toString('hex');
+  sessionStore.set(sessionId, {
+    adminId: admin._id,
+    role: normalizeAdminRole(admin.role),
+    expiresAt: Date.now() + SESSION_TTL_MS
+  });
+  return sessionId;
+}
+
+async function listAdminUsers() {
+  if (!LIST_COLLECTIONS.adminUsers) return [];
+  if (store.getMode() === 'cloud') {
+    await ensureAdminUsersCollection();
+  }
+  return store.listCollection('adminUsers');
+}
+
+async function findAdminByAccount(account) {
+  const normalizedAccount = normalizeLoginAccount(account);
+  if (!normalizedAccount) return null;
+  const admins = await listAdminUsers();
+  return admins.find((item) => normalizeLoginAccount(item.loginAccount) === normalizedAccount) || null;
+}
+
+async function getAdminById(adminId) {
+  if (!adminId) return null;
+  return store.getItem('adminUsers', adminId).catch(() => null);
+}
+
+async function getAuthenticatedAdmin(req) {
+  cleanupSessions();
+  const cookies = parseCookies(req);
+  const sessionId = cookies[SESSION_COOKIE_NAME];
+  if (!sessionId) return null;
+  const session = sessionStore.get(sessionId);
+  if (!session || session.expiresAt <= Date.now()) {
+    sessionStore.delete(sessionId);
+    return null;
+  }
+
+  const admin = await getAdminById(session.adminId);
+  if (!admin || normalizeAdminStatus(admin.status) === 'disabled') {
+    sessionStore.delete(sessionId);
+    return null;
+  }
+
+  session.expiresAt = Date.now() + SESSION_TTL_MS;
+  return admin;
+}
+
+async function getAuthState(req) {
+  const cloudReady = store.getMode() === 'cloud';
+  if (!cloudReady) {
+    return {
+      mode: store.getMode(),
+      cloudReady: false,
+      authenticated: false,
+      bootstrapRequired: false,
+      user: null,
+      permissions: getPermissionSummary({ role: 'viewer' })
+    };
+  }
+
+  const authenticatedAdmin = await getAuthenticatedAdmin(req);
+  const webAdmins = await listAdminUsers();
+  const bootstrapRequired = !webAdmins.some(
+    (item) => normalizeAdminStatus(item.status) === 'active' && normalizeLoginAccount(item.loginAccount) && item.passwordHash
+  );
+
+  return {
+    mode: store.getMode(),
+    cloudReady,
+    authenticated: Boolean(authenticatedAdmin),
+    bootstrapRequired,
+    user: sanitizeAdminUser(authenticatedAdmin),
+    permissions: authenticatedAdmin ? getPermissionSummary(authenticatedAdmin) : getPermissionSummary({ role: 'viewer' })
+  };
+}
+
+async function requirePermission(req, permission) {
+  const admin = await getAuthenticatedAdmin(req);
+  if (!admin) {
+    const error = new Error('请先登录后台账号');
+    error.statusCode = 401;
+    throw error;
+  }
+
+  const permissions = getRolePermissions(admin.role);
+  if (!permissions.has(permission)) {
+    const error = new Error('当前账号暂无此操作权限');
+    error.statusCode = 403;
+    throw error;
+  }
+
+  return admin;
+}
+
+function prepareAdminUserPayload(payload = {}, existing = null) {
+  const nextPayload = {
+    ...payload,
+    role: normalizeAdminRole(payload.role || existing?.role),
+    status: normalizeAdminStatus(payload.status || existing?.status),
+    loginAccount: normalizeLoginAccount(payload.loginAccount || existing?.loginAccount),
+    authChannels: Array.isArray(payload.authChannels)
+      ? Array.from(new Set(payload.authChannels.filter(Boolean)))
+      : Array.isArray(existing?.authChannels)
+        ? existing.authChannels
+        : ['web']
+  };
+
+  if (!nextPayload.name) {
+    nextPayload.name = existing?.name || '';
+  }
+
+  const rawPassword = String(payload.password || '').trim();
+  if (rawPassword) {
+    nextPayload.passwordHash = hashPassword(rawPassword);
+  } else if (existing?.passwordHash) {
+    nextPayload.passwordHash = existing.passwordHash;
+  }
+
+  delete nextPayload.password;
+  return nextPayload;
+}
+
+function ensureCloudAuthReady() {
+  if (store.getMode() !== 'cloud') {
+    throw createCloudRequiredError();
+  }
+}
+
+async function ensureBootstrapAllowed() {
+  ensureCloudAuthReady();
+  await ensureAdminUsersCollection();
+  const admins = await listAdminUsers();
+  const hasWebAdmin = admins.some(
+    (item) => normalizeAdminStatus(item.status) === 'active' && normalizeLoginAccount(item.loginAccount) && item.passwordHash
+  );
+  if (hasWebAdmin) {
+    const error = new Error('后台账号已初始化，请直接使用账号登录。');
+    error.statusCode = 409;
+    throw error;
+  }
+  return admins;
+}
+
+function sanitizeCollectionOutput(collectionKey, value) {
+  if (collectionKey === 'adminUsers') {
+    if (Array.isArray(value)) {
+      return value.map((item) => sanitizeAdminUser(item));
+    }
+    return sanitizeAdminUser(value);
+  }
+
+  return value;
+}
+
+function getCollectionPermission(collectionKey, method) {
+  if (collectionKey === 'adminUsers') {
+    return method === 'GET' ? 'cms.manageUsers' : 'cms.manageUsers';
+  }
+
+  if (method === 'GET') {
+    return 'cms.read';
+  }
+
+  return 'cms.write';
+}
 
 function loadSeed() {
   delete require.cache[SEED_FILE];
@@ -357,12 +657,14 @@ function writeData(data) {
   fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
 }
 
-function sendJson(res, statusCode, payload) {
+function sendJson(res, statusCode, payload, extraHeaders = {}) {
   res.writeHead(statusCode, {
     'Content-Type': 'application/json; charset=utf-8',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type'
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Cache-Control': 'no-store',
+    ...extraHeaders
   });
   res.end(JSON.stringify(payload));
 }
@@ -420,6 +722,16 @@ function stripId(payload) {
   return next;
 }
 
+function stripPageMeta(payload) {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return payload;
+  }
+
+  const next = { ...payload };
+  delete next._meta;
+  return next;
+}
+
 function nowIso() {
   return new Date().toISOString();
 }
@@ -434,6 +746,50 @@ function stampPagePayload(payload, existing = null, timestamp = nowIso()) {
     _createdAt: payload._createdAt || existing?._createdAt || timestamp,
     _updatedAt: timestamp
   };
+}
+
+function buildPageRevision(pageKey, payload) {
+  const updatedAt = payload?._updatedAt || payload?.updatedAt || payload?._createdAt || payload?.createdAt || '';
+  const timestamp = updatedAt ? new Date(updatedAt).getTime() : Date.now();
+  return `${pageKey}:${Number.isFinite(timestamp) ? timestamp : Date.now()}`;
+}
+
+function buildAdminPageMeta(pageKey, payload, sourceMode = 'cloud') {
+  return {
+    pageKey,
+    sourceMode,
+    updatedAt: payload?._updatedAt || payload?.updatedAt || payload?._createdAt || payload?.createdAt || '',
+    revision: buildPageRevision(pageKey, payload)
+  };
+}
+
+function attachAdminPageMeta(pageKey, payload, sourceMode = 'cloud') {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return payload;
+  }
+
+  return {
+    ...payload,
+    _meta: buildAdminPageMeta(pageKey, payload, sourceMode)
+  };
+}
+
+function createPageConflictError(pageKey, payload, sourceMode = 'cloud') {
+  const error = new Error('当前页面已被其他老师更新，请先重新拉取后再保存。');
+  error.statusCode = 409;
+  error.code = 'PAGE_CONFLICT';
+  error.data = buildAdminPageMeta(pageKey, payload, sourceMode);
+  return error;
+}
+
+function createCloudRequiredError() {
+  const error = new Error('当前 3200 后台已锁定云端 CMS 写入，请先完成云环境配置。');
+  error.statusCode = 503;
+  error.code = 'CLOUD_REQUIRED';
+  error.data = {
+    mode: store?.getMode?.() || 'unavailable'
+  };
+  return error;
 }
 
 function stampCollectionItem(payload, itemId, existing = null, timestamp = nowIso()) {
@@ -913,17 +1269,17 @@ function getEmptyTemplate(collectionKey) {
     };
   }
 
-  if (collectionKey === 'materialSeries') {
+  if (collectionKey === 'materialPackages') {
     return {
       _id: '',
-      name: '',
-      slug: '',
-      category: '',
-      tag: '',
-      accent: '#5b4dff',
-      summary: '',
-      shelfLabel: '',
-      items: [],
+      direction: 'math',
+      stage: 'foundation',
+      badge: '',
+      title: '',
+      target: '',
+      solves: '',
+      features: [],
+      contentItemIds: [],
       sort: 100,
       status: 'draft'
     };
@@ -932,13 +1288,15 @@ function getEmptyTemplate(collectionKey) {
   if (collectionKey === 'materialItems') {
     return {
       _id: '',
-      seriesId: '',
+      direction: 'math',
+      stage: 'foundation',
       type: '',
       title: '',
-      stage: '',
       subtitle: '',
       desc: '',
-      contents: [],
+      details: '',
+      accentStart: '#2f66ff',
+      accentEnd: '#4f8dff',
       sort: 100,
       status: 'draft'
     };
@@ -956,6 +1314,18 @@ function getEmptyTemplate(collectionKey) {
       tags: [],
       sort: 100,
       status: 'draft'
+    };
+  }
+
+  if (collectionKey === 'adminUsers') {
+    return {
+      _id: '',
+      name: '',
+      role: 'editor',
+      status: 'active',
+      loginAccount: '',
+      password: '',
+      authChannels: ['web']
     };
   }
 
@@ -1035,7 +1405,7 @@ function collectPublicEntries(payload) {
     ...(payload.questionImports || []),
     ...(payload.teachers || []),
     ...(payload.successCases || []),
-    ...(payload.materialSeries || []),
+    ...(payload.materialPackages || []),
     ...(payload.materialItems || []),
     ...(payload.mediaAssets || [])
   ].filter(Boolean);
@@ -1083,7 +1453,7 @@ async function buildPublicPayload(pageKey) {
   }
 
   if (pageKey === 'materials') {
-    payload.materialSeries = sortPublished(await store.listCollection('materialSeries'));
+    payload.materialPackages = sortPublished(await store.listCollection('materialPackages'));
     payload.materialItems = sortPublished(await store.listCollection('materialItems'));
   }
 
@@ -1171,6 +1541,44 @@ class LocalStore {
   async resetSeed() {
     writeData(stampSeedData(loadSeed()));
   }
+
+  async ensureCollection() {
+    return true;
+  }
+}
+
+class CloudRequiredStore extends LocalStore {
+  getMode() {
+    return 'unavailable';
+  }
+
+  getConfigSummary() {
+    return {
+      expectedEnvId: CLOUD_ENV_ID || '',
+      hint: '当前 3200 后台仅允许写入小程序云端数据库，请补齐云环境凭据后再进行后台维护。',
+      localFallbackFile: DATA_FILE
+    };
+  }
+
+  async savePage() {
+    throw createCloudRequiredError();
+  }
+
+  async createItem() {
+    throw createCloudRequiredError();
+  }
+
+  async updateItem() {
+    throw createCloudRequiredError();
+  }
+
+  async deleteItem() {
+    throw createCloudRequiredError();
+  }
+
+  async resetSeed() {
+    throw createCloudRequiredError();
+  }
 }
 
 class CloudStore {
@@ -1178,6 +1586,7 @@ class CloudStore {
     const cloudbase = require('@cloudbase/node-sdk');
     this.app = cloudbase.init({
       env: CLOUD_ENV_ID,
+      accessKey: RUNTIME_ENV.CLOUDBASE_APIKEY || undefined,
       secretId: RUNTIME_ENV.TENCENTCLOUD_SECRETID || undefined,
       secretKey: RUNTIME_ENV.TENCENTCLOUD_SECRETKEY || undefined
     });
@@ -1207,12 +1616,16 @@ class CloudStore {
     return normalizePagePayload(pageKey, normalizeDocResult(result));
   }
 
-  async savePage(pageKey, payload) {
+  async savePage(pageKey, payload, expectedRevision = '') {
     const collection = PAGE_COLLECTIONS[pageKey];
     const docId = PAGE_DOC_IDS[pageKey];
     if (!collection || !docId) throw new Error('未知页面');
     const existing = await this.getPage(pageKey).catch(() => null);
-    const nextPage = stampPagePayload(payload, existing);
+    const currentRevision = existing ? buildPageRevision(pageKey, existing) : '';
+    if (expectedRevision && currentRevision && expectedRevision !== currentRevision) {
+      throw createPageConflictError(pageKey, existing, this.getMode());
+    }
+    const nextPage = stampPagePayload(stripPageMeta(payload), existing);
     await this.db.collection(collection).doc(docId).set(stripId(nextPage));
     return nextPage;
   }
@@ -1266,6 +1679,32 @@ class CloudStore {
     await this.db.collection(collection).doc(itemId).remove();
   }
 
+  async ensureCollection(collectionKey) {
+    const collection = LIST_COLLECTIONS[collectionKey];
+    if (!collection) {
+      throw new Error('未知集合');
+    }
+
+    try {
+      await this.db.createCollection(collection);
+      return true;
+    } catch (error) {
+      const message = String(error.message || '');
+      const exists =
+        message.includes('already exists') ||
+        message.includes('集合已存在') ||
+        message.includes('Collection already exists') ||
+        message.includes('ResourceExist') ||
+        message.includes('Table exist');
+
+      if (exists) {
+        return false;
+      }
+
+      throw error;
+    }
+  }
+
   async resetSeed() {
     const seed = stampSeedData(loadSeed());
 
@@ -1313,17 +1752,22 @@ class CloudStore {
 
 function createStore() {
   if (!CLOUD_ENV_ID) {
-    return new LocalStore();
+    return new CloudRequiredStore();
   }
 
   if (!RUNTIME_ENV.CLOUDBASE_APIKEY && !(RUNTIME_ENV.TENCENTCLOUD_SECRETID && RUNTIME_ENV.TENCENTCLOUD_SECRETKEY)) {
-    return new LocalStore();
+    return new CloudRequiredStore();
   }
 
   return new CloudStore();
 }
 
 const store = createStore();
+
+async function ensureAdminUsersCollection() {
+  ensureCloudAuthReady();
+  await store.ensureCollection('adminUsers');
+}
 
 async function handleApi(req, res, pathname) {
   const parts = pathname.split('/').filter(Boolean);
@@ -1334,18 +1778,146 @@ async function handleApi(req, res, pathname) {
       port: PORT,
       mode: store.getMode(),
       urls: getServiceUrls(),
-      config: store.getConfigSummary()
+      config: store.getConfigSummary(),
+      cloudReady: store.getMode() === 'cloud',
+      writeTarget: store.getMode() === 'cloud' ? 'cloud' : 'unavailable',
+      collaboration: {
+        pageConflictProtection: store.getMode() === 'cloud'
+      }
     });
     return;
   }
 
+  if (pathname === '/api/auth/status' && req.method === 'GET') {
+    sendJson(res, 200, {
+      ok: true,
+      data: await getAuthState(req)
+    });
+    return;
+  }
+
+  if (pathname === '/api/auth/bootstrap' && req.method === 'POST') {
+    await ensureBootstrapAllowed();
+    const body = await readBody(req);
+    const loginAccount = normalizeLoginAccount(body.loginAccount);
+    const password = String(body.password || '').trim();
+    const name = String(body.name || '').trim() || '系统管理员';
+
+    if (!loginAccount) {
+      sendJson(res, 400, { ok: false, message: '请填写登录账号' });
+      return;
+    }
+
+    if (password.length < 6) {
+      sendJson(res, 400, { ok: false, message: '登录密码至少 6 位' });
+      return;
+    }
+
+    const created = await store.createItem('adminUsers', prepareAdminUserPayload({
+      _id: makeId('admin'),
+      name,
+      role: 'owner',
+      status: 'active',
+      loginAccount,
+      password,
+      authChannels: ['web']
+    }));
+    const sessionId = createAdminSession(created);
+    const sanitized = sanitizeAdminUser(created);
+
+    await store.updateItem('adminUsers', created._id, {
+      ...created,
+      lastLoginAt: nowIso()
+    });
+
+    sendJson(
+      res,
+      200,
+      {
+        ok: true,
+        data: {
+          authenticated: true,
+          bootstrapRequired: false,
+          user: { ...sanitized, lastLoginAt: nowIso() },
+          permissions: getPermissionSummary(created),
+          mode: store.getMode(),
+          cloudReady: true
+        }
+      },
+      { 'Set-Cookie': createSessionCookie(sessionId) }
+    );
+    return;
+  }
+
+  if (pathname === '/api/auth/login' && req.method === 'POST') {
+    ensureCloudAuthReady();
+    const body = await readBody(req);
+    const loginAccount = normalizeLoginAccount(body.loginAccount);
+    const password = String(body.password || '').trim();
+    const admin = await findAdminByAccount(loginAccount);
+
+    const supportsWebLogin = (item) => {
+      const channels = Array.isArray(item?.authChannels) ? item.authChannels : [];
+      return !channels.length || channels.includes('web');
+    };
+
+    if (
+      !admin ||
+      normalizeAdminStatus(admin.status) === 'disabled' ||
+      !supportsWebLogin(admin) ||
+      !admin.passwordHash ||
+      admin.passwordHash !== hashPassword(password)
+    ) {
+      sendJson(res, 401, { ok: false, message: '账号或密码不正确' });
+      return;
+    }
+
+    const sessionId = createAdminSession(admin);
+    const updated = await store.updateItem('adminUsers', admin._id, {
+      ...admin,
+      lastLoginAt: nowIso()
+    });
+
+    sendJson(
+      res,
+      200,
+      {
+        ok: true,
+        data: {
+          authenticated: true,
+          bootstrapRequired: false,
+          user: sanitizeAdminUser(updated),
+          permissions: getPermissionSummary(updated),
+          mode: store.getMode(),
+          cloudReady: true
+        }
+      },
+      { 'Set-Cookie': createSessionCookie(sessionId) }
+    );
+    return;
+  }
+
+  if (pathname === '/api/auth/logout' && req.method === 'POST') {
+    const cookies = parseCookies(req);
+    const sessionId = cookies[SESSION_COOKIE_NAME];
+    if (sessionId) {
+      sessionStore.delete(sessionId);
+    }
+    sendJson(res, 200, { ok: true }, { 'Set-Cookie': clearSessionCookie() });
+    return;
+  }
+
   if (pathname === '/api/meta' && req.method === 'GET') {
+    const admin = await requirePermission(req, 'cms.read');
+    const permissions = getPermissionSummary(admin);
     sendJson(res, 200, {
       ok: true,
       pageOptions,
-      listOptions,
+      listOptions: listOptions.filter((item) => item.key !== 'adminUsers' || permissions.canManageUsers),
       mode: store.getMode(),
-      previewUrls: getServiceUrls().map((url) => `${url}/api/public/home`)
+      previewUrls: getServiceUrls().map((url) => `${url}/api/public/home`),
+      currentUser: sanitizeAdminUser(admin),
+      permissions
     });
     return;
   }
@@ -1363,6 +1935,7 @@ async function handleApi(req, res, pathname) {
   }
 
   if (pathname === '/api/seed/reset' && req.method === 'POST') {
+    await requirePermission(req, 'cms.reset');
     await store.resetSeed();
     sendJson(res, 200, { ok: true, mode: store.getMode() });
     return;
@@ -1370,6 +1943,7 @@ async function handleApi(req, res, pathname) {
 
   if (parts[1] === 'template' && req.method === 'GET') {
     const collectionKey = parts[2];
+    await requirePermission(req, getCollectionPermission(collectionKey, 'POST'));
     sendJson(res, 200, { ok: true, data: getEmptyTemplate(collectionKey) });
     return;
   }
@@ -1386,12 +1960,14 @@ async function handleApi(req, res, pathname) {
     }
 
     if (action === 'preview') {
+      await requirePermission(req, 'cms.write');
       const preview = buildQuestionBankCsvPreview(csvText, fileName);
       sendJson(res, 200, { ok: true, data: preview });
       return;
     }
 
     if (action === 'commit') {
+      await requirePermission(req, 'cms.publish');
       const summary = await importQuestionBankCsv(csvText, fileName);
       sendJson(res, 200, { ok: true, data: summary });
       return;
@@ -1406,15 +1982,18 @@ async function handleApi(req, res, pathname) {
     }
 
     if (req.method === 'GET') {
+      await requirePermission(req, 'cms.read');
       const payload = await store.getPage(pageKey);
-      sendJson(res, 200, { ok: true, data: payload || null });
+      sendJson(res, 200, { ok: true, data: attachAdminPageMeta(pageKey, payload || null, store.getMode()) });
       return;
     }
 
     if (req.method === 'PUT') {
+      await requirePermission(req, 'cms.write');
       const body = await readBody(req);
-      await store.savePage(pageKey, body);
-      sendJson(res, 200, { ok: true });
+      const expectedRevision = String(body?._meta?.revision || '').trim();
+      const saved = await store.savePage(pageKey, body, expectedRevision);
+      sendJson(res, 200, { ok: true, data: attachAdminPageMeta(pageKey, saved, store.getMode()) });
       return;
     }
   }
@@ -1422,34 +2001,127 @@ async function handleApi(req, res, pathname) {
   if (parts[1] === 'collection') {
     const collectionKey = parts[2];
     const itemId = parts[3];
+    const permission = getCollectionPermission(collectionKey, req.method);
+    const admin = await requirePermission(req, permission);
 
     if (req.method === 'GET' && !itemId) {
       const items = await store.listCollection(collectionKey);
-      sendJson(res, 200, { ok: true, data: items });
+      sendJson(res, 200, { ok: true, data: sanitizeCollectionOutput(collectionKey, items) });
       return;
     }
 
     if (req.method === 'GET' && itemId) {
       const item = await store.getItem(collectionKey, itemId);
-      sendJson(res, 200, { ok: true, data: item });
+      sendJson(res, 200, { ok: true, data: sanitizeCollectionOutput(collectionKey, item) });
       return;
     }
 
     if (req.method === 'POST' && !itemId) {
       const body = await readBody(req);
-      const created = await store.createItem(collectionKey, body);
-      sendJson(res, 200, { ok: true, data: created });
+      const payload = collectionKey === 'adminUsers' ? prepareAdminUserPayload(body) : body;
+
+      if (collectionKey === 'adminUsers') {
+        if (!payload.name) {
+          sendJson(res, 400, { ok: false, message: '请填写老师姓名' });
+          return;
+        }
+        if (!payload.loginAccount) {
+          sendJson(res, 400, { ok: false, message: '请填写登录账号' });
+          return;
+        }
+        if (!payload.passwordHash) {
+          sendJson(res, 400, { ok: false, message: '请设置登录密码' });
+          return;
+        }
+
+        const exists = await findAdminByAccount(payload.loginAccount);
+        if (exists) {
+          sendJson(res, 409, { ok: false, message: '该登录账号已存在' });
+          return;
+        }
+      }
+
+      const created = await store.createItem(collectionKey, payload);
+      sendJson(res, 200, { ok: true, data: sanitizeCollectionOutput(collectionKey, created) });
       return;
     }
 
     if (req.method === 'PUT' && itemId) {
       const body = await readBody(req);
-      await store.updateItem(collectionKey, itemId, body);
+      if (collectionKey === 'adminUsers') {
+        const existing = await store.getItem(collectionKey, itemId);
+        if (!existing) {
+          sendJson(res, 404, { ok: false, message: '未找到对应账号' });
+          return;
+        }
+
+        const nextPayload = prepareAdminUserPayload(body, existing);
+        if (!nextPayload.name) {
+          sendJson(res, 400, { ok: false, message: '请填写老师姓名' });
+          return;
+        }
+        if (!nextPayload.loginAccount) {
+          sendJson(res, 400, { ok: false, message: '请填写登录账号' });
+          return;
+        }
+
+        const sameAccount = await findAdminByAccount(nextPayload.loginAccount);
+        if (sameAccount && sameAccount._id !== itemId) {
+          sendJson(res, 409, { ok: false, message: '该登录账号已存在' });
+          return;
+        }
+
+        const allAdmins = await listAdminUsers();
+        const activeWebAdmins = allAdmins.filter(
+          (item) =>
+            item._id !== itemId &&
+            normalizeAdminStatus(item.status) === 'active' &&
+            normalizeLoginAccount(item.loginAccount) &&
+            item.passwordHash
+        );
+        const nextIsActiveWebAdmin =
+          normalizeAdminStatus(nextPayload.status) === 'active' &&
+          normalizeLoginAccount(nextPayload.loginAccount) &&
+          nextPayload.passwordHash;
+
+        if (!nextIsActiveWebAdmin && activeWebAdmins.length === 0) {
+          sendJson(res, 400, { ok: false, message: '至少保留一个可登录的后台管理员账号' });
+          return;
+        }
+
+        if (admin._id === itemId && normalizeAdminStatus(nextPayload.status) === 'disabled') {
+          sendJson(res, 400, { ok: false, message: '不能停用当前登录账号，请先使用其他管理员登录。' });
+          return;
+        }
+
+        await store.updateItem(collectionKey, itemId, nextPayload);
+      } else {
+        await store.updateItem(collectionKey, itemId, body);
+      }
       sendJson(res, 200, { ok: true });
       return;
     }
 
     if (req.method === 'DELETE' && itemId) {
+      if (collectionKey === 'adminUsers') {
+        if (admin._id === itemId) {
+          sendJson(res, 400, { ok: false, message: '不能删除当前登录账号' });
+          return;
+        }
+        const allAdmins = await listAdminUsers();
+        const remainingAdmins = allAdmins.filter(
+          (item) =>
+            item._id !== itemId &&
+            normalizeAdminStatus(item.status) === 'active' &&
+            normalizeLoginAccount(item.loginAccount) &&
+            item.passwordHash
+        );
+        if (remainingAdmins.length === 0) {
+          sendJson(res, 400, { ok: false, message: '至少保留一个可登录的后台管理员账号' });
+          return;
+        }
+      }
+
       await store.deleteItem(collectionKey, itemId);
       sendJson(res, 200, { ok: true });
       return;
@@ -1477,13 +2149,14 @@ const server = http.createServer(async (req, res) => {
     const safePath = pathname === '/' ? '/index.html' : pathname;
     sendFile(res, path.join(PUBLIC_DIR, safePath));
   } catch (error) {
-    sendJson(res, 500, { ok: false, message: error.message || '服务异常' });
+    sendJson(res, error.statusCode || 500, {
+      ok: false,
+      message: error.message || '服务异常',
+      code: error.code || '',
+      data: error.data || null
+    });
   }
 });
-
-if (store.getMode() === 'local') {
-  ensureDataFile();
-}
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`[admin-web] mode=${store.getMode()} ${getServiceUrls().join(' ')}`);

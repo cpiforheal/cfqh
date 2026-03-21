@@ -6,7 +6,8 @@ const NAV_ITEMS = [
   { key: 'results', label: '成果', icon: 'award' },
   { key: 'about', label: '关于', icon: 'info' },
   { key: 'contact', label: '联系', icon: 'phone' },
-  { key: 'media', label: '媒体', icon: 'image' }
+  { key: 'media', label: '媒体', icon: 'image' },
+  { key: 'accounts', label: '角色管理', icon: 'users' }
 ];
 
 const VIEW_CONFIG = {
@@ -101,9 +102,19 @@ const VIEW_CONFIG = {
     pageLabel: '教材资料页面',
     collections: [
       { key: 'mediaAssets', label: '媒体资源' },
-      { key: 'materialSeries', label: '教材套系' },
-      { key: 'materialItems', label: '教材单品' }
+      { key: 'materialPackages', label: '主推套系包' },
+      { key: 'materialItems', label: '货架资料卡' }
     ]
+  },
+  accounts: {
+    key: 'accounts',
+    kicker: '权限',
+    breadcrumb: '角色管理',
+    title: '角色管理',
+    subtitle: '用表格维护老师登录账号、角色权限和启停状态，所有数据都直接同步到小程序云端数据库。',
+    pageKey: null,
+    pageLabel: '',
+    collections: [{ key: 'adminUsers', label: '角色成员' }]
   }
 };
 
@@ -117,6 +128,8 @@ const ICONS = {
   image: '<rect x="4" y="4" width="16" height="16" rx="2"></rect><circle cx="9" cy="9" r="1.5"></circle><path d="m20 15-4.2-4.2a1 1 0 0 0-1.4 0L8 17"></path>',
   search: '<circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path>',
   bell: '<path d="M15 17h5l-1.3-1.3a2 2 0 0 1-.7-1.5V11a6 6 0 0 0-12 0v3.2a2 2 0 0 1-.7 1.5L4 17h5"></path><path d="M10 17a2 2 0 0 0 4 0"></path>',
+  eye: '<path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6Z"></path><circle cx="12" cy="12" r="2.8"></circle>',
+  logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><path d="m16 17 5-5-5-5"></path><path d="M21 12H9"></path>',
   refresh: '<path d="M20 11a8 8 0 0 0-14.9-4"></path><path d="M4 4v4h4"></path><path d="M4 13a8 8 0 0 0 14.9 4"></path><path d="M20 20v-4h-4"></path>',
   chevronLeft: '<path d="m15 18-6-6 6-6"></path>',
   chevronRight: '<path d="m9 18 6-6-6-6"></path>',
@@ -133,6 +146,14 @@ const state = {
   activeView: 'overview',
   loading: false,
   sidebarCollapsed: false,
+  auth: {
+    loading: true,
+    authenticated: false,
+    bootstrapRequired: false,
+    cloudReady: true,
+    user: null,
+    permissions: null
+  },
   meta: null,
   health: null,
   currentData: null,
@@ -147,13 +168,18 @@ const refs = {
   topbarBreadcrumb: document.getElementById('topbar-breadcrumb'),
   viewTitle: document.getElementById('view-title'),
   statusPill: document.getElementById('status-pill'),
+  topbarStatus: document.querySelector('.topbar-status'),
   sidebarCollapse: document.getElementById('sidebar-collapse'),
   themeToggle: document.getElementById('theme-toggle'),
+  sidebarLogout: document.getElementById('sidebar-logout'),
   topbarSearch: document.getElementById('topbar-search'),
   topbarAlerts: document.getElementById('topbar-alerts'),
   refreshView: document.getElementById('refresh-view'),
+  toolbarActions: document.querySelector('.toolbar-actions'),
   content: document.getElementById('content')
 };
+
+let authVisualCleanup = null;
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -170,9 +196,7 @@ function icon(name, className = '') {
 }
 
 function preferredTheme() {
-  const saved = localStorage.getItem('admin-web-theme');
-  if (saved === 'light' || saved === 'dark') return saved;
-  return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return 'light';
 }
 
 function preferredSidebarCollapsed() {
@@ -180,12 +204,14 @@ function preferredSidebarCollapsed() {
 }
 
 function applyTheme(theme) {
-  state.theme = theme;
-  document.documentElement.setAttribute('data-theme', theme);
-  refs.themeToggle.textContent = theme === 'dark' ? '切换亮色' : '切换暗色';
-  refs.themeToggle.title = theme === 'dark' ? '切换为亮色主题' : '切换为暗色主题';
-  refs.themeToggle.setAttribute('aria-label', refs.themeToggle.title);
-  localStorage.setItem('admin-web-theme', theme);
+  state.theme = 'light';
+  document.documentElement.setAttribute('data-theme', 'light');
+  localStorage.removeItem('admin-web-theme');
+  if (refs.themeToggle) {
+    refs.themeToggle.textContent = '亮色主题';
+    refs.themeToggle.title = '当前固定为亮色主题';
+    refs.themeToggle.setAttribute('aria-label', refs.themeToggle.title);
+  }
 }
 
 function applySidebarCollapsed(collapsed) {
@@ -249,10 +275,339 @@ function request(path, options = {}) {
   }).then(async (response) => {
     const payload = await response.json().catch(() => ({}));
     if (!response.ok || payload.ok === false) {
-      throw new Error(payload.message || `请求失败: ${response.status}`);
+      const error = new Error(payload.message || `请求失败: ${response.status}`);
+      error.statusCode = response.status;
+      error.code = payload.code || '';
+      error.data = payload.data || null;
+      if (response.status === 401) {
+        state.auth.authenticated = false;
+        state.auth.user = null;
+        state.auth.permissions = null;
+      }
+      throw error;
     }
     return payload;
   });
+}
+
+function applyAuthShell(locked) {
+  refs.app.dataset.auth = locked ? 'locked' : 'ready';
+}
+
+function isPrimaryAdminAccount() {
+  const loginAccount = String(state.auth?.user?.loginAccount || '').trim().toLowerCase();
+  return loginAccount === 'admin' || state.auth?.user?.role === 'owner';
+}
+
+function getVisibleNavItems() {
+  const permissions = state.auth?.permissions || {};
+  return NAV_ITEMS.filter((item) => {
+    if (item.key === 'accounts') {
+      return Boolean(permissions.canManageUsers) && isPrimaryAdminAccount();
+    }
+    if (item.key === 'overview') {
+      return Boolean(permissions.canRead);
+    }
+    return Boolean(permissions.canRead);
+  });
+}
+
+function renderLockedSidebar() {
+  refs.nav.innerHTML = `<button class="nav-item active nav-item-locked" type="button" aria-label="登录后台" disabled>
+    <span class="nav-label">登录后台</span>
+  </button>`;
+}
+
+function ensureActiveViewAvailable() {
+  const visibleItems = getVisibleNavItems();
+  if (visibleItems.some((item) => item.key === state.activeView)) {
+    return;
+  }
+  state.activeView = visibleItems[0]?.key || 'overview';
+}
+
+function getPermissionLabel() {
+  if (state.auth?.user?.roleLabel) return state.auth.user.roleLabel;
+  const role = state.auth?.user?.role || '';
+  if (role === 'owner') return '系统所有者';
+  if (role === 'admin') return '管理员';
+  if (role === 'publisher') return '发布老师';
+  if (role === 'viewer') return '查看者';
+  return '编辑老师';
+}
+
+function renderAuthScreen(message = '') {
+  applyAuthShell(true);
+  if (typeof authVisualCleanup === 'function') {
+    authVisualCleanup();
+    authVisualCleanup = null;
+  }
+  const { bootstrapRequired, cloudReady } = state.auth;
+  const helper = !cloudReady
+    ? '当前 3200 后台只在云端 CMS 模式下开放账号登录。请先配置 CloudBase 环境变量，再刷新页面。'
+    : bootstrapRequired
+      ? '首次启用后台，请先创建一个可登录的管理员账号。账号信息只会写入小程序云端数据库。'
+      : '请输入云端后台账号和密码。登录成功后才会进入内容管理工作台。';
+  const title = !cloudReady ? 'Cloud CMS required' : bootstrapRequired ? 'Create admin account' : 'Welcome back!';
+  const subtitle = !cloudReady ? 'Please connect your cloud environment' : bootstrapRequired ? 'Set up the first admin for your CMS' : 'Please enter your details';
+  renderLockedSidebar();
+  refs.topbarKicker.textContent = '权限';
+  refs.topbarBreadcrumb.textContent = '登录后台';
+  refs.viewTitle.textContent = bootstrapRequired ? '创建管理员' : '老师登录';
+  setStatus(cloudReady ? (bootstrapRequired ? '等待创建首个管理员' : '等待老师登录') : '等待连接云端 CMS', cloudReady ? 'ok' : 'warn');
+
+  refs.content.innerHTML = `<section class="auth-shell">
+    <div class="auth-visual">
+      <div class="auth-brand">
+        <div class="auth-brand-mark">启</div>
+        <div class="auth-brand-copy">
+          <strong>CareerCompass</strong>
+        </div>
+      </div>
+      <div class="auth-hero">
+        <div class="auth-hero-copy">
+          <h2>乘帆起航</h2>
+        </div>
+        <div class="auth-scene" aria-hidden="true" data-auth-scene>
+          <div class="auth-figure auth-figure-a" data-auth-figure>
+            <span class="eye-row">
+              <i class="eye"><span class="eye-pupil"></span></i>
+              <i class="eye"><span class="eye-pupil"></span></i>
+            </span>
+          </div>
+          <div class="auth-figure auth-figure-b" data-auth-figure>
+            <span class="eye-row">
+              <i class="eye"><span class="eye-pupil"></span></i>
+              <i class="eye"><span class="eye-pupil"></span></i>
+            </span>
+          </div>
+          <div class="auth-figure auth-figure-c" data-auth-figure>
+            <span class="eye-row">
+              <i class="eye"><span class="eye-pupil"></span></i>
+              <i class="eye"><span class="eye-pupil"></span></i>
+            </span>
+          </div>
+          <div class="auth-figure auth-figure-d" data-auth-figure>
+            <span class="eye-row">
+              <i class="eye"><span class="eye-pupil"></span></i>
+              <i class="eye"><span class="eye-pupil"></span></i>
+            </span>
+            <b></b>
+          </div>
+        </div>
+        <div class="auth-visual-footer">
+          <span>Privacy Policy</span>
+          <span>Terms of Service</span>
+          <span>Contact</span>
+        </div>
+      </div>
+    </div>
+    <div class="auth-panel">
+      <div class="auth-panel-inner">
+        <div class="auth-heading">
+          <div class="auth-heading-dot"></div>
+          <h1>${escapeHtml(title)}</h1>
+          <p>${escapeHtml(subtitle)}</p>
+        </div>
+        ${!cloudReady || bootstrapRequired ? `<div class="auth-note">${escapeHtml(helper)}</div>` : ''}
+        ${message ? `<div class="auth-feedback error">${escapeHtml(message)}</div>` : ''}
+        ${!cloudReady ? `
+          <div class="auth-disabled-card">
+            <strong>当前状态</strong>
+            <span>未检测到可用的 CloudBase 云环境配置。</span>
+          </div>
+        ` : `
+          <form class="auth-form" data-auth-form="${bootstrapRequired ? 'bootstrap' : 'login'}">
+            ${bootstrapRequired ? `
+              <label class="auth-field">
+                <span>老师姓名</span>
+                <input name="name" type="text" placeholder="例如：陈老师" autocomplete="name" />
+              </label>
+            ` : ''}
+            <label class="auth-field">
+              <span>${bootstrapRequired ? 'Admin email or account' : 'Email'}</span>
+              <input name="loginAccount" type="text" placeholder="${bootstrapRequired ? 'you@example.com' : 'you@example.com'}" autocomplete="username" />
+            </label>
+            <label class="auth-field auth-field-password">
+              <span>Password</span>
+              <div class="auth-password-input">
+                <input name="password" type="password" placeholder="••••••••" autocomplete="${bootstrapRequired ? 'new-password' : 'current-password'}" />
+                <button class="auth-password-toggle" type="button" data-action="toggle-password" aria-label="显示或隐藏密码" aria-pressed="false">
+                  ${icon('eye')}
+                </button>
+              </div>
+            </label>
+            <div class="auth-form-meta">
+              <label class="auth-check">
+                <input type="checkbox" name="remember" ${bootstrapRequired ? '' : 'checked'} />
+                <span>Remember for 30 days</span>
+              </label>
+              <button class="auth-text-action" type="button" data-action="forgot-password">Forgot password?</button>
+            </div>
+            <button class="auth-submit" type="submit">${bootstrapRequired ? 'Create admin' : 'Log In'}</button>
+            <div class="auth-form-footer">
+              <span>${escapeHtml(bootstrapRequired ? 'The first admin will enter the CMS with owner permission.' : 'Need access? Contact the system admin to create or reset your account.')}</span>
+            </div>
+          </form>
+        `}
+      </div>
+    </div>
+  </section>`;
+  initAuthVisualMotion();
+  syncModalState();
+}
+
+function initAuthVisualMotion() {
+  if (typeof authVisualCleanup === 'function') {
+    authVisualCleanup();
+    authVisualCleanup = null;
+  }
+  const shell = refs.content.querySelector('.auth-shell');
+  const scene = refs.content.querySelector('[data-auth-scene]');
+  if (!shell || !scene) return;
+
+  const passwordInput = refs.content.querySelector('.auth-form input[name="password"]');
+  const eyeRows = Array.from(scene.querySelectorAll('.eye-row'));
+  const maxOffset = 7.5;
+
+  const resetEyes = () => {
+    eyeRows.forEach((row) => {
+      row.style.setProperty('--eye-offset-x', '0px');
+      row.style.setProperty('--eye-offset-y', '0px');
+    });
+  };
+
+  const handlePointerMove = (event) => {
+    if (shell.classList.contains('is-password-focus')) return;
+    eyeRows.forEach((row) => {
+      const rect = row.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const deltaX = event.clientX - centerX;
+      const deltaY = event.clientY - centerY;
+      const distance = Math.max(Math.hypot(deltaX, deltaY), 1);
+      const offsetX = Math.max(-maxOffset, Math.min(maxOffset, (deltaX / distance) * maxOffset));
+      const offsetY = Math.max(-maxOffset, Math.min(maxOffset, (deltaY / distance) * maxOffset));
+      row.style.setProperty('--eye-offset-x', `${offsetX.toFixed(2)}px`);
+      row.style.setProperty('--eye-offset-y', `${offsetY.toFixed(2)}px`);
+    });
+  };
+
+  const handlePointerLeave = () => {
+    if (!shell.classList.contains('is-password-focus')) {
+      resetEyes();
+    }
+  };
+
+  const handlePasswordFocus = () => {
+    shell.classList.add('is-password-focus');
+    resetEyes();
+  };
+
+  const handlePasswordBlur = () => {
+    shell.classList.remove('is-password-focus');
+    resetEyes();
+  };
+
+  window.addEventListener('mousemove', handlePointerMove);
+  scene.addEventListener('mouseleave', handlePointerLeave);
+  if (passwordInput) {
+    passwordInput.addEventListener('focus', handlePasswordFocus);
+    passwordInput.addEventListener('blur', handlePasswordBlur);
+  }
+
+  authVisualCleanup = () => {
+    window.removeEventListener('mousemove', handlePointerMove);
+    scene.removeEventListener('mouseleave', handlePointerLeave);
+    if (passwordInput) {
+      passwordInput.removeEventListener('focus', handlePasswordFocus);
+      passwordInput.removeEventListener('blur', handlePasswordBlur);
+    }
+  };
+}
+
+function renderSessionControl() {
+  if (!refs.toolbarActions) return;
+  const user = state.auth?.user;
+  if (state.auth?.authenticated && typeof authVisualCleanup === 'function') {
+    authVisualCleanup();
+    authVisualCleanup = null;
+  }
+  if (!state.auth?.authenticated || !user) {
+    if (refs.sidebarLogout) {
+      refs.sidebarLogout.classList.add('is-hidden');
+      refs.sidebarLogout.innerHTML = `${icon('logout')}<span>退出登录</span>`;
+    }
+    refs.toolbarActions.innerHTML = '';
+  } else {
+    if (refs.sidebarLogout) {
+      refs.sidebarLogout.classList.remove('is-hidden');
+      refs.sidebarLogout.innerHTML = `${icon('logout')}<span>退出 ${escapeHtml(user.name || user.loginAccount || '当前账号')}</span>`;
+    }
+    refs.toolbarActions.innerHTML = `
+      <div class="topbar-session">
+        <div class="topbar-session-copy">
+          <strong>${escapeHtml(user.name || user.loginAccount || '后台老师')}</strong>
+          <span>${escapeHtml(getPermissionLabel())}</span>
+        </div>
+        <button class="topbar-session-action" type="button" data-action="logout">退出登录</button>
+      </div>
+      <button id="refresh-view" class="topbar-icon-button" type="button" aria-label="刷新"></button>
+    `;
+  }
+  refs.topbarSearch = document.getElementById('topbar-search');
+  refs.topbarAlerts = document.getElementById('topbar-alerts');
+  refs.refreshView = document.getElementById('refresh-view');
+  if (refs.topbarSearch) {
+    refs.topbarSearch.innerHTML = icon('search');
+  }
+  if (refs.topbarAlerts) {
+    refs.topbarAlerts.innerHTML = `${icon('bell')}<span class="topbar-dot" aria-hidden="true"></span>`;
+  }
+  if (refs.refreshView) {
+    refs.refreshView.innerHTML = icon('refresh');
+  }
+}
+
+async function loadAuthState() {
+  state.auth.loading = true;
+  const result = await request('/api/auth/status');
+  state.auth.loading = false;
+  state.auth.authenticated = Boolean(result.data?.authenticated);
+  state.auth.bootstrapRequired = Boolean(result.data?.bootstrapRequired);
+  state.auth.cloudReady = result.data?.cloudReady !== false;
+  state.auth.user = result.data?.admin || null;
+  state.auth.permissions = result.data?.permissions || null;
+  ensureActiveViewAvailable();
+  return state.auth;
+}
+
+async function submitLogin(formData) {
+  return request('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({
+      loginAccount: String(formData.get('loginAccount') || '').trim(),
+      password: String(formData.get('password') || '')
+    })
+  });
+}
+
+async function submitBootstrap(formData) {
+  return request('/api/auth/bootstrap', {
+    method: 'POST',
+    body: JSON.stringify({
+      name: String(formData.get('name') || '').trim(),
+      loginAccount: String(formData.get('loginAccount') || '').trim(),
+      password: String(formData.get('password') || '')
+    })
+  });
+}
+
+async function logoutCurrentUser() {
+  await request('/api/auth/logout', { method: 'POST' });
+  await loadAuthState();
+  renderSessionControl();
+  renderAuthScreen('已退出当前后台账号。');
 }
 
 function getViewUi(viewKey = state.activeView) {
@@ -261,6 +616,7 @@ function getViewUi(viewKey = state.activeView) {
       selectedIds: {},
       drafts: {},
       filters: {},
+      roleFilters: {},
       statusFilters: {},
       openEditors: {}
     };
@@ -401,13 +757,14 @@ function getCollectionMeta(collectionKey) {
 
 function getPrimaryLabel(item, collectionKey) {
   if (!item) return '未命名';
+  if (collectionKey === 'adminUsers') return item.name || item.loginAccount || item._id || '未命名账号';
   if (collectionKey === 'directions') return item.name || item.slug || item._id || '未命名方向';
   if (collectionKey === 'medicalQuestions') return item.stem || item.questionId || item._id || '未命名题目';
   if (collectionKey === 'pastPapers') return item.title || item.paperId || item._id || '未命名试卷';
   if (collectionKey === 'questionImports') return item.title || item.sourceType || item._id || '未命名导入';
   if (collectionKey === 'teachers') return item.name || item.role || item._id || '未命名老师';
   if (collectionKey === 'successCases') return item.title || item.subtitle || item._id || '未命名案例';
-  if (collectionKey === 'materialSeries') return item.name || item.slug || item._id || '未命名套系';
+  if (collectionKey === 'materialPackages') return item.title || item.badge || item._id || '未命名套系包';
   if (collectionKey === 'materialItems') return item.title || item.subtitle || item._id || '未命名单品';
   if (collectionKey === 'mediaAssets') return item.name || item.alt || item.url || item._id || '未命名资源';
   return item.title || item.name || item.label || item._id || '未命名条目';
@@ -415,14 +772,15 @@ function getPrimaryLabel(item, collectionKey) {
 
 function getSecondaryLabel(item, collectionKey) {
   if (!item) return '';
+  if (collectionKey === 'adminUsers') return [item.roleLabel || item.role, item.status].filter(Boolean).join(' / ');
   if (collectionKey === 'directions') return [item.category, item.status].filter(Boolean).join(' / ');
   if (collectionKey === 'medicalQuestions') return [item.direction, item.questionType, item.year, item.status].filter(Boolean).join(' / ');
   if (collectionKey === 'pastPapers') return [item.direction, item.year, item.status].filter(Boolean).join(' / ');
   if (collectionKey === 'questionImports') return [item.direction, item.sourceType, item.status].filter(Boolean).join(' / ');
   if (collectionKey === 'teachers') return [item.role, item.tag].filter(Boolean).join(' / ');
   if (collectionKey === 'successCases') return [item.category, item.year].filter(Boolean).join(' / ');
-  if (collectionKey === 'materialSeries') return [item.category, item.tag].filter(Boolean).join(' / ');
-  if (collectionKey === 'materialItems') return [item.type, item.stage].filter(Boolean).join(' / ');
+  if (collectionKey === 'materialPackages') return [item.direction, item.stage].filter(Boolean).join(' / ');
+  if (collectionKey === 'materialItems') return [item.direction, item.stage, item.type].filter(Boolean).join(' / ');
   if (collectionKey === 'mediaAssets') return [item.module, item.type, item.status].filter(Boolean).join(' / ');
   return [item.status, item.updatedAt || item._updatedAt].filter(Boolean).join(' / ');
 }
@@ -440,13 +798,13 @@ function resolveViewFromPageKey(pageKey) {
 }
 
 const FIELD_LABELS = {
-  _id: 'ID',
+  _id: '内容编号',
   siteName: '站点名称',
   brandName: '品牌名称',
   contactPhone: '联系电话',
   contactWechat: '微信号',
   contactQrcode: '二维码链接',
-  contactQrcodeUrl: '二维码图片 URL',
+  contactQrcodeUrl: '二维码图片地址',
   address: '地址',
   serviceHours: '服务时间',
   intro: '机构简介',
@@ -456,10 +814,10 @@ const FIELD_LABELS = {
   highlightTitle: '主标题第二行',
   desc: '说明',
   secondaryNote: '补充说明',
-  backgroundImageUrl: '背景图 URL',
-  backgroundImageSeed: '背景图 Seed',
-  imageUrl: '图片 URL',
-  imageSeed: '图片 Seed',
+  backgroundImageUrl: '背景图地址',
+  backgroundImageSeed: '背景图备用标识',
+  imageUrl: '图片地址',
+  imageSeed: '图片备用标识',
   tags: '首页大屏标签',
   primaryButton: '首页大屏按钮',
   text: '文案',
@@ -473,7 +831,7 @@ const FIELD_LABELS = {
   icon: '图标',
   advantages: '学习支持（热门方向下方）',
   directionsIntro: '方向介绍',
-  featuredDirectionIds: '热门方向展示 ID',
+  featuredDirectionIds: '热门方向卡片',
   moreDirectionCard: '更多方向卡片',
   environmentSection: '校区环境（咨询区上方）',
   subtitle: '副标题',
@@ -483,32 +841,47 @@ const FIELD_LABELS = {
   footnote: '底部说明',
   categories: '分类',
   suggestions: '建议',
-  featuredSeriesIds: '精选套系 ID',
+  header: '顶部标题区',
+  searchLabel: '搜索按钮提示',
+  directionTabs: '顶部方向切换',
+  stageTabs: '阶段切换按钮',
+  mainSection: '主推套系区',
+  sideNote: '右侧提示',
+  shelfSection: '资料货架区',
+  hint: '滑动提示',
+  consultBar: '底部咨询条',
   introCard: '介绍卡片',
   features: '优势项',
   stats: '成果统计',
   values: '理念内容',
   environmentImages: '环境图片',
-  tabs: '分类标签',
+  details: '详细介绍',
+  accentStart: '封面渐变起始色',
+  accentEnd: '封面渐变结束色',
   questionBank: '题库配置',
   dailyQuestionCard: '每日一题页',
   pastPapersCard: '模拟题页',
   wrongBookCard: '错题本页',
   importGuide: '导入说明',
   templateText: '模板文本',
-  questionId: '题目 ID',
+  questionId: '题目编号',
+  loginAccount: '后台登录账号',
+  password: '登录密码',
+  hasPassword: '已设置密码',
+  authChannels: '登录方式',
+  lastLoginAt: '最近登录时间',
   direction: '方向',
   questionType: '题型',
   stem: '题干',
   options: '选项',
   answer: '答案',
   explanation: '解析',
-  paperId: '试卷 ID',
-  questionIds: '题目 ID 列表',
+  paperId: '所属试卷',
+  questionIds: '题目编号列表',
   sourceType: '来源类型',
   rawText: '纯文本内容',
   name: '名称',
-  slug: 'Slug',
+  slug: '内容标识',
   category: '分类',
   isFeatured: '首页精选',
   featuredTag: '精选标签',
@@ -530,21 +903,22 @@ const FIELD_LABELS = {
   background: '背景',
   iconBg: '图标背景',
   style: '样式',
-  avatarUrl: '头像 URL',
-  avatarSeed: '头像 Seed',
+  avatarUrl: '头像图片地址',
+  avatarSeed: '头像备用图标识',
   specialties: '擅长',
-  coverUrl: '封面 URL',
-  coverSeed: '封面 Seed',
+  coverUrl: '封面图片地址',
+  coverSeed: '封面备用图标识',
   year: '年份',
   accent: '主题色',
-  shelfLabel: '书架标签',
+  badge: '角标文案',
+  target: '适合人群',
+  solves: '解决问题',
+  contentItemIds: '套系包含资料',
   items: '条目',
-  seriesId: '套系 ID',
   type: '类型',
   stage: '阶段',
-  contents: '目录',
   module: '所属模块',
-  thumbUrl: '缩略图 URL',
+  thumbUrl: '缩略图地址',
   alt: '替代文本'
 };
 
@@ -556,10 +930,8 @@ const LINE_LIST_FIELDS = new Set([
   'suggestions',
   'features',
   'featuredDirectionIds',
-  'featuredSeriesIds',
-  'tabs',
+  'contentItemIds',
   'specialties',
-  'contents',
   'questionIds'
 ]);
 const OBJECT_ARRAY_FIELDS = new Set([
@@ -571,6 +943,8 @@ const OBJECT_ARRAY_FIELDS = new Set([
   'stats',
   'values',
   'environmentImages',
+  'directionTabs',
+  'stageTabs',
   'options'
 ]);
 const ARRAY_TEMPLATES = {
@@ -582,15 +956,15 @@ const ARRAY_TEMPLATES = {
   stats: { value: '', label: '', note: '' },
   values: { title: '', desc: '' },
   environmentImages: { label: '', imageUrl: '', imageSeed: '' },
+  directionTabs: { key: '', label: '', icon: '' },
+  stageTabs: { key: '', label: '' },
   options: { id: '', text: '' },
   tags: '',
   categories: '',
   suggestions: '',
   featuredDirectionIds: '',
-  featuredSeriesIds: '',
-  tabs: '',
+  contentItemIds: '',
   specialties: '',
-  contents: '',
   questionIds: ''
 };
 const SELECT_FIELD_OPTIONS = {
@@ -606,7 +980,13 @@ const SELECT_FIELD_OPTIONS = {
     { value: 'reLaunch', label: '重新进入' }
   ],
   direction: [
-    { value: 'medical', label: '医护' }
+    { value: 'math', label: '高等数学' },
+    { value: 'medical', label: '医护综合' }
+  ],
+  stage: [
+    { value: 'foundation', label: '基础阶段' },
+    { value: 'reinforcement', label: '强化阶段' },
+    { value: 'sprint', label: '冲刺阶段' }
   ],
   questionType: [
     { value: 'single_choice', label: '单选题' },
@@ -620,15 +1000,26 @@ const SELECT_FIELD_OPTIONS = {
     { value: 'wrongbook', label: '错题整理' },
     { value: 'file', label: '文件导入' }
   ],
-  role: [
-    { value: 'owner', label: 'Owner' },
-    { value: 'editor', label: 'Editor' }
-  ],
   type: [
     { value: 'image', label: '图片' },
     { value: 'video', label: '视频' },
     { value: 'file', label: '文件' }
   ]
+};
+
+const SCOPED_SELECT_FIELD_OPTIONS = {
+  'collection:adminUsers': {
+    role: [
+      { value: 'viewer', label: '查看老师' },
+      { value: 'editor', label: '编辑老师' },
+      { value: 'publisher', label: '发布老师' },
+      { value: 'admin', label: '管理员' }
+    ],
+    status: [
+      { value: 'active', label: '可登录' },
+      { value: 'disabled', label: '已停用' }
+    ]
+  }
 };
 
 const COMPANION_FIELDS = {
@@ -658,6 +1049,10 @@ const QUESTION_BANK_EDITOR_HIDDEN_PATHS = new Set([
   'pastPapersCard.buttonText',
   'wrongBookCard.buttonText'
 ]);
+
+const PAGE_SPECIFIC_HIDDEN_PATHS = {
+  'page:teachers': new Set(['hero.imageUrl', 'hero.imageSeed'])
+};
 
 const HOME_EDITOR_ARRAY_RULES = {
   overviewStats: { visibleItems: 3, maxItems: 3 },
@@ -696,7 +1091,7 @@ const EDITOR_LAYOUTS = {
       },
       {
         title: '热门方向',
-        desc: '对应四个入口下方的热门方向大卡片，目前通过方向 ID 控制。',
+        desc: '对应四个入口下方的热门方向大卡片，按所选方向顺序展示。',
         keys: ['featuredDirectionIds']
       },
       {
@@ -775,12 +1170,35 @@ const EDITOR_LAYOUTS = {
       {
         title: '内容表达',
         desc: '对应老师卡片里的简介和补充文案。',
-        keys: ['summary', 'desc', 'subtitle']
+        keys: ['intro']
       },
       {
         title: '展示资源',
         desc: '对应师资卡片里的头像资源。',
         keys: ['avatarUrl', 'avatarSeed']
+      }
+    ]
+  },
+  'collection:adminUsers': {
+    hero: {
+      title: '后台账号信息',
+      desc: '这里维护老师的登录账号、角色权限和启停状态。密码留空时会保留原密码。'
+    },
+    sections: [
+      {
+        title: '账号身份',
+        desc: '对应老师在后台登录时使用的姓名和账号。',
+        keys: ['name', 'loginAccount']
+      },
+      {
+        title: '角色权限',
+        desc: '决定这个老师进入 CMS 后能看、能改、能发布哪些内容。',
+        keys: ['role', 'status']
+      },
+      {
+        title: '登录安全',
+        desc: '新建账号时请输入登录密码；编辑已有账号时留空表示不改密码。',
+        keys: ['password']
       }
     ]
   },
@@ -797,7 +1215,7 @@ const EDITOR_LAYOUTS = {
       },
       {
         title: '两张重点方向卡片',
-        desc: '对应页面中间两张重点方向大卡片，当前通过方向 ID 控制展示顺序。',
+        desc: '对应页面中间两张重点方向大卡片，按所选方向顺序展示。',
         keys: ['featuredDirectionIds']
       }
     ],
@@ -818,19 +1236,29 @@ const EDITOR_LAYOUTS = {
   'page:teachers': {
     hero: {
       title: '师资页主配置',
-      desc: '首屏、介绍卡片和优势项先放在主区，CTA 收到补充区块里，查看更顺。'
+      desc: '这里维护的是师资页当前真实会显示的首屏标题说明、带学方式说明、老师协作亮点和底部咨询承接区。代表老师头像和下方老师条目来自“师资列表”。'
     },
     sections: [
       {
-        title: '页面主信息',
-        desc: '对应师资页首屏、介绍卡和核心优势区。',
-        keys: ['hero', 'introCard', 'features']
+        title: '代表老师首屏',
+        desc: '对应师资页顶部的大标题、说明和信任标签。',
+        keys: ['hero']
+      },
+      {
+        title: '带学方式说明',
+        desc: '对应师资页首屏下方的说明卡，解释主讲、答疑和督学如何协同。',
+        keys: ['introCard']
+      },
+      {
+        title: '老师协作亮点',
+        desc: '对应师资页中部的三张协作亮点卡片。',
+        keys: ['features']
       }
     ],
     secondarySections: [
       {
-        title: '底部 CTA',
-        desc: '对应师资页底部咨询引导区。',
+        title: '底部咨询承接区',
+        desc: '对应师资页最下方的咨询承接卡片。',
         keys: ['cta']
       }
     ],
@@ -839,19 +1267,24 @@ const EDITOR_LAYOUTS = {
   'page:success': {
     hero: {
       title: '成果页主配置',
-      desc: '先聚焦首屏和统计数据，CTA 放到二级区块，避免字段之间互相挤压。'
+      desc: '这里维护的是成果页当前真实会显示的结果首屏、结果证明数据和底部咨询承接区。'
     },
     sections: [
       {
-        title: '页面主信息',
-        desc: '对应成果页首屏和顶部成果数据卡。',
-        keys: ['hero', 'stats']
+        title: '结果首屏',
+        desc: '对应成果页顶部的大标题、说明和首屏标签。',
+        keys: ['hero']
+      },
+      {
+        title: '结果证明数据',
+        desc: '对应成果页首屏里的 3 张结果证明数据卡。',
+        keys: ['stats']
       }
     ],
     secondarySections: [
       {
-        title: '底部 CTA',
-        desc: '对应成果页底部咨询引导区。',
+        title: '底部咨询承接区',
+        desc: '对应成果页最下方的咨询承接卡片。',
         keys: ['cta']
       }
     ],
@@ -886,20 +1319,25 @@ const EDITOR_LAYOUTS = {
   'page:materials': {
     hero: {
       title: '资料页主配置',
-      desc: '先看首屏、标签和总览统计，精选套系与 CTA 放到二级区块里，层次会清楚很多。'
+      desc: '这里维护的是资料页顶部切换、主推套系、资料货架和底部咨询条，页面会按方向和阶段切换实时对应。'
     },
     sections: [
       {
-        title: '页面主信息',
-        desc: '对应资料页首屏、顶部分类标签和总览统计卡。',
-        keys: ['hero', 'tabs', 'overviewStats']
+        title: '顶部区',
+        desc: '对应资料页标题、搜索按钮、方向切换和阶段切换。',
+        keys: ['header', 'directionTabs', 'stageTabs']
+      },
+      {
+        title: '主推套系区',
+        desc: '对应“核心主推套系”和右侧提示。',
+        keys: ['mainSection']
       }
     ],
     secondarySections: [
       {
-        title: '推荐与 CTA',
-        desc: '对应资料页精选套系推荐和底部咨询区。',
-        keys: ['featuredSeriesIds', 'cta']
+        title: '资料货架与咨询条',
+        desc: '对应资料货架标题、滑动提示和底部咨询条。',
+        keys: ['shelfSection', 'consultBar']
       }
     ],
     foldLabel: '资料页补充区块'
@@ -953,7 +1391,7 @@ const EDITOR_LAYOUTS = {
   'collection:pastPapers': {
     hero: {
       title: '模拟题套卷',
-      desc: '先维护套卷标题、年份、方向和状态，再补题目 ID 列表和摘要说明。'
+      desc: '先维护试卷标题、年份、方向和状态，再补题目编号列表和摘要说明。'
     },
     sections: [
       {
@@ -1042,11 +1480,11 @@ const SCOPED_FIELD_LABELS = {
     'hero.title': '首页大屏第一行标题',
     'hero.highlightTitle': '首页大屏第二行标题',
     'hero.desc': '首页大屏说明',
-    'hero.backgroundImageUrl': '首页大屏背景图 URL',
+    'hero.backgroundImageUrl': '首页大屏背景图地址',
     'hero.tags': '首页大屏标签',
     'hero.primaryButton': '首页大屏按钮',
     'hero.primaryButton.text': '首页大屏按钮文案',
-    'hero.primaryButton.url': '首页大屏按钮跳转地址',
+    'hero.primaryButton.url': '首页大屏按钮打开页面',
     'hero.primaryButton.openType': '首页大屏按钮跳转方式',
     overviewStats: '首屏数据卡',
     'overviewStats.*': '数据卡',
@@ -1055,10 +1493,10 @@ const SCOPED_FIELD_LABELS = {
     quickLinks: '首页四个功能入口',
     'quickLinks.*': '功能入口',
     'quickLinks.*.label': '入口标题',
-    'quickLinks.*.url': '入口跳转地址',
+    'quickLinks.*.url': '入口打开页面',
     'quickLinks.*.openType': '入口跳转方式',
     'quickLinks.*.icon': '入口图标标识',
-    featuredDirectionIds: '热门方向展示 ID',
+    featuredDirectionIds: '热门方向卡片',
     advantages: '学习支持',
     'advantages.*': '学习支持卡片',
     'advantages.*.icon': '卡片图标标识',
@@ -1068,7 +1506,7 @@ const SCOPED_FIELD_LABELS = {
     'environmentSection.cards': '环境图片',
     'environmentSection.cards.*': '环境图片',
     'environmentSection.cards.*.label': '图片名称',
-    'environmentSection.cards.*.imageUrl': '图片 URL',
+    'environmentSection.cards.*.imageUrl': '图片地址',
     cta: '底部咨询区',
     'cta.title': '咨询区标题',
     'cta.desc': '咨询区说明',
@@ -1090,7 +1528,7 @@ const SCOPED_FIELD_LABELS = {
     subtitle: '判断首屏说明',
     categories: '判断标签',
     suggestions: '判断提示',
-    featuredDirectionIds: '两张重点方向卡片 ID',
+    featuredDirectionIds: '两张重点方向卡片',
     moreSection: '底部补充说明',
     'moreSection.title': '补充区标题',
     'moreSection.tag': '补充区标签',
@@ -1102,44 +1540,43 @@ const SCOPED_FIELD_LABELS = {
     'cta.footnote': '咨询补充提示'
   },
   'page:teachers': {
-    hero: '师资页首屏',
+    hero: '代表老师首屏',
     'hero.chip': '首屏小角标',
-    'hero.title': '师资页主标题',
-    'hero.desc': '师资页说明',
-    'hero.imageUrl': '首屏配图 URL',
-    introCard: '介绍卡片',
-    'introCard.title': '介绍卡标题',
-    'introCard.desc': '介绍卡说明',
-    features: '核心优势',
-    'features.*': '优势卡片',
-    'features.*.title': '优势标题',
-    'features.*.desc': '优势说明',
-    cta: '底部咨询区',
-    'cta.title': '咨询区标题',
-    'cta.desc': '咨询区说明',
-    'cta.buttonText': '咨询按钮文案'
+    'hero.title': '代表老师首屏主标题',
+    'hero.desc': '代表老师首屏说明',
+    introCard: '带学方式说明',
+    'introCard.title': '说明卡标题',
+    'introCard.desc': '说明卡说明',
+    features: '老师协作亮点',
+    'features.*': '协作亮点卡',
+    'features.*.title': '亮点标题',
+    'features.*.desc': '亮点说明',
+    cta: '底部咨询承接区',
+    'cta.title': '承接区标题',
+    'cta.desc': '承接区说明',
+    'cta.buttonText': '承接按钮文案'
   },
   'page:success': {
-    hero: '成果页首屏',
+    hero: '结果首屏',
     'hero.chip': '首屏小角标',
-    'hero.title': '成果页主标题',
-    'hero.desc': '成果页说明',
-    stats: '成果数据卡',
-    'stats.*': '成果数据卡',
-    'stats.*.value': '数据值',
-    'stats.*.label': '数据标签',
+    'hero.title': '结果首屏主标题',
+    'hero.desc': '结果首屏说明',
+    stats: '结果证明数据',
+    'stats.*': '结果证明卡',
+    'stats.*.value': '证明数值',
+    'stats.*.label': '证明标签',
     'stats.*.note': '补充说明',
-    cta: '底部咨询区',
-    'cta.title': '咨询区标题',
-    'cta.desc': '咨询区说明',
-    'cta.buttonText': '咨询按钮文案'
+    cta: '底部咨询承接区',
+    'cta.title': '承接区标题',
+    'cta.desc': '承接区说明',
+    'cta.buttonText': '承接按钮文案'
   },
   'page:about': {
     hero: '关于页首屏',
     'hero.chip': '首屏小角标',
     'hero.title': '关于页主标题',
     'hero.desc': '关于页说明',
-    'hero.imageUrl': '首屏配图 URL',
+    'hero.imageUrl': '首屏配图地址',
     introCard: '介绍卡片',
     'introCard.title': '介绍卡标题',
     'introCard.desc': '介绍卡说明',
@@ -1150,29 +1587,35 @@ const SCOPED_FIELD_LABELS = {
     environmentImages: '校区环境图片',
     'environmentImages.*': '环境图片',
     'environmentImages.*.label': '图片名称',
-    'environmentImages.*.imageUrl': '图片 URL',
+    'environmentImages.*.imageUrl': '图片地址',
     cta: '底部咨询区',
     'cta.title': '咨询区标题',
     'cta.desc': '咨询区说明',
     'cta.buttonText': '咨询按钮文案'
   },
   'page:materials': {
-    hero: '资料页首屏',
-    'hero.chip': '首屏小角标',
-    'hero.title': '资料页主标题',
-    'hero.desc': '资料页说明',
-    'hero.imageUrl': '首屏配图 URL',
-    tabs: '顶部资料分类标签',
-    overviewStats: '总览统计卡',
-    'overviewStats.*': '统计卡',
-    'overviewStats.*.value': '统计值',
-    'overviewStats.*.label': '统计标签',
-    'overviewStats.*.note': '统计说明',
-    featuredSeriesIds: '精选资料套系 ID',
-    cta: '底部咨询区',
-    'cta.title': '咨询区标题',
-    'cta.desc': '咨询区说明',
-    'cta.buttonText': '咨询按钮文案'
+    header: '顶部标题区',
+    'header.title': '页面标题',
+    'header.searchLabel': '搜索按钮提示',
+    directionTabs: '顶部方向切换',
+    'directionTabs.*': '方向切换项',
+    'directionTabs.*.key': '切换标识',
+    'directionTabs.*.label': '切换名称',
+    'directionTabs.*.icon': '切换图标',
+    stageTabs: '阶段切换按钮',
+    'stageTabs.*': '阶段按钮',
+    'stageTabs.*.key': '阶段标识',
+    'stageTabs.*.label': '阶段名称',
+    mainSection: '主推套系区',
+    'mainSection.title': '区块标题',
+    'mainSection.sideNote': '右侧提示',
+    shelfSection: '资料货架区',
+    'shelfSection.title': '货架标题',
+    'shelfSection.hint': '滑动提示',
+    consultBar: '底部咨询条',
+    'consultBar.title': '咨询标题',
+    'consultBar.desc': '咨询说明',
+    'consultBar.buttonText': '咨询按钮文案'
   },
   'page:questionBank': {
     dailyQuestionCard: '每日一题页',
@@ -1190,7 +1633,7 @@ const SCOPED_FIELD_LABELS = {
   },
   'collection:directions': {
     name: '方向名称',
-    slug: '方向 Slug',
+    slug: '方向标识',
     category: '方向分类',
     isFeatured: '是否进入首页推荐',
     featuredTag: '首页精选标签',
@@ -1220,8 +1663,8 @@ const SCOPED_FIELD_LABELS = {
     name: '老师姓名',
     role: '老师身份',
     tag: '老师标签',
-    avatarUrl: '头像图片 URL',
-    avatarSeed: '头像 Seed',
+    avatarUrl: '头像图片地址',
+    avatarSeed: '头像备用图标识',
     intro: '卡片简介',
     specialties: '擅长标签',
     sort: '排序值',
@@ -1230,38 +1673,40 @@ const SCOPED_FIELD_LABELS = {
   'collection:successCases': {
     title: '上岸故事标题',
     subtitle: '上岸故事说明',
-    coverUrl: '封面图片 URL',
-    coverSeed: '封面 Seed',
+    coverUrl: '封面图片地址',
+    coverSeed: '封面备用图标识',
     year: '上岸年份',
     category: '案例分类',
     sort: '排序值',
     status: '发布状态'
   },
-  'collection:materialSeries': {
-    name: '套系名称',
-    slug: '套系 Slug',
-    category: '套系分类',
-    tag: '套系标签',
-    accent: '套系强调色',
-    summary: '套系简介',
-    shelfLabel: '书架标签',
-    items: '套系标签组',
+  'collection:materialPackages': {
+    direction: '所属方向',
+    stage: '所属阶段',
+    badge: '角标文案',
+    title: '套系标题',
+    target: '适合人群',
+    solves: '解决问题',
+    features: '套系卖点',
+    contentItemIds: '套系包含资料',
     sort: '排序值',
     status: '发布状态'
   },
   'collection:materialItems': {
-    seriesId: '所属套系 ID',
+    direction: '所属方向',
+    stage: '所属阶段',
     type: '资料类型',
     title: '资料标题',
     subtitle: '资料副标题',
-    stage: '适用阶段',
     desc: '资料说明',
-    contents: '目录标签',
+    details: '详细介绍',
+    accentStart: '封面渐变起始色',
+    accentEnd: '封面渐变结束色',
     sort: '排序值',
     status: '发布状态'
   },
   'collection:medicalQuestions': {
-    questionId: '题目 ID',
+    questionId: '题目编号',
     direction: '所属方向',
     questionType: '题型',
     stem: '题干',
@@ -1271,17 +1716,17 @@ const SCOPED_FIELD_LABELS = {
     'options.*.text': '选项内容',
     answer: '答案',
     explanation: '解析',
-    paperId: '所属试卷 ID',
+    paperId: '所属试卷',
     tags: '题目标签',
     status: '发布状态'
   },
   'collection:pastPapers': {
-    paperId: '试卷 ID',
+    paperId: '试卷编号',
     title: '试卷标题',
     description: '试卷说明',
     year: '年份',
     direction: '所属方向',
-    questionIds: '题目 ID 列表',
+    questionIds: '题目编号列表',
     status: '发布状态'
   },
   'collection:questionImports': {
@@ -1303,6 +1748,14 @@ const SCOPED_FIELD_LABELS = {
     tags: '资源标签',
     sort: '排序值',
     status: '发布状态'
+  },
+  'collection:adminUsers': {
+    name: '老师姓名',
+    loginAccount: '后台登录账号',
+    password: '登录密码',
+    role: '账号角色',
+    status: '账号状态',
+    lastLoginAt: '最近登录时间'
   }
 };
 
@@ -1356,8 +1809,55 @@ function appendArrayItem(source, path, item) {
   });
 }
 
-function getSelectOptions(fieldKey) {
+function getSelectOptions(scope, fieldKey) {
+  const scopedOptions = SCOPED_SELECT_FIELD_OPTIONS[scope]?.[fieldKey];
+  if (scopedOptions) return scopedOptions;
   return SELECT_FIELD_OPTIONS[fieldKey] || null;
+}
+
+function buildReferenceOptions(items, getLabel, getMeta) {
+  return [
+    { value: '', label: '请选择' },
+    ...items.map((item) => {
+      const label = getLabel(item);
+      const meta = getMeta ? getMeta(item) : '';
+      return {
+        value: item._id || '',
+        label: meta ? `${label} · ${meta}` : label
+      };
+    })
+  ];
+}
+
+function getReferenceOptions(scope, path) {
+  const normalizedPath = normalizeEditorPath(path);
+  const collections = state.currentData?.collections || {};
+
+  if ((scope === 'page:home' || scope === 'page:courses') && normalizedPath === 'featuredDirectionIds') {
+    return buildReferenceOptions(
+      collections.directions || [],
+      (item) => item.name || item._id || '未命名方向',
+      (item) => [item.category, item.status === 'draft' ? '草稿' : ''].filter(Boolean).join(' / ')
+    );
+  }
+
+  if (scope === 'collection:materialPackages' && normalizedPath === 'contentItemIds') {
+    return buildReferenceOptions(
+      collections.materialItems || [],
+      (item) => item.title || item._id || '未命名资料卡',
+      (item) => [item.direction, item.stage, item.type].filter(Boolean).join(' / ')
+    );
+  }
+
+  if (scope === 'collection:medicalQuestions' && normalizedPath === 'paperId') {
+    return buildReferenceOptions(
+      collections.pastPapers || [],
+      (item) => item.title || item.paperId || item._id || '未命名套卷',
+      (item) => [item.year, item.direction].filter(Boolean).join(' / ')
+    );
+  }
+
+  return null;
 }
 
 function getEditorLayout(scope) {
@@ -1404,11 +1904,28 @@ function getFormSource(scope) {
     const collectionKey = scope.split(':')[1];
     const ui = getViewUi();
     if (ui.drafts[collectionKey]) {
+      if (collectionKey === 'adminUsers') {
+        return {
+          role: 'editor',
+          status: 'active',
+          password: '',
+          ...ui.drafts[collectionKey]
+        };
+      }
       return ui.drafts[collectionKey];
     }
 
     const selectedId = ui.selectedIds[collectionKey];
-    return (state.currentData?.collections?.[collectionKey] || []).find((item) => item._id === selectedId) || null;
+    const selectedItem = (state.currentData?.collections?.[collectionKey] || []).find((item) => item._id === selectedId) || null;
+    if (collectionKey === 'adminUsers' && selectedItem) {
+      return {
+        role: 'editor',
+        status: 'active',
+        password: '',
+        ...selectedItem
+      };
+    }
+    return selectedItem;
   }
 
   return null;
@@ -1519,12 +2036,24 @@ function usesDirectSectionEditor(pageKey) {
 function shouldHideField(scope, path) {
   const normalizedPath = normalizeEditorPath(path);
 
+  if (normalizedPath === '_meta' || normalizedPath.startsWith('_meta.')) {
+    return true;
+  }
+
+  if (scope === 'collection:adminUsers') {
+    return ['passwordHash', 'hasPassword', 'authChannels', 'roleLabel', 'lastLoginAt'].includes(String(path[path.length - 1] || ''));
+  }
+
   if (isHomePageScope(scope)) {
     return HOME_EDITOR_HIDDEN_PATHS.has(normalizedPath);
   }
 
   if (isQuestionBankPageScope(scope)) {
     return QUESTION_BANK_EDITOR_HIDDEN_PATHS.has(normalizedPath);
+  }
+
+  if (PAGE_SPECIFIC_HIDDEN_PATHS[scope]?.has(normalizedPath)) {
+    return true;
   }
 
   return false;
@@ -1547,11 +2076,22 @@ function getArrayEditorRule(scope, path) {
 function renderPrimitiveInput(scope, path, fieldKey, value) {
   const label = getScopedFieldLabel(scope, path, fieldKey);
   const pathText = path.join('.');
-  const selectOptions = getSelectOptions(fieldKey);
+  const selectOptions = getSelectOptions(scope, fieldKey);
+  const referenceOptions = getReferenceOptions(scope, path);
   const isImageUrlField = /(?:image|background|avatar|cover|thumb)Url$/i.test(fieldKey);
   const inputPlaceholder = isImageUrlField ? '直接粘贴图床链接' : '';
   const isDirectionScope = scope === 'collection:directions' || scope === 'page:courses';
   const useWideField = isImageUrlField || isDirectionScope;
+
+  if (referenceOptions) {
+    return `<label class="form-field form-field-wide">
+      <span class="form-label">${escapeHtml(label)}</span>
+      <span class="form-hint">按名称选择，系统会自动关联对应内容。</span>
+      <select class="form-select" data-form-scope="${escapeHtml(scope)}" data-form-path="${escapeHtml(pathText)}" data-form-kind="text">
+        ${referenceOptions.map((option) => `<option value="${escapeHtml(option.value)}"${String(value ?? '') === String(option.value) ? ' selected' : ''}>${escapeHtml(option.label)}</option>`).join('')}
+      </select>
+    </label>`;
+  }
 
   if (selectOptions) {
     return `<label class="form-field${useWideField ? ' form-field-wide' : ''}">
@@ -1623,9 +2163,34 @@ function renderFormNode(scope, value, path = [], fieldKey = '') {
     const pathText = path.join('.');
     const objectItems = value.some((item) => item && typeof item === 'object' && !Array.isArray(item)) || OBJECT_ARRAY_FIELDS.has(fieldKey);
     const stringItems = value.every((item) => item == null || typeof item === 'string');
+    const referenceOptions = getReferenceOptions(scope, path);
     const arrayRule = getArrayEditorRule(scope, path);
     const visibleItems = arrayRule?.visibleItems ? value.slice(0, arrayRule.visibleItems) : value;
     const canAppend = arrayRule?.maxItems ? value.length < arrayRule.maxItems : true;
+
+    if (!objectItems && referenceOptions) {
+      return `<section class="form-block">
+        <div class="form-block-head">
+          <div>
+            <h4>${escapeHtml(label)}</h4>
+            <p>按名称选择即可，系统会自动保存关联关系，不需要手动填写 ID。</p>
+          </div>
+          ${canAppend ? `<button class="system-action" type="button" data-action="append-array-item" data-form-scope="${escapeHtml(scope)}" data-form-path="${escapeHtml(pathText)}">新增一项</button>` : ''}
+        </div>
+        <div class="form-array-list">
+          ${visibleItems.length ? visibleItems.map((item, index) => {
+            const itemPath = [...path, index];
+            const itemPathText = itemPath.join('.');
+            return `<div class="form-array-row">
+              <select class="form-select" data-form-scope="${escapeHtml(scope)}" data-form-path="${escapeHtml(itemPathText)}" data-form-kind="text">
+                ${referenceOptions.map((option) => `<option value="${escapeHtml(option.value)}"${String(item ?? '') === String(option.value) ? ' selected' : ''}>${escapeHtml(option.label)}</option>`).join('')}
+              </select>
+              <button class="system-action danger-action" type="button" data-action="remove-array-item" data-form-scope="${escapeHtml(scope)}" data-form-path="${escapeHtml(pathText)}" data-index="${index}">删除</button>
+            </div>`;
+          }).join('') : '<div class="empty-state">当前还没有已选条目，点击右上角可以新增。</div>'}
+        </div>
+      </section>`;
+    }
 
     if (!objectItems && (LINE_LIST_FIELDS.has(fieldKey) || stringItems)) {
       return renderLineListInput(scope, path, fieldKey, value);
@@ -1796,6 +2361,7 @@ function getSelectedCollectionState(collectionKey, items) {
 }
 
 const TABLE_COLLECTIONS = new Set([
+  'adminUsers',
   'directions',
   'medicalQuestions',
   'pastPapers',
@@ -1803,11 +2369,38 @@ const TABLE_COLLECTIONS = new Set([
   'teachers',
   'successCases',
   'mediaAssets',
-  'materialSeries',
+  'materialPackages',
   'materialItems'
 ]);
 
 const TABLE_COLUMNS = {
+  adminUsers: [
+    {
+      key: 'name',
+      label: '角色成员',
+      render: (item) => `<strong class="data-table-title">${escapeHtml(item.name || item.loginAccount || '未命名账号')}</strong><span class="data-table-sub">${escapeHtml(item.loginAccount || item._id || '')}</span>`
+    },
+    {
+      key: 'role',
+      label: '角色权限',
+      render: (item) => escapeHtml(item.roleLabel || item.role || '-')
+    },
+    {
+      key: 'status',
+      label: '账号状态',
+      render: (item) => `<span class="record-pill${item.status === 'active' ? ' success' : ''}">${escapeHtml(item.status === 'active' ? '可登录' : '已停用')}</span>`
+    },
+    {
+      key: 'lastLoginAt',
+      label: '最近登录',
+      render: (item) => escapeHtml(formatDateTime(item.lastLoginAt))
+    },
+    {
+      key: 'action',
+      label: '操作',
+      render: (item) => `<button class="row-action" type="button" data-action="select-item" data-collection-key="adminUsers" data-item-id="${escapeHtml(item._id || '')}">编辑</button>`
+    }
+  ],
   directions: [
     {
       key: 'name',
@@ -1959,14 +2552,15 @@ const TABLE_COLUMNS = {
       render: (item) => `<button class="row-action" type="button" data-action="select-item" data-collection-key="mediaAssets" data-item-id="${escapeHtml(item._id || '')}">编辑</button>`
     }
   ],
-  materialSeries: [
+  materialPackages: [
     {
-      key: 'name',
-      label: '套系名称',
-      render: (item) => `<strong class="data-table-title">${escapeHtml(item.name || '未命名套系')}</strong><span class="data-table-sub">${escapeHtml(item.shelfLabel || item.slug || item._id || '')}</span>`
+      key: 'title',
+      label: '套系标题',
+      render: (item) => `<strong class="data-table-title">${escapeHtml(item.title || '未命名套系包')}</strong><span class="data-table-sub">${escapeHtml(item.badge || item._id || '')}</span>`
     },
-    { key: 'category', label: '分类', render: (item) => escapeHtml(item.category || '-') },
-    { key: 'tag', label: '标签', render: (item) => escapeHtml(item.tag || '-') },
+    { key: 'direction', label: '方向', render: (item) => escapeHtml(item.direction || '-') },
+    { key: 'stage', label: '阶段', render: (item) => escapeHtml(item.stage || '-') },
+    { key: 'features', label: '卖点数', render: (item) => escapeHtml(String((item.features || []).length || 0)) },
     {
       key: 'status',
       label: '状态',
@@ -1977,17 +2571,18 @@ const TABLE_COLUMNS = {
     {
       key: 'action',
       label: '操作',
-      render: (item) => `<button class="row-action" type="button" data-action="select-item" data-collection-key="materialSeries" data-item-id="${escapeHtml(item._id || '')}">编辑</button>`
+      render: (item) => `<button class="row-action" type="button" data-action="select-item" data-collection-key="materialPackages" data-item-id="${escapeHtml(item._id || '')}">编辑</button>`
     }
   ],
   materialItems: [
     {
       key: 'title',
-      label: '单品标题',
-      render: (item) => `<strong class="data-table-title">${escapeHtml(item.title || '未命名单品')}</strong><span class="data-table-sub">${escapeHtml(item.subtitle || item.seriesId || item._id || '')}</span>`
+      label: '资料标题',
+      render: (item) => `<strong class="data-table-title">${escapeHtml(item.title || '未命名资料卡')}</strong><span class="data-table-sub">${escapeHtml(item.subtitle || item._id || '')}</span>`
     },
-    { key: 'type', label: '类型', render: (item) => escapeHtml(item.type || '-') },
+    { key: 'direction', label: '方向', render: (item) => escapeHtml(item.direction || '-') },
     { key: 'stage', label: '阶段', render: (item) => escapeHtml(item.stage || '-') },
+    { key: 'type', label: '类型', render: (item) => escapeHtml(item.type || '-') },
     {
       key: 'status',
       label: '状态',
@@ -2007,6 +2602,20 @@ const STATUS_FILTER_OPTIONS = [
   { key: 'all', label: '全部' },
   { key: 'published', label: '已发布' },
   { key: 'draft', label: '草稿' }
+];
+
+const ADMIN_STATUS_FILTER_OPTIONS = [
+  { key: 'all', label: '全部状态' },
+  { key: 'active', label: '可登录' },
+  { key: 'disabled', label: '已停用' }
+];
+
+const ADMIN_ROLE_FILTER_OPTIONS = [
+  { key: 'all', label: '全部角色' },
+  { key: 'admin', label: '管理员' },
+  { key: 'publisher', label: '发布老师' },
+  { key: 'editor', label: '编辑老师' },
+  { key: 'viewer', label: '查看老师' }
 ];
 
 function getCollectionFilterState(collectionKey) {
@@ -2030,7 +2639,8 @@ function getFilteredCollectionItems(collectionKey, items) {
       ...(Array.isArray(item.specialties) ? item.specialties : []),
       ...(Array.isArray(item.tags) ? item.tags : []),
       ...(Array.isArray(item.chips) ? item.chips : []),
-      ...(Array.isArray(item.contents) ? item.contents : []),
+      ...(Array.isArray(item.features) ? item.features : []),
+      ...(Array.isArray(item.contentItemIds) ? item.contentItemIds : []),
       ...(Array.isArray(item.questionIds) ? item.questionIds : [])
     ];
     const haystack = [
@@ -2058,10 +2668,47 @@ function getFilteredCollectionItems(collectionKey, items) {
       item.alt,
       item.url,
       item.thumbUrl,
-      item.seriesId,
-      item.shelfLabel,
+      item.badge,
+      item.target,
+      item.solves,
+      item.details,
       item.year,
       ...stringLists
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+
+    return haystack.includes(keyword);
+  });
+}
+
+function getAdminUserFilterState() {
+  const ui = getViewUi();
+  return {
+    keyword: ui.filters.adminUsers || '',
+    status: ui.statusFilters.adminUsers || 'all',
+    role: ui.roleFilters.adminUsers || 'all'
+  };
+}
+
+function getFilteredAdminUsers(items = []) {
+  const filterState = getAdminUserFilterState();
+  const keyword = filterState.keyword.trim().toLowerCase();
+
+  return items.filter((item) => {
+    const statusMatched = filterState.status === 'all' ? true : (item.status || 'active') === filterState.status;
+    const roleMatched = filterState.role === 'all' ? true : (item.role || 'editor') === filterState.role;
+    if (!statusMatched || !roleMatched) return false;
+    if (!keyword) return true;
+
+    const haystack = [
+      item._id,
+      item.name,
+      item.loginAccount,
+      item.roleLabel,
+      item.role,
+      item.status
     ]
       .filter(Boolean)
       .join(' ')
@@ -2113,6 +2760,105 @@ function renderCollectionEditor(collectionKey, selected, collectionMeta) {
       </div>
     </article>
   </div>`;
+}
+
+function renderAdminUsersSection(collectionKey, items) {
+  const collectionMeta = getCollectionMeta(collectionKey);
+  const filteredItems = getFilteredAdminUsers(items);
+  const selected = getSelectedCollectionState(collectionKey, filteredItems.length ? filteredItems : items);
+  const filterState = getAdminUserFilterState();
+  const ui = getViewUi();
+  const isEditorOpen = Boolean(ui.openEditors[collectionKey]);
+  const totalCount = items.length;
+  const activeCount = items.filter((item) => (item.status || 'active') === 'active').length;
+  const adminCount = items.filter((item) => (item.role || 'editor') === 'admin').length;
+  const lastLoginCount = items.filter((item) => item.lastLoginAt).length;
+
+  return `<section class="collection-section workspace-motion-scope role-management-scope">
+    <div class="table-layout table-layout-single">
+      <article class="panel table-panel table-panel-focus workspace-panel-enter account-table-panel">
+        <div class="panel-head workspace-enter" style="--enter-delay: 0ms;">
+          <div>
+            <h3>${escapeHtml(collectionMeta.label)}</h3>
+            <p>给老师分配登录账号、角色和启停状态。右侧固定编辑入口，保存后会直接同步到小程序云端数据库。</p>
+          </div>
+          <div class="panel-actions">
+            <button class="system-action" type="button" data-action="reload-view">刷新列表</button>
+            <button class="system-action" type="button" data-action="new-item" data-collection-key="${escapeHtml(collectionKey)}">新增账号</button>
+          </div>
+        </div>
+        <div class="table-toolbar workspace-enter account-toolbar" style="--enter-delay: 60ms;">
+          <div class="account-toolbar-main">
+            <label class="table-search">
+              ${icon('search')}
+              <input type="text" value="${escapeHtml(filterState.keyword)}" placeholder="搜索老师姓名、登录账号或角色" data-list-filter="${escapeHtml(collectionKey)}" />
+            </label>
+            <div class="account-filter-stack">
+              <label class="account-filter">
+                <span>角色</span>
+                <select class="form-select account-filter-select" data-role-filter="${escapeHtml(collectionKey)}">
+                  ${ADMIN_ROLE_FILTER_OPTIONS.map((option) => `<option value="${escapeHtml(option.key)}"${filterState.role === option.key ? ' selected' : ''}>${escapeHtml(option.label)}</option>`).join('')}
+                </select>
+              </label>
+              <label class="account-filter">
+                <span>状态</span>
+                <select class="form-select account-filter-select" data-account-status-filter="${escapeHtml(collectionKey)}">
+                  ${ADMIN_STATUS_FILTER_OPTIONS.map((option) => `<option value="${escapeHtml(option.key)}"${filterState.status === option.key ? ' selected' : ''}>${escapeHtml(option.label)}</option>`).join('')}
+                </select>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="editor-meta workspace-enter account-summary-chips" style="--enter-delay: 120ms;">
+          <span class="meta-chip">账号总数 ${escapeHtml(String(totalCount))}</span>
+          <span class="meta-chip">可登录 ${escapeHtml(String(activeCount))}</span>
+          <span class="meta-chip">管理员 ${escapeHtml(String(adminCount))}</span>
+          <span class="meta-chip">有登录记录 ${escapeHtml(String(lastLoginCount))}</span>
+        </div>
+        <div class="table-shell workspace-enter" style="--enter-delay: 180ms;">
+          ${filteredItems.length ? `<table class="data-table data-table-admin-users">
+            <thead>
+              <tr>
+                <th>角色成员</th>
+                <th>角色权限</th>
+                <th>登录状态</th>
+                <th>最近登录</th>
+                <th class="account-actions-sticky">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${filteredItems.map((item, index) => {
+                const isActive = isEditorOpen && selected.itemId === item._id && !selected.isDraft;
+                const roleKey = escapeHtml(item.role || 'editor');
+                const statusText = item.status === 'disabled' ? '已停用' : '可登录';
+                const lastLogin = item.lastLoginAt ? formatDateTime(item.lastLoginAt) : '未登录过';
+                const lastLoginHint = item.lastLoginAt ? formatRelative(item.lastLoginAt) : '账号创建后尚未登录';
+                return `<tr class="workspace-row-enter${isActive ? ' active' : ''}" style="--enter-delay: ${220 + index * 24}ms;" data-action="select-item" data-collection-key="${escapeHtml(collectionKey)}" data-item-id="${escapeHtml(item._id || '')}">
+                  <td>
+                    <div class="account-user-cell">
+                      <strong class="data-table-title">${escapeHtml(item.name || item.loginAccount || '未命名账号')}</strong>
+                      <span class="data-table-sub">登录账号：${escapeHtml(item.loginAccount || '-')}</span>
+                      <span class="data-table-minor">云端 ID：${escapeHtml(item._id || '-')}</span>
+                    </div>
+                  </td>
+                  <td><span class="record-pill account-role-pill role-${roleKey}">${escapeHtml(item.roleLabel || item.role || '编辑老师')}</span></td>
+                  <td><span class="record-pill account-status-pill${item.status !== 'disabled' ? ' success' : ''}">${escapeHtml(statusText)}</span></td>
+                  <td>
+                    <strong class="data-table-title">${escapeHtml(lastLogin)}</strong>
+                    <span class="data-table-sub">${escapeHtml(lastLoginHint)}</span>
+                  </td>
+                  <td class="account-actions-sticky">
+                    <button class="row-action row-action-wide" type="button" data-action="select-item" data-collection-key="${escapeHtml(collectionKey)}" data-item-id="${escapeHtml(item._id || '')}">编辑</button>
+                  </td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>` : '<div class="empty-state">当前筛选下没有账号，试试清空条件或新增一位老师账号。</div>'}
+        </div>
+      </article>
+      ${renderCollectionEditor(collectionKey, selected, collectionMeta)}
+    </div>
+  </section>`;
 }
 
 function renderPageEditorOverlay(pageKey, pageLabel, page) {
@@ -2285,6 +3031,10 @@ function getPageSectionRows(pageKey, page = {}) {
   }
 
   if (pageKey === 'home') {
+    const directionNameMap = Object.fromEntries(
+      ((state.currentData?.collections?.directions || [])).map((item) => [item._id, item.name || item._id])
+    );
+    const featuredNames = (page.featuredDirectionIds || []).map((id) => directionNameMap[id]).filter(Boolean);
     const statCount = Math.min((page.overviewStats || []).length, 3);
     const quickLinkCount = Math.min((page.quickLinks || []).length, 4);
     const advantageCount = Math.min((page.advantages || []).length, 4);
@@ -2318,8 +3068,8 @@ function getPageSectionRows(pageKey, page = {}) {
         id: 'directions',
         title: '热门方向',
         desc: '对应首页“热门方向”区块里展示的方向卡片。',
-        meta: (page.featuredDirectionIds || []).slice(0, 2).join(' / ') || `${(page.featuredDirectionIds || []).length} 个方向 ID`,
-        location: '热门方向展示 ID',
+        meta: featuredNames.slice(0, 2).join(' / ') || `${(page.featuredDirectionIds || []).length} 张热门方向卡片`,
+        location: '热门方向卡片',
         keys: ['featuredDirectionIds'],
         linkedSources: [
           {
@@ -2350,7 +3100,7 @@ function getPageSectionRows(pageKey, page = {}) {
             .map((item) => item?.label)
             .filter(Boolean)
             .join(' / ') || `${environmentCount} 张环境图片`,
-        location: '图片名称 / 图片 URL',
+        location: '图片名称 / 图片地址',
         keys: ['environmentSection'],
         linkedSources: [
           {
@@ -2404,7 +3154,7 @@ function getPageSectionRows(pageKey, page = {}) {
         title: '两张重点方向卡片',
         desc: '对应页面中间两张重点方向大卡片。',
         meta: featuredNames.slice(0, 2).join(' / ') || `${(page.featuredDirectionIds || []).length} 张重点方向卡片`,
-        location: '两张重点方向卡片 ID',
+        location: '两张重点方向卡片',
         keys: ['featuredDirectionIds'],
         linkedSources: [
           {
@@ -2440,45 +3190,45 @@ function getPageSectionRows(pageKey, page = {}) {
     return [
       {
         id: 'hero',
-        title: '师资页首屏',
-        desc: '对应师资页顶部标题、说明和标签。',
+        title: '代表老师首屏',
+        desc: '对应师资页顶部的大标题、说明和信任标签。',
         meta: page.hero?.title || page.hero?.desc || '首屏标题 / 说明',
         location: '首屏标题 / 首屏说明 / 首屏标签',
         keys: ['hero']
       },
       {
         id: 'introCard',
-        title: '师资介绍卡',
-        desc: '对应师资页首屏下方的介绍卡片。',
-        meta: page.introCard?.title || page.introCard?.desc || '介绍卡标题 / 说明',
-        location: '介绍卡标题 / 介绍卡说明',
+        title: '带学方式说明',
+        desc: '对应师资页首屏下方的说明卡，解释主讲、答疑和督学如何一起带学。',
+        meta: page.introCard?.title || page.introCard?.desc || '说明卡标题 / 说明',
+        location: '说明卡标题 / 说明卡说明',
         keys: ['introCard']
       },
       {
         id: 'features',
-        title: '师资页优势点',
-        desc: '对应师资页中部的优势标签和补充说明。',
-        meta: `${(page.features || []).length} 项优势点`,
-        location: '优势标题 / 优势说明 / 图标标识',
+        title: '老师协作亮点',
+        desc: '对应师资页中部的协作亮点卡片。',
+        meta: `${(page.features || []).length} 项协作亮点`,
+        location: '亮点标题 / 亮点说明',
         keys: ['features']
       },
       {
         id: 'teacherCollection',
-        title: '老师卡片条目',
-        desc: '对应师资页里每一位老师的头像、姓名、头衔、标签和简介。',
+        title: '代表老师与其余老师条目',
+        desc: '对应师资页里每一位老师的头像、姓名、身份、标签、简介和擅长方向。系统会按排序取第一位作为顶部代表老师，其余老师在下方纵向展示。',
         meta: `${(state.currentData?.collections?.teachers || []).length} 位老师`,
-        location: '老师头像 / 姓名 / 头衔 / 标签 / 简介',
+        location: '老师头像 / 姓名 / 身份 / 标签 / 简介 / 擅长方向 / 排序',
         keys: [],
         linkOnly: true,
         targetView: 'teachers',
         targetCollectionKey: 'teachers',
         actionLabel: '去师资列表修改',
-        statusText: '已跳转到师资列表，请修改老师卡片条目。'
+        statusText: '已跳转到师资列表，请修改老师条目。'
       },
       {
         id: 'cta',
-        title: '师资页底部咨询区',
-        desc: '对应师资页最下方的咨询承接区。',
+        title: '底部咨询承接区',
+        desc: '对应师资页最下方的咨询承接卡片。',
         meta: page.cta?.title || page.cta?.buttonText || '咨询区标题 / 按钮',
         location: '咨询区标题 / 咨询区说明 / 咨询按钮文案',
         keys: ['cta']
@@ -2490,26 +3240,26 @@ function getPageSectionRows(pageKey, page = {}) {
     return [
       {
         id: 'hero',
-        title: '成果页首屏',
-        desc: '对应成果页顶部标题、说明和标签。',
+        title: '结果首屏',
+        desc: '对应成果页顶部的大标题、说明和首屏标签。',
         meta: page.hero?.title || page.hero?.desc || '首屏标题 / 说明',
         location: '首屏标题 / 首屏说明 / 首屏标签',
         keys: ['hero']
       },
       {
         id: 'stats',
-        title: '成果页数据卡',
-        desc: '对应成果页顶部的数据卡与成果摘要。',
-        meta: `${(page.stats || []).length} 项成果数据`,
+        title: '结果证明数据',
+        desc: '对应成果页首屏里的 3 张结果证明数据卡。',
+        meta: `${(page.stats || []).length} 项结果证明`,
         location: '数据数值 / 数据标签 / 补充说明',
         keys: ['stats']
       },
       {
         id: 'successCases',
         title: '上岸案例条目',
-        desc: '对应成果页案例卡片里的标题、年份、学校、简介和标签。',
+        desc: '对应成果页里的代表案例和后续案例时间线。',
         meta: `${(state.currentData?.collections?.successCases || []).length} 个成果案例`,
-        location: '案例标题 / 学校 / 年份 / 摘要 / 标签',
+        location: '案例标题 / 案例说明 / 上岸年份 / 案例分类 / 封面图片',
         keys: [],
         linkOnly: true,
         targetView: 'results',
@@ -2519,8 +3269,8 @@ function getPageSectionRows(pageKey, page = {}) {
       },
       {
         id: 'cta',
-        title: '成果页底部咨询区',
-        desc: '对应成果页最下方的咨询承接区。',
+        title: '底部咨询承接区',
+        desc: '对应成果页最下方的咨询承接卡片。',
         meta: page.cta?.title || page.cta?.buttonText || '咨询区标题 / 按钮',
         location: '咨询区标题 / 咨询区说明 / 咨询按钮文案',
         keys: ['cta']
@@ -2559,7 +3309,7 @@ function getPageSectionRows(pageKey, page = {}) {
         title: '环境图片区',
         desc: '对应关于页的校区环境图片。',
         meta: `${(page.environmentImages || []).length} 张环境图片`,
-        location: '图片标题 / 图片 URL',
+        location: '图片标题 / 图片地址',
         keys: ['environmentImages']
       },
       {
@@ -2587,85 +3337,61 @@ function getPageSectionRows(pageKey, page = {}) {
   }
 
   if (pageKey === 'materials') {
-    const seriesMap = Object.fromEntries(((state.currentData?.collections?.materialSeries || [])).map((item) => [item._id, item.name || item._id]));
-    const featuredSeriesNames = (page.featuredSeriesIds || []).map((id) => seriesMap[id]).filter(Boolean);
-
     return [
       {
-        id: 'hero',
-        title: '资料页首屏',
-        desc: '对应资料页顶部标题、说明和标签。',
-        meta: page.hero?.title || page.hero?.desc || '首屏标题 / 说明',
-        location: '首屏标题 / 首屏说明 / 首屏标签',
-        keys: ['hero']
+        id: 'topSetup',
+        title: '第 1 步 · 页面顶部',
+        desc: '先改标题、顶部方向切换和阶段按钮，学生最先看到的是这里。',
+        meta: page.header?.title || `${(page.directionTabs || []).length} 个方向按钮 / ${(page.stageTabs || []).length} 个阶段按钮`,
+        location: '页面标题 / 搜索按钮 / 方向切换 / 阶段按钮',
+        keys: ['header', 'directionTabs', 'stageTabs']
       },
       {
-        id: 'tabs',
-        title: '顶部分类标签',
-        desc: '对应资料页顶部分类 tab。',
-        meta: `${(page.tabs || []).length} 个分类标签`,
-        location: '标签名称 / 标签说明',
-        keys: ['tabs']
+        id: 'mainSection',
+        title: '第 2 步 · 主推区标题',
+        desc: '这里决定主推区的阅读重点，先把区块标题和右侧提示改清楚。',
+        meta: page.mainSection?.title || page.mainSection?.sideNote || '区块标题 / 右侧提示',
+        location: '区块标题 / 右侧提示',
+        keys: ['mainSection']
       },
       {
-        id: 'overviewStats',
-        title: '资料页数据卡',
-        desc: '对应资料页顶部统计信息卡。',
-        meta: `${(page.overviewStats || []).length} 项统计数据`,
-        location: '数据数值 / 数据标签 / 补充说明',
-        keys: ['overviewStats']
+        id: 'materialPackages',
+        title: '第 3 步 · 主推套系内容',
+        desc: '这里改大卡里的角标、标题、卖点、适合人群和解决问题，是最核心的转化内容。',
+        meta: `${(state.currentData?.collections?.materialPackages || []).length} 个套系包`,
+        location: '角标 / 套系标题 / 卖点 / 适合人群 / 解决问题 / 包含资料',
+        keys: [],
+        linkOnly: true,
+        targetView: 'media',
+        targetCollectionKey: 'materialPackages',
+        actionLabel: '去主推套系包修改',
+        statusText: '已跳转到主推套系包列表。'
       },
       {
-        id: 'featuredSeriesIds',
-        title: '精选资料套系',
-        desc: '对应资料页首页展示的精选资料套系。',
-        meta: featuredSeriesNames.join(' / ') || `${(page.featuredSeriesIds || []).length} 个精选套系`,
-        location: '精选套系 ID',
-        keys: ['featuredSeriesIds'],
+        id: 'materialItems',
+        title: '第 4 步 · 资料货架',
+        desc: '先改货架标题和滑动提示，再去修改每张资料卡的标题、副标题、说明和封面色。',
+        meta: `${(state.currentData?.collections?.materialItems || []).length} 张资料卡`,
+        location: '货架标题 / 滑动提示 / 资料标题 / 副标题 / 资料说明 / 渐变色',
+        keys: ['shelfSection'],
         linkedSources: [
           {
-            label: '套系内容详情',
-            desc: '精选套系卡片里的名称、摘要、标签和封面来自“教材套系”列表。',
-            actionLabel: '去教材套系修改',
+            label: '资料卡内容',
+            desc: '每张横向资料卡的标题、副标题、说明和封面渐变色，都在“货架资料卡”列表里修改。',
+            actionLabel: '去货架资料卡修改',
             targetView: 'media',
-            targetCollectionKey: 'materialSeries',
-            statusText: '已跳转到教材套系列表，请修改精选资料套系内容。'
+            targetCollectionKey: 'materialItems',
+            statusText: '已跳转到货架资料卡列表。'
           }
         ]
       },
       {
-        id: 'materialSeries',
-        title: '教材套系列表',
-        desc: '对应资料页里的每个资料套系卡片。',
-        meta: `${(state.currentData?.collections?.materialSeries || []).length} 个资料套系`,
-        location: '套系名称 / 摘要 / 标签 / 封面',
-        keys: [],
-        linkOnly: true,
-        targetView: 'media',
-        targetCollectionKey: 'materialSeries',
-        actionLabel: '去教材套系修改',
-        statusText: '已跳转到教材套系列表。'
-      },
-      {
-        id: 'materialItems',
-        title: '教材单品条目',
-        desc: '对应资料页套系下方的具体资料单品。',
-        meta: `${(state.currentData?.collections?.materialItems || []).length} 个资料单品`,
-        location: '资料标题 / 类型 / 阶段 / 下载或跳转信息',
-        keys: [],
-        linkOnly: true,
-        targetView: 'media',
-        targetCollectionKey: 'materialItems',
-        actionLabel: '去教材单品修改',
-        statusText: '已跳转到教材单品列表。'
-      },
-      {
-        id: 'cta',
-        title: '资料页底部咨询区',
-        desc: '对应资料页最下方的咨询承接区。',
-        meta: page.cta?.title || page.cta?.buttonText || '咨询区标题 / 按钮',
-        location: '咨询区标题 / 咨询区说明 / 咨询按钮文案',
-        keys: ['cta']
+        id: 'consultBar',
+        title: '第 5 步 · 底部咨询条',
+        desc: '最后再改底部咨询承接区，告诉学生下一步该怎么联系老师。',
+        meta: page.consultBar?.title || page.consultBar?.buttonText || '咨询标题 / 按钮',
+        location: '咨询标题 / 咨询说明 / 按钮文案',
+        keys: ['consultBar']
       }
     ];
   }
@@ -2904,6 +3630,44 @@ function renderPageSectionsTable(pageKey, rows, selectedSectionId, actionName) {
   </div>`;
 }
 
+function renderPageWorkflowGuide(pageKey, rows = []) {
+  if (pageKey !== 'materials' || !rows.length) {
+    return '';
+  }
+
+  const cards = [
+    {
+      title: '先改页面顶部',
+      desc: '如果你只是想先让页面顺眼一点，先点“第 1 步 · 页面顶部”。',
+      meta: '标题 / 方向切换 / 阶段按钮'
+    },
+    {
+      title: '再改主推大卡',
+      desc: '主推套系是学生最容易停下来阅读的地方，优先改这里。',
+      meta: '角标 / 主标题 / 卖点 / 适合人群'
+    },
+    {
+      title: '最后补货架和咨询',
+      desc: '资料卡和底部咨询条放在最后改，节奏更清楚，也不容易乱。',
+      meta: '资料卡 / 咨询按钮'
+    }
+  ];
+
+  return `<div class="page-workflow-guide workspace-enter" style="--enter-delay: 140ms;">
+    <div class="page-workflow-guide-head">
+      <strong>推荐修改顺序</strong>
+      <span>不用把所有词条一次看完，按这个顺序改就能快速完成一张页面。</span>
+    </div>
+    <div class="page-workflow-guide-grid">
+      ${cards.map((card) => `<div class="page-workflow-guide-card">
+        <strong>${escapeHtml(card.title)}</strong>
+        <p>${escapeHtml(card.desc)}</p>
+        <em>${escapeHtml(card.meta)}</em>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
 function renderQuestionBankPagePanel(view, page) {
   if (!view.pageKey || !page) return '';
 
@@ -3049,8 +3813,8 @@ function renderQuestionBankImportOverlay() {
                 <thead>
                   <tr>
                     <th>行号</th>
-                    <th>题目 ID</th>
-                    <th>试卷 ID</th>
+                    <th>题目编号</th>
+                    <th>试卷编号</th>
                     <th>题型</th>
                     <th>题干预览</th>
                     <th>年份</th>
@@ -3118,8 +3882,9 @@ function renderPageWorkspace(view, data) {
             <span>${escapeHtml(`共 ${rows.length} 个核心区块，字段名称和前端展示位置已统一，建议按从上到下逐块维护。`)}</span>
             <em>${escapeHtml(`当前页面字段 ${Object.keys(data.page || {}).length} 个`)}</em>
           </div>
+          ${renderPageWorkflowGuide(view.pageKey, rows)}
           ${renderPageSectionNavCards(view.pageKey, rows, selectedSectionId, 'open-page-section-editor')}
-          ${renderPageSectionsTable(view.pageKey, rows, selectedSectionId, 'open-page-section-editor')}
+          ${view.pageKey === 'materials' ? '' : renderPageSectionsTable(view.pageKey, rows, selectedSectionId, 'open-page-section-editor')}
         </article>
         ${renderPageSectionOverlay(view.pageKey, view.pageLabel, data.page, rows)}
       </div>
@@ -3476,7 +4241,8 @@ function renderTableCollectionSection(collectionKey, items) {
 }
 
 function renderSidebar() {
-  refs.nav.innerHTML = NAV_ITEMS.map((item) => `<button class="nav-item${state.activeView === item.key ? ' active' : ''}" type="button" data-nav="${escapeHtml(item.key)}" aria-label="${escapeHtml(item.label)}">
+  const visibleItems = getVisibleNavItems();
+  refs.nav.innerHTML = visibleItems.map((item) => `<button class="nav-item${state.activeView === item.key ? ' active' : ''}" type="button" data-nav="${escapeHtml(item.key)}" aria-label="${escapeHtml(item.label)}">
     <span class="nav-label">${escapeHtml(item.label)}</span>
   </button>`).join('');
 }
@@ -3492,9 +4258,22 @@ function setStatus(message, tone = 'ok') {
   refs.statusPill.dataset.tone = tone;
 }
 
+function isCloudWriteReady() {
+  return state.health?.mode === 'cloud' && state.health?.writeTarget === 'cloud';
+}
+
+function getCloudConnectionLabel() {
+  return isCloudWriteReady() ? '已锁定云端 CMS 写入' : '云端 CMS 未就绪';
+}
+
+function isPageConflictError(error) {
+  return error?.statusCode === 409 || error?.code === 'PAGE_CONFLICT';
+}
+
 function getSaveSuccessMessage(label = '内容') {
-  const target = state.health?.mode === 'cloud' ? '云端' : '本地';
-  return `${label}已保存并同步到${target}`;
+  return isCloudWriteReady()
+    ? `${label}已保存并同步到云端 CMS`
+    : `${label}暂未写入，请先完成云环境配置`;
 }
 
 function hasOpenEditor(viewKey = state.activeView) {
@@ -3523,6 +4302,11 @@ function renderOverview(data) {
   const drafts = Object.values(data.collections).flat().filter((item) => item.status !== 'published').length;
   const todayUpdates = data.recentUpdates.filter((item) => isToday(item.updatedAt)).length;
   const mediaCount = (data.collections.mediaAssets || []).length;
+  const writeSourceLabel = isCloudWriteReady() ? '云端 CMS' : '未就绪';
+  const writeSourceNote = isCloudWriteReady()
+    ? '当前写入已锁定到小程序云端数据库。'
+    : '云环境未完成，当前后台已暂停生产写入。';
+  const conflictGuardLabel = state.health?.collaboration?.pageConflictProtection ? '已启用' : '待补齐';
 
   refs.content.innerHTML = `<section class="dashboard-page workspace-motion-scope">
     <div class="stats-grid">
@@ -3553,7 +4337,7 @@ function renderOverview(data) {
         <div class="panel-head">
           <div>
             <h3>页面配置状态</h3>
-            <p>${escapeHtml(state.health?.mode === 'cloud' ? '当前为云端模式' : '当前为本地模式')}，这里展示各页面最后更新时间。</p>
+            <p>${escapeHtml(writeSourceNote)} 这里展示各页面最后更新时间。</p>
           </div>
         </div>
         <div class="record-list compact-list overview-list">
@@ -3615,14 +4399,19 @@ function renderOverview(data) {
         </div>
         <div class="system-grid">
           <div class="system-card">
-            <span>数据源模式</span>
-            <div class="system-value"><strong>${escapeHtml(state.health?.mode || 'unknown')}</strong><em>${escapeHtml(String(state.health?.port || ''))}</em></div>
-            <div class="system-track"><span class="tone-violet" style="width:${state.health?.mode === 'cloud' ? 100 : 72}%"></span></div>
+            <span>生产写源</span>
+            <div class="system-value"><strong>${escapeHtml(writeSourceLabel)}</strong><em>${escapeHtml(state.health?.config?.envId || '未配置 env')}</em></div>
+            <div class="system-track"><span class="tone-violet" style="width:${isCloudWriteReady() ? 100 : 28}%"></span></div>
           </div>
           <div class="system-card">
             <span>集合数量</span>
             <div class="system-value"><strong>${escapeHtml(String(Object.keys(data.collections).length))}</strong><em>collections</em></div>
             <div class="system-track"><span class="tone-green" style="width:${Math.min(100, Object.keys(data.collections).length * 14)}%"></span></div>
+          </div>
+          <div class="system-card">
+            <span>冲突保护</span>
+            <div class="system-value"><strong>${escapeHtml(conflictGuardLabel)}</strong><em>页面保存 revision</em></div>
+            <div class="system-track"><span class="tone-sky" style="width:${state.health?.collaboration?.pageConflictProtection ? 100 : 35}%"></span></div>
           </div>
         </div>
         <div class="system-actions">
@@ -3706,6 +4495,10 @@ function renderTableFirstModule(view, data) {
 }
 
 function renderCollectionSection(collectionKey, items) {
+  if (collectionKey === 'adminUsers') {
+    return renderAdminUsersSection(collectionKey, items);
+  }
+
   if (TABLE_COLLECTIONS.has(collectionKey)) {
     return renderTableCollectionSection(collectionKey, items);
   }
@@ -3971,6 +4764,12 @@ async function loadModuleData(view) {
 }
 
 async function renderActiveView(force = false) {
+  if (!state.auth?.authenticated) {
+    renderAuthScreen();
+    return;
+  }
+  applyAuthShell(false);
+  ensureActiveViewAvailable();
   const view = VIEW_CONFIG[state.activeView];
   if (!view) return;
   setTopbar(view);
@@ -3987,8 +4786,15 @@ async function renderActiveView(force = false) {
     } else {
       renderModule(view, state.currentData);
     }
-    setStatus(state.health?.mode === 'cloud' ? '已连接云端 CMS' : '本地 CMS 已连接');
+    setStatus(getCloudConnectionLabel(), isCloudWriteReady() ? 'ok' : 'warn');
   } catch (error) {
+    if (error.statusCode === 401) {
+      await loadAuthState();
+      renderSessionControl();
+      renderAuthScreen('登录状态已失效，请重新登录。');
+      setStatus('请先登录后台账号', 'error');
+      return;
+    }
     state.error = error.message || '加载失败';
     renderError(state.error);
     setStatus('数据同步失败', 'error');
@@ -4051,10 +4857,17 @@ async function hydrateMeta() {
   const [meta, health] = await Promise.all([request('/api/meta'), request('/api/health')]);
   state.meta = meta;
   state.health = health;
+  if (meta.currentUser) {
+    state.auth.user = meta.currentUser;
+  }
+  if (meta.permissions) {
+    state.auth.permissions = meta.permissions;
+  }
 }
 
 async function switchView(viewKey) {
   if (!VIEW_CONFIG[viewKey]) return;
+  if (!getVisibleNavItems().some((item) => item.key === viewKey)) return;
   state.activeView = viewKey;
   await renderActiveView(true);
 }
@@ -4078,6 +4891,35 @@ function bindGlobalActions() {
     await switchView(button.dataset.nav);
   });
 
+  refs.content.addEventListener('submit', async (event) => {
+    const form = event.target.closest('[data-auth-form]');
+    if (!form) return;
+    event.preventDefault();
+    const mode = form.dataset.authForm;
+    const formData = new FormData(form);
+    try {
+      setStatus(mode === 'bootstrap' ? '正在创建管理员...' : '正在登录后台...', 'loading');
+      if (mode === 'bootstrap') {
+        await submitBootstrap(formData);
+      } else {
+        await submitLogin(formData);
+      }
+      await loadAuthState();
+      renderSessionControl();
+      if (state.auth.authenticated) {
+        await hydrateMeta();
+        await renderActiveView(true);
+        setStatus(mode === 'bootstrap' ? '管理员已创建并登录' : '登录成功');
+        finishBootAnimation();
+      } else {
+        renderAuthScreen('登录未完成，请检查账号状态。');
+      }
+    } catch (error) {
+      renderAuthScreen(error.message || '登录失败，请稍后重试。');
+      setStatus(error.message || '登录失败', 'error');
+    }
+  });
+
   refs.content.addEventListener('click', async (event) => {
     const button = event.target.closest('[data-action]');
     if (!button) return;
@@ -4091,6 +4933,22 @@ function bindGlobalActions() {
 
       if (action === 'reload-view') {
         await renderActiveView(true);
+        return;
+      }
+
+      if (action === 'toggle-password') {
+        const field = button.closest('.auth-password-input');
+        const input = field?.querySelector('input[name="password"]');
+        if (!input) return;
+        const nextType = input.type === 'password' ? 'text' : 'password';
+        input.type = nextType;
+        button.setAttribute('aria-pressed', nextType === 'text' ? 'true' : 'false');
+        field.classList.toggle('is-visible', nextType === 'text');
+        return;
+      }
+
+      if (action === 'forgot-password') {
+        setStatus('请联系系统管理员重置后台密码。', 'warn');
         return;
       }
 
@@ -4131,10 +4989,20 @@ function bindGlobalActions() {
       }
 
       if (action === 'save-page' && pageKey) {
-        setStatus('正在保存页面...', 'loading');
-        await savePage(pageKey);
-        await renderActiveView(true);
-        setStatus(getSaveSuccessMessage('页面'));
+        try {
+          setStatus('正在保存页面...', 'loading');
+          await savePage(pageKey);
+          await renderActiveView(true);
+          setStatus(getSaveSuccessMessage('页面'), isCloudWriteReady() ? 'ok' : 'warn');
+        } catch (error) {
+          if (isPageConflictError(error)) {
+            const latestUpdatedAt = error?.data?.updatedAt ? formatDateTime(error.data.updatedAt) : '刚刚';
+            setStatus('页面已被其他老师更新，请先重新拉取。', 'warn');
+            window.alert(`${error.message || '当前页面已被其他老师更新，请先重新拉取后再保存。'}\n\n最新更新时间：${latestUpdatedAt}\n建议先刷新页面，再确认最新内容后继续编辑。`);
+            return;
+          }
+          throw error;
+        }
         return;
       }
 
@@ -4335,7 +5203,7 @@ function bindGlobalActions() {
         setStatus('正在删除条目...', 'loading');
         await deleteCollectionItem(collectionKey, itemId);
         await renderActiveView(true);
-        setStatus(state.health?.mode === 'cloud' ? '条目已从云端删除' : '条目已删除');
+        setStatus('条目已从云端 CMS 删除');
       }
     } catch (error) {
       setStatus(error.message || '操作失败', 'error');
@@ -4377,6 +5245,24 @@ function bindGlobalActions() {
       return;
     }
 
+    const roleFilter = event.target.closest('[data-role-filter]');
+    if (roleFilter) {
+      const ui = getViewUi();
+      const collectionKey = roleFilter.dataset.roleFilter;
+      ui.roleFilters[collectionKey] = roleFilter.value || 'all';
+      renderModule(VIEW_CONFIG[state.activeView], state.currentData);
+      return;
+    }
+
+    const accountStatusFilter = event.target.closest('[data-account-status-filter]');
+    if (accountStatusFilter) {
+      const ui = getViewUi();
+      const collectionKey = accountStatusFilter.dataset.accountStatusFilter;
+      ui.statusFilters[collectionKey] = accountStatusFilter.value || 'all';
+      renderModule(VIEW_CONFIG[state.activeView], state.currentData);
+      return;
+    }
+
     const input = event.target.closest('[data-form-path]');
     if (!input) return;
 
@@ -4411,41 +5297,74 @@ function bindGlobalActions() {
     }
   });
 
-  refs.themeToggle.addEventListener('click', () => {
-    applyTheme(state.theme === 'dark' ? 'light' : 'dark');
-  });
-
   refs.sidebarCollapse.addEventListener('click', () => {
     applySidebarCollapsed(!state.sidebarCollapsed);
   });
 
-  refs.refreshView.addEventListener('click', async () => {
-    await renderActiveView(true);
+  refs.toolbarActions.addEventListener('click', async (event) => {
+    const button = event.target.closest('[data-action]');
+    if (button?.dataset.action === 'logout') {
+      await logoutCurrentUser();
+      return;
+    }
   });
 
-  refs.topbarSearch.addEventListener('click', () => {
-    window.alert('当前版本先聚焦内容编辑，搜索入口下一轮再补。');
-  });
+  document.addEventListener('click', async (event) => {
+    const logoutButton = event.target.closest('[data-action="logout"]');
+    if (logoutButton && !logoutButton.closest('.toolbar-actions')) {
+      await logoutCurrentUser();
+      return;
+    }
 
-  refs.topbarAlerts.addEventListener('click', () => {
-    window.alert('当前版本没有独立通知中心，但最近更新已接入总览页。');
+    if (event.target.closest('#refresh-view')) {
+      if (!state.auth.authenticated) {
+        await loadAuthState();
+        renderSessionControl();
+        renderAuthScreen();
+        return;
+      }
+      await renderActiveView(true);
+      return;
+    }
+
+    if (event.target.closest('#topbar-search')) {
+      window.alert('当前版本先聚焦内容编辑，搜索入口下一轮再补。');
+      return;
+    }
+
+    if (event.target.closest('#topbar-alerts')) {
+      window.alert('当前版本没有独立通知中心，但最近更新已接入总览页。');
+    }
   });
 }
 
 async function bootstrap() {
-  refs.topbarSearch.innerHTML = icon('search');
-  refs.topbarAlerts.innerHTML = `${icon('bell')}<span class="topbar-dot" aria-hidden="true"></span>`;
-  refs.refreshView.innerHTML = icon('refresh');
-  applyTheme(preferredTheme());
+  applyTheme('light');
   applySidebarCollapsed(preferredSidebarCollapsed());
-  renderSidebar();
+  renderSessionControl();
   bindGlobalActions();
 
   try {
+    await loadAuthState();
+    renderSessionControl();
+    if (!state.auth.cloudReady || !state.auth.authenticated) {
+      setTopbar(VIEW_CONFIG.overview);
+      setStatus(state.auth.cloudReady ? '请先登录后台账号' : '请先连接云端 CMS', state.auth.cloudReady ? 'loading' : 'error');
+      renderAuthScreen();
+      finishBootAnimation();
+      return;
+    }
     await hydrateMeta();
     await renderActiveView(true);
     finishBootAnimation();
   } catch (error) {
+    if (error.statusCode === 401) {
+      await loadAuthState();
+      renderSessionControl();
+      renderAuthScreen('请先登录后台账号。');
+      finishBootAnimation();
+      return;
+    }
     setTopbar(VIEW_CONFIG.overview);
     setStatus('CMS 服务不可用', 'error');
     renderError(error.message || '初始化失败');

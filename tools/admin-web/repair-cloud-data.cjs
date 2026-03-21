@@ -25,7 +25,7 @@ const LIST_COLLECTIONS = {
   directions: 'directions',
   teachers: 'teachers',
   successCases: 'success_cases',
-  materialSeries: 'material_series',
+  materialPackages: 'material_packages',
   materialItems: 'material_items',
   mediaAssets: 'media_assets'
 };
@@ -37,7 +37,10 @@ function stripId(payload) {
 }
 
 async function main() {
-  const app = cloudbase.init({ env: process.env.CLOUDBASE_ENV_ID });
+  const app = cloudbase.init({
+    env: process.env.CLOUDBASE_ENV_ID,
+    accessKey: process.env.CLOUDBASE_APIKEY || undefined
+  });
   const db = app.database();
 
   const collections = [...new Set([...Object.values(PAGE_COLLECTIONS), ...Object.values(LIST_COLLECTIONS)])];

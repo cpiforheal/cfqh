@@ -6,7 +6,7 @@ function getFallbackList(collection) {
   if (collection === 'directions') return fallbackContent.directions;
   if (collection === 'teachers') return fallbackContent.teachers;
   if (collection === 'success_cases') return fallbackContent.successCases;
-  if (collection === 'material_series') return fallbackContent.materialSeries;
+  if (collection === 'material_packages') return fallbackContent.materialPackages;
   if (collection === 'material_items') return fallbackContent.materialItems;
   if (collection === 'media_assets') return fallbackContent.mediaAssets;
   if (collection === 'admin_users') return [];
@@ -55,13 +55,7 @@ export async function getAdminPage(pageKey) {
 
     throw new AppError(ErrorType.CLOUD_FUNCTION, '获取页面数据失败');
   } catch (error) {
-    console.warn('[admin] 降级使用本地页面数据:', pageKey, error);
-
-    if (pageKey === 'site') {
-      return fallbackContent.site || null;
-    }
-
-    return fallbackContent.pages[pageKey] || null;
+    throw ErrorHandler.parseCloudError(error);
   }
 }
 
@@ -74,7 +68,11 @@ export async function saveAdminPage(pageKey, content) {
     });
 
     if (!result || !result.ok) {
-      throw new AppError(ErrorType.CLOUD_FUNCTION, '保存页面失败');
+      throw new AppError(
+        ErrorType.CLOUD_FUNCTION,
+        result?.message || result?.error || '保存页面失败',
+        result
+      );
     }
 
     return result;
@@ -96,8 +94,7 @@ export async function getAdminList(collection) {
 
     throw new AppError(ErrorType.CLOUD_FUNCTION, '获取列表数据失败');
   } catch (error) {
-    console.warn('[admin] 降级使用本地列表数据:', collection, error);
-    return getFallbackList(collection);
+    throw ErrorHandler.parseCloudError(error);
   }
 }
 
@@ -211,16 +208,16 @@ export function getEmptyItemTemplate(collection) {
     };
   }
 
-  if (collection === 'material_series') {
+  if (collection === 'material_packages') {
     return {
-      name: '',
-      slug: '',
-      category: '',
-      tag: '',
-      accent: '#5b4dff',
-      summary: '',
-      shelfLabel: '',
-      items: [],
+      direction: 'math',
+      stage: 'foundation',
+      badge: '',
+      title: '',
+      target: '',
+      solves: '',
+      features: [],
+      contentItemIds: [],
       sort: 100,
       status: 'draft'
     };
@@ -228,13 +225,15 @@ export function getEmptyItemTemplate(collection) {
 
   if (collection === 'material_items') {
     return {
-      seriesId: '',
+      direction: 'math',
+      stage: 'foundation',
       type: '',
       title: '',
-      stage: '',
       subtitle: '',
       desc: '',
-      contents: [],
+      details: '',
+      accentStart: '#2f66ff',
+      accentEnd: '#4f8dff',
       sort: 100,
       status: 'draft'
     };
@@ -258,6 +257,9 @@ export function getEmptyItemTemplate(collection) {
     return {
       _id: '',
       name: '',
+      loginAccount: '',
+      password: '',
+      authChannels: ['web'],
       role: 'editor',
       status: 'active'
     };

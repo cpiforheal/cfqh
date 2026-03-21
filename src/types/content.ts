@@ -178,11 +178,32 @@ export interface AboutPage {
 
 // 教材页配置
 export interface MaterialsPage {
-  hero: HeroSection;
-  tabs: string[];
-  overviewStats: StatItem[];
-  featuredSeriesIds: string[];
-  cta: CtaSection;
+  header: {
+    title: string;
+    searchLabel: string;
+  };
+  directionTabs: Array<{
+    key: string;
+    label: string;
+    icon: string;
+  }>;
+  stageTabs: Array<{
+    key: string;
+    label: string;
+  }>;
+  mainSection: {
+    title: string;
+    sideNote: string;
+  };
+  shelfSection: {
+    title: string;
+    hint: string;
+  };
+  consultBar: {
+    title: string;
+    desc: string;
+    buttonText: string;
+  };
 }
 
 // 页面配置集合
@@ -261,17 +282,17 @@ export interface SuccessCase {
   updatedAt?: string;
 }
 
-// 教材系列
-export interface MaterialSeries {
+// 主推套系包
+export interface MaterialPackage {
   _id: string;
-  name: string;
-  slug: string;
-  category: string;
-  tag: string;
-  accent: string;
-  summary: string;
-  shelfLabel: string;
-  items: string[];
+  direction: string;
+  stage: string;
+  badge: string;
+  title: string;
+  target: string;
+  solves: string;
+  features: string[];
+  contentItemIds: string[];
   sort: number;
   status?: Status;
   createdAt?: string;
@@ -281,13 +302,15 @@ export interface MaterialSeries {
 // 教材项目
 export interface MaterialItem {
   _id: string;
-  seriesId: string;
+  direction: string;
+  stage: string;
   type: string;
   title: string;
-  stage: string;
   subtitle: string;
   desc: string;
-  contents: string[];
+  details: string;
+  accentStart: string;
+  accentEnd: string;
   sort: number;
   status?: Status;
   createdAt?: string;
@@ -336,7 +359,7 @@ export interface PublicContentResponse {
   directions?: Direction[];
   teachers?: Teacher[];
   successCases?: SuccessCase[];
-  materialSeries?: MaterialSeries[];
+  materialPackages?: MaterialPackage[];
   materialItems?: MaterialItem[];
   __meta: ContentMeta;
 }

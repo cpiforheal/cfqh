@@ -7,7 +7,7 @@ import { ErrorHandler, ErrorType, AppError } from '../utils/errorHandler';
 
 // 缓存配置
 const CACHE_TTL = 5 * 60 * 1000; // 5分钟缓存
-const CACHE_VERSION = '2026-03-19-courses-conversion-v3';
+const CACHE_VERSION = '2026-03-21-materials-packages-v1';
 const CACHE_KEY_PREFIX = 'cms_content_';
 const CACHE_META_KEY = 'cms_meta_';
 
@@ -142,7 +142,7 @@ export function getFallbackPublicContent(pageKey) {
   }
 
   if (pageKey === 'materials') {
-    payload.materialSeries = sortPublished(fallbackContent.materialSeries);
+    payload.materialPackages = sortPublished(fallbackContent.materialPackages);
     payload.materialItems = sortPublished(fallbackContent.materialItems);
   }
 

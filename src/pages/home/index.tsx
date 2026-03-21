@@ -1647,9 +1647,7 @@ export default function HomePage() {
                           style={{
                             padding: '8rpx 14rpx',
                             borderRadius: '999rpx',
-                            background: item.tagBackground,
-                            border: '1rpx solid rgba(255,255,255,0.82)',
-                            boxShadow: '0 12rpx 24rpx rgba(255,255,255,0.34)'
+                            background: 'rgba(255,255,255,0.34)'
                           }}
                         >
                           <Text style={{ fontSize: ui.type.note, color: item.tagColor, fontWeight: 800 }}>
@@ -1661,13 +1659,11 @@ export default function HomePage() {
 
                     <View
                       style={{
-                        background: item.headerBackground,
+                        background: 'rgba(255,255,255,0.26)',
                         borderRadius: '24rpx',
                         padding: '16rpx 16rpx',
                         position: 'relative',
-                        zIndex: 2,
-                        border: `1rpx solid ${item.panelBorder}`,
-                        boxShadow: item.panelShadow
+                        zIndex: 2
                       }}
                     >
                       <View style={{ display: 'flex', alignItems: 'center' }}>
@@ -1697,10 +1693,9 @@ export default function HomePage() {
                       minWidth: '88rpx',
                       padding: '12rpx 0 10rpx',
                       borderRadius: '22rpx',
-                      background: item.numberBackground,
-                      border: `1rpx solid ${item.numberBorder}`,
+                      background: 'rgba(255,255,255,0.24)',
                       textAlign: 'center',
-                      boxShadow: item.numberShadow
+                      opacity: 0.9
                     }}
                   >
                     <Text style={{ display: 'block', fontSize: '20rpx', color: homeTone.note, fontWeight: 700, textAlign: 'center' }}>热门</Text>
@@ -1715,18 +1710,15 @@ export default function HomePage() {
                     marginTop: '18rpx',
                     borderRadius: '24rpx',
                     padding: '18rpx 18rpx',
-                    background: item.panelBackground,
-                    border: `1rpx solid ${item.panelBorder}`,
+                    background: 'rgba(255,255,255,0.22)',
                     position: 'relative',
-                    zIndex: 2,
-                    boxShadow: item.panelShadow
+                    zIndex: 2
                   }}
                 >
                   <View
                     style={{
                       marginBottom: '12rpx',
-                      paddingBottom: '12rpx',
-                      borderBottom: '1rpx solid rgba(148,163,184,0.14)'
+                      paddingBottom: '12rpx'
                     }}
                   >
                     <Text style={{ display: 'block', fontSize: ui.type.note, color: item.descriptionTitle, fontWeight: 800 }}>适合先从哪里下手</Text>
@@ -1753,10 +1745,17 @@ export default function HomePage() {
                           marginTop: '12rpx',
                           marginRight: '12rpx',
                           flexShrink: 0,
-                          boxShadow: index === 0 ? '0 0 12rpx rgba(14,165,233,0.32)' : '0 0 12rpx rgba(59,130,246,0.26)'
+                          opacity: 0.72
                         }}
                       />
-                      <Text style={{ flex: 1, fontSize: ui.type.note, color: '#475569', lineHeight: 1.7 }}>
+                      <Text
+                        style={{
+                          flex: 1,
+                          fontSize: ui.type.note,
+                          color: '#475569',
+                          lineHeight: 1.7
+                        }}
+                      >
                         {compactText(feature, 28)}
                       </Text>
                     </View>
@@ -1780,9 +1779,7 @@ export default function HomePage() {
                       marginRight: '16rpx',
                       padding: '10rpx 14rpx',
                       borderRadius: '999rpx',
-                      background: item.chipBackground,
-                      border: `1rpx solid ${item.chipBorder}`,
-                      boxShadow: item.chipShadow
+                      background: 'rgba(255,255,255,0.24)'
                     }}
                   >
                     <Text style={{ fontSize: ui.type.note, color: '#334155', fontWeight: 700 }}>
@@ -1790,9 +1787,19 @@ export default function HomePage() {
                     </Text>
                   </View>
                 ) : (
-                  <Text style={{ flex: 1, fontSize: ui.type.note, color: homeTone.note, fontWeight: 700 }}>
-                    {getDirectionMiniLabel(item)}
-                  </Text>
+                  <View
+                    style={{
+                      flex: 1,
+                      marginRight: '16rpx',
+                      padding: '10rpx 14rpx',
+                      borderRadius: '999rpx',
+                      background: 'rgba(255,255,255,0.24)'
+                    }}
+                  >
+                    <Text style={{ fontSize: ui.type.note, color: homeTone.note, fontWeight: 700 }}>
+                      {getDirectionMiniLabel(item)}
+                    </Text>
+                  </View>
                 )}
                 <View
                   style={{
@@ -1844,12 +1851,12 @@ export default function HomePage() {
                 padding: isCompactAssessment ? '18rpx 18rpx 16rpx' : '22rpx 20rpx 20rpx',
                 borderRadius: isCompactAssessment ? '22rpx' : '24rpx',
                 background: isCompactAssessment
-                  ? 'linear-gradient(180deg, #ffffff 0%, #fbfdff 100%)'
+                  ? 'linear-gradient(145deg, #ffffff 0%, #fdfcff 24%, #f8fbff 58%, #f4f9ff 100%)'
                   : 'linear-gradient(180deg, #ffffff 0%, #f8fbff 100%)',
                 boxShadow: isCompactAssessment
-                  ? '0 12rpx 22rpx rgba(148,163,184,0.06)'
+                  ? '0 16rpx 28rpx rgba(148,163,184,0.08), 0 4rpx 10rpx rgba(255,255,255,0.72) inset'
                   : '0 16rpx 28rpx rgba(148,163,184,0.08)',
-                border: `1rpx solid ${homeTone.accentBorder}`,
+                border: isCompactAssessment ? '1rpx solid rgba(219,234,254,0.92)' : `1rpx solid ${homeTone.accentBorder}`,
                 boxSizing: 'border-box',
                 position: 'relative',
                 overflow: 'hidden'
@@ -1864,12 +1871,39 @@ export default function HomePage() {
                   height: '128rpx',
                   borderRadius: '999rpx',
                   backgroundColor: isCompactAssessment
-                    ? 'rgba(226,232,240,0.22)'
+                    ? 'rgba(191,219,254,0.34)'
                     : index === 0
                       ? 'rgba(125,211,252,0.18)'
                       : 'rgba(191,219,254,0.24)'
                 }}
               />
+              {isCompactAssessment ? (
+                <>
+                  <View
+                    style={{
+                      position: 'absolute',
+                      left: '-22rpx',
+                      bottom: '-28rpx',
+                      width: '144rpx',
+                      height: '144rpx',
+                      borderRadius: '999rpx',
+                      background: 'radial-gradient(circle at 50% 50%, rgba(253,224,71,0.26) 0%, rgba(255,255,255,0) 72%)'
+                    }}
+                  />
+                  <View
+                    style={{
+                      position: 'absolute',
+                      right: '26rpx',
+                      bottom: '18rpx',
+                      width: '92rpx',
+                      height: '36rpx',
+                      borderRadius: '999rpx',
+                      border: '1rpx dashed rgba(14,165,233,0.22)',
+                      opacity: 0.8
+                    }}
+                  />
+                </>
+              ) : null}
               <View style={{ position: 'relative', zIndex: 2 }}>
                 <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <View style={{ display: 'flex', alignItems: 'center', flex: 1, paddingRight: '16rpx' }}>
@@ -1878,13 +1912,15 @@ export default function HomePage() {
                         width: isCompactAssessment ? '48rpx' : '54rpx',
                         height: isCompactAssessment ? '48rpx' : '54rpx',
                         borderRadius: isCompactAssessment ? '16rpx' : '18rpx',
-                        backgroundColor: '#ffffff',
+                        background: isCompactAssessment
+                          ? 'linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(240,249,255,0.92) 100%)'
+                          : '#ffffff',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         marginRight: '14rpx',
                         boxShadow: isCompactAssessment
-                          ? '0 8rpx 16rpx rgba(148,163,184,0.08)'
+                          ? '0 10rpx 20rpx rgba(96,165,250,0.12)'
                           : '0 10rpx 20rpx rgba(148,163,184,0.10)'
                       }}
                     >
@@ -1920,8 +1956,9 @@ export default function HomePage() {
                         minWidth: '104rpx',
                         padding: '10rpx 14rpx',
                         borderRadius: '999rpx',
-                        background: 'rgba(255,255,255,0.78)',
-                        border: `1rpx solid ${homeTone.accentBorder}`,
+                        background: 'linear-gradient(180deg, rgba(255,255,255,0.94) 0%, rgba(240,249,255,0.88) 100%)',
+                        border: '1rpx solid rgba(191,219,254,0.88)',
+                        boxShadow: '0 10rpx 18rpx rgba(125,211,252,0.10)',
                         textAlign: 'center'
                       }}
                     >

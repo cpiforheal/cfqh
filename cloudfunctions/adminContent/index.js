@@ -30,11 +30,19 @@ const ALLOWED_COLLECTIONS = new Set([
   'directions',
   'teachers',
   'success_cases',
-  'material_series',
+  'material_packages',
   'material_items',
   'media_assets',
   'admin_users'
 ]);
+
+const ROLE_PERMISSIONS = {
+  viewer: new Set(['cms.read']),
+  editor: new Set(['cms.read', 'cms.write']),
+  publisher: new Set(['cms.read', 'cms.write', 'cms.publish']),
+  admin: new Set(['cms.read', 'cms.write', 'cms.publish', 'cms.manageUsers', 'cms.reset']),
+  owner: new Set(['cms.read', 'cms.write', 'cms.publish', 'cms.manageUsers', 'cms.reset'])
+};
 
 const HOME_PORTAL_LINKS = [
   { label: '机构介绍', desc: '看品牌介绍', url: '/pages/about/index', openType: 'navigate', icon: 'building' },
@@ -98,19 +106,103 @@ const COURSES_PAGE_FALLBACK = {
     footnote: '方向判断 · 课程安排 · 学情评估'
   }
 };
+const MATERIALS_PAGE_FALLBACK = {
+  header: {
+    title: '教材资料库',
+    searchLabel: '搜索资料'
+  },
+  directionTabs: [
+    { key: 'math', label: '高等数学', icon: 'grid' },
+    { key: 'medical', label: '医护综合', icon: 'medical' }
+  ],
+  stageTabs: [
+    { key: 'foundation', label: '基础阶段' },
+    { key: 'reinforcement', label: '强化阶段' },
+    { key: 'sprint', label: '冲刺阶段' }
+  ],
+  mainSection: {
+    title: '核心主推套系',
+    sideNote: '最适合当前阶段'
+  },
+  shelfSection: {
+    title: '套系包含以下资料：',
+    hint: '左右滑动查看'
+  },
+  consultBar: {
+    title: '不知道怎么选？',
+    desc: '专业老师为您1对1定制资料方案',
+    buttonText: '免费咨询'
+  }
+};
 
-async function ensureAdmin() {
+function normalizeRole(role) {
+  const normalized = String(role || '').trim().toLowerCase();
+  if (normalized === 'viewer') return 'viewer';
+  if (normalized === 'publisher') return 'publisher';
+  if (normalized === 'admin') return 'admin';
+  if (normalized === 'owner') return 'owner';
+  return 'editor';
+}
+
+function normalizeStatus(status) {
+  return String(status || '').trim().toLowerCase() === 'disabled' ? 'disabled' : 'active';
+}
+
+function getPermissions(role) {
+  return ROLE_PERMISSIONS[normalizeRole(role)] || ROLE_PERMISSIONS.editor;
+}
+
+function sanitizeAdminUser(admin) {
+  if (!admin) return null;
+  return {
+    _id: admin._id,
+    name: admin.name || '',
+    role: normalizeRole(admin.role),
+    status: normalizeStatus(admin.status),
+    loginAccount: String(admin.loginAccount || '').trim().toLowerCase(),
+    authChannels: Array.isArray(admin.authChannels) ? admin.authChannels : [],
+    updatedAt: admin.updatedAt || '',
+    createdAt: admin.createdAt || ''
+  };
+}
+
+function getActionPermission(action, collection) {
+  if (action === 'getPage' || action === 'listCollection' || action === 'getItem') {
+    if (collection === 'admin_users') return 'cms.manageUsers';
+    return 'cms.read';
+  }
+
+  if (action === 'savePage' || action === 'saveItem') {
+    if (collection === 'admin_users') return 'cms.manageUsers';
+    return 'cms.write';
+  }
+
+  if (action === 'deleteItem') {
+    if (collection === 'admin_users') return 'cms.manageUsers';
+    return 'cms.write';
+  }
+
+  return 'cms.read';
+}
+
+async function ensureAdmin(requiredPermission = 'cms.read', collection = '') {
   const { OPENID } = cloud.getWXContext();
 
   try {
     const result = await db.collection('admin_users').doc(OPENID).get();
+    const admin = result.data;
 
-    if (!result.data || result.data.status === 'disabled') {
+    if (!admin || normalizeStatus(admin.status) === 'disabled') {
       throw new Error('无后台权限');
     }
 
-    console.log(`[adminContent] 管理员验证通过: ${OPENID}, 角色=${result.data.role}`);
-    return result.data;
+    const permissions = getPermissions(admin.role);
+    if (!permissions.has(requiredPermission)) {
+      throw new Error('当前账号暂无此操作权限');
+    }
+
+    console.log(`[adminContent] 管理员验证通过: ${OPENID}, 角色=${admin.role}, 权限=${requiredPermission}`);
+    return admin;
   } catch (error) {
     console.error(`[adminContent] 管理员验证失败: ${OPENID}`, error);
     throw new Error('无后台权限');
@@ -134,7 +226,37 @@ function stripManagedFields(payload) {
   const data = { ...payload };
   delete data.createdAt;
   delete data.updatedAt;
+  delete data._meta;
   return data;
+}
+
+function hashPassword(password = '') {
+  const crypto = require('crypto');
+  return crypto.createHash('sha256').update(`cfqh-admin:${String(password)}`).digest('hex');
+}
+
+function prepareAdminUserPayload(payload = {}, existing = null) {
+  const nextPayload = {
+    ...payload,
+    role: normalizeRole(payload.role || existing?.role),
+    status: normalizeStatus(payload.status || existing?.status),
+    loginAccount: String(payload.loginAccount || existing?.loginAccount || '').trim().toLowerCase(),
+    authChannels: Array.isArray(payload.authChannels)
+      ? Array.from(new Set(payload.authChannels.filter(Boolean)))
+      : Array.isArray(existing?.authChannels)
+        ? existing.authChannels
+        : ['web']
+  };
+
+  const password = String(payload.password || '').trim();
+  if (password) {
+    nextPayload.passwordHash = hashPassword(password);
+  } else if (existing?.passwordHash) {
+    nextPayload.passwordHash = existing.passwordHash;
+  }
+
+  delete nextPayload.password;
+  return nextPayload;
 }
 
 function normalizeHomeHero(hero) {
@@ -292,6 +414,25 @@ function normalizeCoursesPage(payload) {
   };
 }
 
+function normalizeMaterialsPage(payload) {
+  if (!payload) {
+    return payload;
+  }
+
+  const isLegacyPage = !payload.header || !Array.isArray(payload.directionTabs) || !Array.isArray(payload.stageTabs);
+  if (isLegacyPage) {
+    return MATERIALS_PAGE_FALLBACK;
+  }
+
+  return {
+    ...payload,
+    header: { ...MATERIALS_PAGE_FALLBACK.header, ...(payload.header || {}) },
+    mainSection: { ...MATERIALS_PAGE_FALLBACK.mainSection, ...(payload.mainSection || {}) },
+    shelfSection: { ...MATERIALS_PAGE_FALLBACK.shelfSection, ...(payload.shelfSection || {}) },
+    consultBar: { ...MATERIALS_PAGE_FALLBACK.consultBar, ...(payload.consultBar || {}) }
+  };
+}
+
 function normalizePagePayload(pageKey, payload) {
   if (!payload) {
     return payload;
@@ -313,15 +454,46 @@ function normalizePagePayload(pageKey, payload) {
     return normalizeCoursesPage(payload);
   }
 
+  if (pageKey === 'materials') {
+    return normalizeMaterialsPage(payload);
+  }
+
   return payload;
+}
+
+function getPageUpdatedAt(payload) {
+  return payload?.updatedAt || payload?.createdAt || '';
+}
+
+function buildPageRevision(pageKey, payload) {
+  const updatedAt = getPageUpdatedAt(payload);
+  const timestamp = updatedAt ? new Date(updatedAt).getTime() : Date.now();
+  return `${pageKey}:${Number.isFinite(timestamp) ? timestamp : Date.now()}`;
+}
+
+function attachPageMeta(pageKey, payload) {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return payload;
+  }
+
+  return {
+    ...payload,
+    _meta: {
+      pageKey,
+      updatedAt: getPageUpdatedAt(payload),
+      revision: buildPageRevision(pageKey, payload),
+      sourceMode: 'cloud'
+    }
+  };
 }
 
 exports.main = async (event) => {
   const startTime = Date.now();
   const action = event.action;
+  const collection = event.collection || '';
 
   try {
-    await ensureAdmin();
+    await ensureAdmin(getActionPermission(action, collection), collection);
 
     console.log(`[adminContent] 开始处理: action=${action}`);
 
@@ -333,7 +505,7 @@ exports.main = async (event) => {
       const data = normalizePagePayload(pageKey, await getDocument(collection, PAGE_DOC_IDS[pageKey]));
       const duration = Date.now() - startTime;
       console.log(`[adminContent] getPage 完成: pageKey=${pageKey}, 耗时=${duration}ms`);
-      return { ok: true, data };
+      return { ok: true, data: attachPageMeta(pageKey, data) };
     }
 
     if (action === 'savePage') {
@@ -344,7 +516,28 @@ exports.main = async (event) => {
       const payload = stripManagedFields(event.content);
       const now = db.serverDate();
       const docRef = db.collection(collection).doc(PAGE_DOC_IDS[pageKey]);
-      const exists = await docRef.get().then(() => true).catch(() => false);
+      const existingDoc = await getDocument(collection, PAGE_DOC_IDS[pageKey]);
+      const existing = normalizePagePayload(pageKey, existingDoc);
+      const expectedRevision = String(event.revision || event.content?._meta?.revision || '').trim();
+      const latestRevision = existing ? buildPageRevision(pageKey, existing) : '';
+
+      if (expectedRevision && latestRevision && expectedRevision !== latestRevision) {
+        const duration = Date.now() - startTime;
+        console.warn(`[adminContent] savePage 冲突: pageKey=${pageKey}, 耗时=${duration}ms`);
+        return {
+          ok: false,
+          code: 'PAGE_CONFLICT',
+          message: '当前页面已被其他老师更新，请先重新拉取后再保存。',
+          data: {
+            pageKey,
+            revision: latestRevision,
+            updatedAt: getPageUpdatedAt(existing),
+            sourceMode: 'cloud'
+          }
+        };
+      }
+
+      const exists = Boolean(existingDoc);
 
       if (exists) {
         await docRef.update({
@@ -363,9 +556,10 @@ exports.main = async (event) => {
         });
       }
 
+      const saved = normalizePagePayload(pageKey, await getDocument(collection, PAGE_DOC_IDS[pageKey]));
       const duration = Date.now() - startTime;
       console.log(`[adminContent] savePage 完成: pageKey=${pageKey}, 耗时=${duration}ms`);
-      return { ok: true };
+      return { ok: true, data: attachPageMeta(pageKey, saved) };
     }
 
     if (action === 'listCollection') {
@@ -375,7 +569,10 @@ exports.main = async (event) => {
       const result = await db.collection(collection).orderBy('sort', 'asc').limit(100).get();
       const duration = Date.now() - startTime;
       console.log(`[adminContent] listCollection 完成: collection=${collection}, 数量=${result.data?.length || 0}, 耗时=${duration}ms`);
-      return { ok: true, data: result.data || [] };
+      return {
+        ok: true,
+        data: collection === 'admin_users' ? (result.data || []).map((item) => sanitizeAdminUser(item)) : result.data || []
+      };
     }
 
     if (action === 'getItem') {
@@ -387,7 +584,7 @@ exports.main = async (event) => {
       const data = await getDocument(collection, id);
       const duration = Date.now() - startTime;
       console.log(`[adminContent] getItem 完成: collection=${collection}, id=${id}, 耗时=${duration}ms`);
-      return { ok: true, data };
+      return { ok: true, data: collection === 'admin_users' ? sanitizeAdminUser(data) : data };
     }
 
     if (action === 'saveItem') {
@@ -396,7 +593,9 @@ exports.main = async (event) => {
       if (!ALLOWED_COLLECTIONS.has(collection)) throw new Error('不支持的集合');
       if (!item || typeof item !== 'object') throw new Error('缺少数据');
 
-      const payload = stripManagedFields(item);
+      const payload = collection === 'admin_users'
+        ? prepareAdminUserPayload(stripManagedFields(item), item._id ? await getDocument(collection, item._id).catch(() => null) : null)
+        : stripManagedFields(item);
       const itemId = payload._id;
       const now = db.serverDate();
 
@@ -465,7 +664,10 @@ exports.main = async (event) => {
 
     return {
       ok: false,
-      error: error.message || '操作失败'
+      message: error.message || '操作失败',
+      error: error.message || '操作失败',
+      code: error.code || '',
+      data: error.data || null
     };
   }
 };

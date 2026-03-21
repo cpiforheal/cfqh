@@ -22,6 +22,17 @@ const directionIconOptions = [
   { label: '脉冲', value: 'pulse' }
 ];
 
+const materialDirectionOptions = [
+  { label: '高等数学', value: 'math' },
+  { label: '医护综合', value: 'medical' }
+];
+
+const materialStageOptions = [
+  { label: '基础阶段', value: 'foundation' },
+  { label: '强化阶段', value: 'reinforcement' },
+  { label: '冲刺阶段', value: 'sprint' }
+];
+
 const pageHeroBasicFields = [
   { key: 'chip', label: '区块角标', type: 'text', required: true },
   { key: 'title', label: '区块主标题', type: 'text', required: true },
@@ -75,7 +86,7 @@ export function getAdminPageFormSchema(pageKey) {
       { key: 'contactPhone', label: '底部联系电话', type: 'text' },
       { key: 'contactWechat', label: '咨询微信号', type: 'text' },
       { key: 'contactQrcode', label: '咨询二维码链接', type: 'text' },
-      { key: 'contactQrcodeUrl', label: '咨询二维码图片 URL', type: 'text', validate: 'media-url' },
+      { key: 'contactQrcodeUrl', label: '咨询二维码图片地址', type: 'text', validate: 'media-url' },
       { key: 'address', label: '校区地址', type: 'text' },
       { key: 'serviceHours', label: '咨询服务时间', type: 'text' },
       { key: 'intro', label: '机构简介（关于我们页）', type: 'textarea' }
@@ -89,7 +100,7 @@ export function getAdminPageFormSchema(pageKey) {
         { key: 'title', label: '首页大屏第一行标题', type: 'text', required: true },
         { key: 'desc', label: '首页大屏说明', type: 'textarea', required: true },
         { key: 'highlightTitle', label: '首页大屏第二行标题', type: 'text', required: true },
-        { key: 'backgroundImageUrl', label: '首页大屏背景图 URL', type: 'text', validate: 'media-url' },
+        { key: 'backgroundImageUrl', label: '首页大屏背景图地址', type: 'text', validate: 'media-url' },
         { key: 'tags', label: '首页大屏标签', type: 'stringArray', defaultItem: '' },
         objectField('primaryButton', '首页大屏按钮', [
           { key: 'text', label: '按钮文案', type: 'text', required: true },
@@ -130,14 +141,14 @@ export function getAdminPageFormSchema(pageKey) {
         { icon: '', title: '', desc: '' },
         { maxItems: 4, visibleItems: 4 }
       ),
-      { key: 'featuredDirectionIds', label: '热门方向展示 ID', type: 'stringArray', defaultItem: '' },
+      { key: 'featuredDirectionIds', label: '热门方向卡片', type: 'stringArray', defaultItem: '' },
       objectField('environmentSection', '校区环境（咨询区上方）', [
         objectArrayField(
           'cards',
           '环境图片',
           [
             { key: 'label', label: '名称', type: 'text', required: true },
-            { key: 'imageUrl', label: '图片 URL', type: 'text', validate: 'media-url' }
+            { key: 'imageUrl', label: '图片地址', type: 'text', validate: 'media-url' }
           ],
           { label: '', imageUrl: '' },
           { maxItems: 2, visibleItems: 2 }
@@ -177,7 +188,7 @@ export function getAdminPageFormSchema(pageKey) {
       { key: 'subtitle', label: '判断首屏说明', type: 'textarea', required: true },
       { key: 'categories', label: '判断标签（3项）', type: 'stringArray', defaultItem: '' },
       { key: 'suggestions', label: '判断提示（3条）', type: 'stringArray', defaultItem: '' },
-      { key: 'featuredDirectionIds', label: '两张重点方向卡片 ID', type: 'stringArray', defaultItem: '' },
+      { key: 'featuredDirectionIds', label: '两张重点方向卡片', type: 'stringArray', defaultItem: '' },
       objectField('moreSection', '底部补充说明', [
         { key: 'title', label: '区块标题', type: 'text', required: true },
         { key: 'tag', label: '区块标签', type: 'text' },
@@ -189,25 +200,23 @@ export function getAdminPageFormSchema(pageKey) {
 
   if (pageKey === 'teachers') {
     return [
-      objectField('hero', '师资页首屏', [
-        ...pageHeroBasicFields,
-        { key: 'imageUrl', label: '首屏背景图 URL', type: 'text', validate: 'media-url' },
-        { key: 'imageSeed', label: '首屏背景图 Seed', type: 'text' }
+      objectField('hero', '代表老师首屏', [
+        ...pageHeroBasicFields
       ]),
-      objectField('introCard', '页首介绍卡', [
+      objectField('introCard', '带学方式说明', [
         { key: 'title', label: '卡片标题', type: 'text' },
         { key: 'desc', label: '卡片说明', type: 'textarea' }
       ]),
-      objectArrayField('features', '师资页优势卡', pageValueFields, { title: '', desc: '' }),
-      objectField('cta', '底部咨询区', ctaFields)
+      objectArrayField('features', '老师协作亮点', pageValueFields, { title: '', desc: '' }),
+      objectField('cta', '底部咨询承接区', ctaFields)
     ];
   }
 
   if (pageKey === 'success') {
     return [
-      objectField('hero', '成绩页首屏', pageHeroBasicFields),
-      objectArrayField('stats', '成绩页数据卡', statFields, { value: '', label: '', note: '' }),
-      objectField('cta', '底部咨询区', ctaFields)
+      objectField('hero', '结果首屏', pageHeroBasicFields),
+      objectArrayField('stats', '结果证明数据', statFields, { value: '', label: '', note: '' }),
+      objectField('cta', '底部咨询承接区', ctaFields)
     ];
   }
 
@@ -215,8 +224,8 @@ export function getAdminPageFormSchema(pageKey) {
     return [
       objectField('hero', '关于页首屏', [
         ...pageHeroBasicFields,
-        { key: 'imageUrl', label: '首屏背景图 URL', type: 'text', validate: 'media-url' },
-        { key: 'imageSeed', label: '首屏背景图 Seed', type: 'text' }
+        { key: 'imageUrl', label: '首屏背景图地址', type: 'text', validate: 'media-url' },
+        { key: 'imageSeed', label: '首屏背景图备用标识', type: 'text' }
       ]),
       objectField('introCard', '机构介绍卡', [
         { key: 'title', label: '卡片标题', type: 'text' },
@@ -228,8 +237,8 @@ export function getAdminPageFormSchema(pageKey) {
         '校区环境图片',
         [
           { key: 'label', label: '图片名称', type: 'text', required: true },
-          { key: 'imageUrl', label: '图片 URL', type: 'text', validate: 'media-url' },
-          { key: 'imageSeed', label: '图片 Seed', type: 'text' }
+          { key: 'imageUrl', label: '图片地址', type: 'text', validate: 'media-url' },
+          { key: 'imageSeed', label: '图片备用标识', type: 'text' }
         ],
         { label: '', imageUrl: '', imageSeed: '' }
       ),
@@ -239,15 +248,44 @@ export function getAdminPageFormSchema(pageKey) {
 
   if (pageKey === 'materials') {
     return [
-      objectField('hero', '资料页首屏', [
-        ...pageHeroBasicFields,
-        { key: 'imageUrl', label: '首屏背景图 URL', type: 'text', validate: 'media-url' },
-        { key: 'imageSeed', label: '首屏背景图 Seed', type: 'text' }
+      objectField('header', '顶部标题区', [
+        { key: 'title', label: '页面标题', type: 'text', required: true },
+        { key: 'searchLabel', label: '搜索按钮提示', type: 'text', required: true }
       ]),
-      { key: 'tabs', label: '资料页顶部标签', type: 'stringArray', defaultItem: '' },
-      objectArrayField('overviewStats', '资料页数据卡', statFields, { value: '', label: '', note: '' }),
-      { key: 'featuredSeriesIds', label: '精选资料展示 ID', type: 'stringArray', defaultItem: '' },
-      objectField('cta', '底部咨询区', ctaFields)
+      objectArrayField(
+        'directionTabs',
+        '顶部方向切换',
+        [
+          { key: 'key', label: '切换标识', type: 'select', options: materialDirectionOptions },
+          { key: 'label', label: '切换名称', type: 'text', required: true },
+          { key: 'icon', label: '切换图标', type: 'select', options: directionIconOptions }
+        ],
+        { key: 'math', label: '', icon: 'grid' },
+        { maxItems: 2, visibleItems: 2 }
+      ),
+      objectArrayField(
+        'stageTabs',
+        '阶段切换按钮',
+        [
+          { key: 'key', label: '阶段标识', type: 'select', options: materialStageOptions },
+          { key: 'label', label: '阶段名称', type: 'text', required: true }
+        ],
+        { key: 'foundation', label: '' },
+        { maxItems: 3, visibleItems: 3 }
+      ),
+      objectField('mainSection', '主推套系区', [
+        { key: 'title', label: '区块标题', type: 'text', required: true },
+        { key: 'sideNote', label: '右侧提示', type: 'text', required: true }
+      ]),
+      objectField('shelfSection', '资料货架区', [
+        { key: 'title', label: '货架标题', type: 'text', required: true },
+        { key: 'hint', label: '滑动提示', type: 'text', required: true }
+      ]),
+      objectField('consultBar', '底部咨询条', [
+        { key: 'title', label: '咨询标题', type: 'text', required: true },
+        { key: 'desc', label: '咨询说明', type: 'textarea', required: true },
+        { key: 'buttonText', label: '咨询按钮文案', type: 'text', required: true }
+      ])
     ];
   }
 
@@ -257,9 +295,9 @@ export function getAdminPageFormSchema(pageKey) {
 export function getAdminCollectionFormSchema(collection) {
   if (collection === 'directions') {
     return [
-      { key: '_id', label: 'ID', type: 'text' },
+      { key: '_id', label: '内容编号', type: 'text' },
       { key: 'name', label: '方向卡标题', type: 'text', required: true },
-      { key: 'slug', label: 'Slug', type: 'text', required: true },
+      { key: 'slug', label: '方向标识', type: 'text', required: true },
       { key: 'category', label: '分类', type: 'text', required: true },
       { key: 'isFeatured', label: '首页精选', type: 'boolean' },
       { key: 'featuredTag', label: '首页热门方向标签', type: 'text' },
@@ -291,12 +329,12 @@ export function getAdminCollectionFormSchema(collection) {
 
   if (collection === 'teachers') {
     return [
-      { key: '_id', label: 'ID', type: 'text' },
+      { key: '_id', label: '内容编号', type: 'text' },
       { key: 'name', label: '姓名', type: 'text', required: true },
       { key: 'role', label: '角色', type: 'text', required: true },
       { key: 'tag', label: '标签', type: 'text' },
-      { key: 'avatarUrl', label: '头像 URL', type: 'text', validate: 'media-url' },
-      { key: 'avatarSeed', label: '头像 Seed', type: 'text' },
+      { key: 'avatarUrl', label: '头像图片地址', type: 'text', validate: 'media-url' },
+      { key: 'avatarSeed', label: '头像备用图标识', type: 'text' },
       { key: 'intro', label: '简介', type: 'textarea' },
       { key: 'specialties', label: '擅长标签', type: 'stringArray', defaultItem: '' },
       { key: 'sort', label: '排序', type: 'number' },
@@ -306,11 +344,11 @@ export function getAdminCollectionFormSchema(collection) {
 
   if (collection === 'success_cases') {
     return [
-      { key: '_id', label: 'ID', type: 'text' },
+      { key: '_id', label: '内容编号', type: 'text' },
       { key: 'title', label: '标题', type: 'text', required: true },
       { key: 'subtitle', label: '副标题', type: 'textarea', required: true },
-      { key: 'coverUrl', label: '封面 URL', type: 'text', validate: 'media-url' },
-      { key: 'coverSeed', label: '封面 Seed', type: 'text' },
+      { key: 'coverUrl', label: '封面图片地址', type: 'text', validate: 'media-url' },
+      { key: 'coverSeed', label: '封面备用图标识', type: 'text' },
       { key: 'year', label: '年份', type: 'number' },
       { key: 'category', label: '分类', type: 'text', required: true },
       { key: 'sort', label: '排序', type: 'number' },
@@ -318,17 +356,17 @@ export function getAdminCollectionFormSchema(collection) {
     ];
   }
 
-  if (collection === 'material_series') {
+  if (collection === 'material_packages') {
     return [
-      { key: '_id', label: 'ID', type: 'text' },
-      { key: 'name', label: '套系名称', type: 'text', required: true },
-      { key: 'slug', label: 'Slug', type: 'text', required: true },
-      { key: 'category', label: '分类', type: 'text', required: true },
-      { key: 'tag', label: '标签', type: 'text' },
-      { key: 'accent', label: '强调色', type: 'text' },
-      { key: 'summary', label: '摘要', type: 'textarea', required: true },
-      { key: 'shelfLabel', label: '书架标题', type: 'text' },
-      { key: 'items', label: '套系标签', type: 'stringArray', defaultItem: '' },
+      { key: '_id', label: '内容编号', type: 'text' },
+      { key: 'direction', label: '所属方向', type: 'select', options: materialDirectionOptions, required: true },
+      { key: 'stage', label: '所属阶段', type: 'select', options: materialStageOptions, required: true },
+      { key: 'badge', label: '角标文案', type: 'text', required: true },
+      { key: 'title', label: '套系标题', type: 'text', required: true },
+      { key: 'target', label: '适合人群', type: 'textarea', required: true },
+      { key: 'solves', label: '解决问题', type: 'textarea', required: true },
+      { key: 'features', label: '套系卖点', type: 'stringArray', defaultItem: '' },
+      { key: 'contentItemIds', label: '套系包含资料', type: 'stringArray', defaultItem: '' },
       { key: 'sort', label: '排序', type: 'number' },
       { key: 'status', label: '状态', type: 'select', options: statusOptions }
     ];
@@ -336,14 +374,16 @@ export function getAdminCollectionFormSchema(collection) {
 
   if (collection === 'material_items') {
     return [
-      { key: '_id', label: 'ID', type: 'text' },
-      { key: 'seriesId', label: '所属套系 ID', type: 'text', required: true },
+      { key: '_id', label: '内容编号', type: 'text' },
+      { key: 'direction', label: '所属方向', type: 'select', options: materialDirectionOptions, required: true },
+      { key: 'stage', label: '所属阶段', type: 'select', options: materialStageOptions, required: true },
       { key: 'type', label: '资料类型', type: 'text', required: true },
       { key: 'title', label: '标题', type: 'text', required: true },
-      { key: 'stage', label: '阶段', type: 'text', required: true },
       { key: 'subtitle', label: '副标题', type: 'text' },
       { key: 'desc', label: '描述', type: 'textarea', required: true },
-      { key: 'contents', label: '目录标签', type: 'stringArray', defaultItem: '' },
+      { key: 'details', label: '详细介绍', type: 'text' },
+      { key: 'accentStart', label: '封面渐变起始色', type: 'text', required: true },
+      { key: 'accentEnd', label: '封面渐变结束色', type: 'text', required: true },
       { key: 'sort', label: '排序', type: 'number' },
       { key: 'status', label: '状态', type: 'select', options: statusOptions }
     ];
@@ -352,19 +392,22 @@ export function getAdminCollectionFormSchema(collection) {
   if (collection === 'admin_users') {
     return [
       { key: '_id', label: 'OpenID', type: 'text' },
-      { key: 'name', label: '名称', type: 'text' },
-      { key: 'role', label: '角色', type: 'select', options: roleOptions },
-      { key: 'status', label: '状态', type: 'select', options: [{ label: '启用', value: 'active' }, { label: '禁用', value: 'disabled' }] }
+      { key: 'name', label: '老师姓名', type: 'text', required: true },
+      { key: 'loginAccount', label: '后台登录账号', type: 'text', required: true },
+      { key: 'password', label: '登录密码（留空表示不修改）', type: 'text' },
+      { key: 'authChannels', label: '登录方式', type: 'stringArray', defaultItem: '' },
+      { key: 'role', label: '角色权限', type: 'select', options: roleOptions },
+      { key: 'status', label: '账号状态', type: 'select', options: [{ label: '启用', value: 'active' }, { label: '禁用', value: 'disabled' }] }
     ];
   }
 
   if (collection === 'media_assets') {
     return [
-      { key: '_id', label: 'ID', type: 'text' },
+      { key: '_id', label: '内容编号', type: 'text' },
       { key: 'title', label: '资源名称', type: 'text', required: true },
       { key: 'category', label: '资源分类', type: 'text', required: true },
-      { key: 'url', label: '资源 URL', type: 'text', required: true, validate: 'media-url' },
-      { key: 'thumbUrl', label: '缩略图 URL', type: 'text', validate: 'media-url' },
+      { key: 'url', label: '资源地址', type: 'text', required: true, validate: 'media-url' },
+      { key: 'thumbUrl', label: '缩略图地址', type: 'text', validate: 'media-url' },
       { key: 'alt', label: '替代文本', type: 'text' },
       { key: 'tags', label: '标签', type: 'stringArray', defaultItem: '' },
       { key: 'sort', label: '排序', type: 'number' },

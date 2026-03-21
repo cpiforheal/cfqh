@@ -41,7 +41,7 @@ function buildPublicMeta(pageKey, payload) {
     ...(payload.questionImports || []),
     ...(payload.teachers || []),
     ...(payload.successCases || []),
-    ...(payload.materialSeries || []),
+    ...(payload.materialPackages || []),
     ...(payload.materialItems || [])
   ].filter(Boolean);
 
@@ -161,7 +161,7 @@ exports.main = async (event) => {
 
     if (pageKey === 'materials') {
       queries.push(
-        listCollection('material_series').then(data => ({ key: 'materialSeries', data })),
+        listCollection('material_packages').then(data => ({ key: 'materialPackages', data })),
         listCollection('material_items').then(data => ({ key: 'materialItems', data }))
       );
     }
