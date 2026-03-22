@@ -14,6 +14,8 @@ const PORT = Number(process.env.ADMIN_WEB_PORT || 3200);
 const seedData = require(path.join(ROOT, 'database', 'seed-data.js'));
 const SESSION_COOKIE_NAME = 'cfqh_admin_session';
 const SESSION_TTL_MS = 1000 * 60 * 60 * 12;
+const DEFAULT_JSON_BODY_LIMIT_BYTES = 5 * 1024 * 1024;
+const CSV_BODY_LIMIT_BYTES = 10 * 1024 * 1024;
 const sessionStore = new Map();
 const ROLE_LABELS = {
   viewer: '查看者',
@@ -43,6 +45,7 @@ const HOME_CTA_FALLBACK = seedData.pages?.home?.cta || {};
 const HOME_ENVIRONMENT_FALLBACK = seedData.pages?.home?.environmentSection || { cards: [] };
 const COURSES_PAGE_FALLBACK = seedData.pages?.courses || {};
 const COURSES_CTA_FALLBACK = seedData.pages?.courses?.cta || {};
+const SUCCESS_PAGE_FALLBACK = seedData.pages?.success || {};
 const MATERIALS_PAGE_FALLBACK = seedData.pages?.materials || {};
 
 function getNetworkHosts() {
@@ -62,6 +65,76 @@ function getNetworkHosts() {
 
 function getServiceUrls() {
   return getNetworkHosts().map((host) => `http://${host}:${PORT}`);
+}
+
+function getModeLabel(mode) {
+  if (mode === 'cloud') return '云端模式';
+  if (mode === 'local') return '本地模式';
+  return '云端待配置';
+}
+
+function getWriteTarget(mode) {
+  if (mode === 'cloud') return 'cloud';
+  if (mode === 'local') return 'local';
+  return 'unavailable';
+}
+
+function getWriteTargetLabel(writeTarget) {
+  if (writeTarget === 'cloud') return '云端 CMS';
+  if (writeTarget === 'local') return '本地 JSON';
+  return '暂停写入';
+}
+
+function getWriteNotice(mode) {
+  if (mode === 'cloud') {
+    return '当前保存会直接写入云端 CMS，并可用于小程序联调。';
+  }
+  if (mode === 'local') {
+    return '当前只连接本地 JSON 文件。为避免误以为已同步到生产环境，后台暂不开放正式登录写入。';
+  }
+  return '当前 3200 后台要求写入小程序云端数据库，请补齐云环境凭据后再开始正式维护。';
+}
+
+function buildRuntimeStatus(mode = store.getMode()) {
+  const writeTarget = getWriteTarget(mode);
+  return {
+    mode,
+    modeLabel: getModeLabel(mode),
+    cloudReady: mode === 'cloud',
+    writeTarget,
+    writeTargetLabel: getWriteTargetLabel(writeTarget),
+    writeEnabled: mode === 'cloud',
+    authEnabled: mode === 'cloud',
+    writeNotice: getWriteNotice(mode),
+    collaboration: {
+      pageConflictProtection: mode === 'cloud'
+    }
+  };
+}
+
+function isAllowedCorsOrigin(origin, req) {
+  if (!origin) return false;
+  try {
+    const parsed = new URL(origin);
+    const requestHost = String(req.headers.host || '').split(':')[0].trim();
+    const allowedHosts = new Set(['localhost', ...getNetworkHosts(), requestHost].filter(Boolean));
+    return allowedHosts.has(parsed.hostname);
+  } catch (error) {
+    return false;
+  }
+}
+
+function buildCorsHeaders(req) {
+  const origin = String(req.headers.origin || '').trim();
+  if (!origin || !isAllowedCorsOrigin(origin, req)) {
+    return { Vary: 'Origin' };
+  }
+
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Credentials': 'true',
+    Vary: 'Origin'
+  };
 }
 
 function normalizeHomeHero(hero) {
@@ -219,6 +292,35 @@ function normalizeCoursesPage(payload) {
   };
 }
 
+function normalizeSuccessPage(payload) {
+  if (!payload) {
+    return payload;
+  }
+
+  const isLegacyPage = !payload.header || !Array.isArray(payload.directionTabs) || !Array.isArray(payload.pathTabs);
+  if (isLegacyPage) {
+    return SUCCESS_PAGE_FALLBACK;
+  }
+
+  return {
+    ...payload,
+    header: { ...(SUCCESS_PAGE_FALLBACK.header || {}), ...(payload.header || {}) },
+    featuredSection: { ...(SUCCESS_PAGE_FALLBACK.featuredSection || {}), ...(payload.featuredSection || {}) },
+    listSection: { ...(SUCCESS_PAGE_FALLBACK.listSection || {}), ...(payload.listSection || {}) },
+    supportSection: {
+      ...(SUCCESS_PAGE_FALLBACK.supportSection || {}),
+      ...(payload.supportSection || {}),
+      items: Array.isArray(payload.supportSection?.items) && payload.supportSection.items.length
+        ? payload.supportSection.items
+        : SUCCESS_PAGE_FALLBACK.supportSection?.items || []
+    },
+    ctaByDirection: {
+      math: { ...(SUCCESS_PAGE_FALLBACK.ctaByDirection?.math || {}), ...(payload.ctaByDirection?.math || {}) },
+      medical: { ...(SUCCESS_PAGE_FALLBACK.ctaByDirection?.medical || {}), ...(payload.ctaByDirection?.medical || {}) }
+    }
+  };
+}
+
 function normalizeMaterialsPage(payload) {
   if (!payload) {
     return payload;
@@ -257,6 +359,10 @@ function normalizePagePayload(pageKey, payload) {
 
   if (pageKey === 'courses') {
     return normalizeCoursesPage(payload);
+  }
+
+  if (pageKey === 'success') {
+    return normalizeSuccessPage(payload);
   }
 
   if (pageKey === 'materials') {
@@ -518,11 +624,10 @@ async function getAuthenticatedAdmin(req) {
 }
 
 async function getAuthState(req) {
-  const cloudReady = store.getMode() === 'cloud';
-  if (!cloudReady) {
+  const runtime = buildRuntimeStatus();
+  if (!runtime.cloudReady) {
     return {
-      mode: store.getMode(),
-      cloudReady: false,
+      ...runtime,
       authenticated: false,
       bootstrapRequired: false,
       user: null,
@@ -537,8 +642,7 @@ async function getAuthState(req) {
   );
 
   return {
-    mode: store.getMode(),
-    cloudReady,
+    ...runtime,
     authenticated: Boolean(authenticatedAdmin),
     bootstrapRequired,
     user: sanitizeAdminUser(authenticatedAdmin),
@@ -660,10 +764,10 @@ function writeData(data) {
 function sendJson(res, statusCode, payload, extraHeaders = {}) {
   res.writeHead(statusCode, {
     'Content-Type': 'application/json; charset=utf-8',
-    'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
     'Cache-Control': 'no-store',
+    ...(res.__corsHeaders || {}),
     ...extraHeaders
   });
   res.end(JSON.stringify(payload));
@@ -687,13 +791,35 @@ function sendFile(res, filePath) {
   fs.createReadStream(filePath).pipe(res);
 }
 
-function readBody(req) {
+function createPayloadTooLargeError(limitBytes) {
+  const error = new Error(`请求体过大，请控制在 ${(limitBytes / 1024 / 1024).toFixed(0)}MB 内后重试。`);
+  error.statusCode = 413;
+  error.code = 'PAYLOAD_TOO_LARGE';
+  return error;
+}
+
+function readBody(req, options = {}) {
+  const limitBytes = Number(options.limitBytes || DEFAULT_JSON_BODY_LIMIT_BYTES);
   return new Promise((resolve, reject) => {
     let raw = '';
+    let size = 0;
+    let settled = false;
     req.on('data', (chunk) => {
+      if (settled) return;
+      size += chunk.length;
+      if (size > limitBytes) {
+        settled = true;
+        req.pause();
+        req.removeAllListeners('data');
+        req.resume();
+        reject(createPayloadTooLargeError(limitBytes));
+        return;
+      }
       raw += chunk;
     });
     req.on('end', () => {
+      if (settled) return;
+      settled = true;
       if (!raw) {
         resolve({});
         return;
@@ -704,7 +830,11 @@ function readBody(req) {
         reject(new Error('JSON 解析失败'));
       }
     });
-    req.on('error', reject);
+    req.on('error', (error) => {
+      if (settled) return;
+      settled = true;
+      reject(error);
+    });
   });
 }
 
@@ -1259,6 +1389,22 @@ function getEmptyTemplate(collectionKey) {
   if (collectionKey === 'successCases') {
     return {
       _id: '',
+      direction: 'math',
+      pathTags: [],
+      studentName: '',
+      studentAvatarText: '',
+      scoreGain: '',
+      scoreLabel: '',
+      chips: [],
+      startingLabel: '',
+      startingScore: '',
+      finalLabel: '',
+      finalScore: '',
+      quote: '',
+      fitAudience: '',
+      listTitle: '',
+      listDesc: '',
+      detailButtonText: '看详情',
       title: '',
       subtitle: '',
       coverSeed: '',
@@ -1773,16 +1919,17 @@ async function handleApi(req, res, pathname) {
   const parts = pathname.split('/').filter(Boolean);
 
   if (pathname === '/api/health' && req.method === 'GET') {
+    const runtime = buildRuntimeStatus();
     sendJson(res, 200, {
       ok: true,
       port: PORT,
-      mode: store.getMode(),
+      ...runtime,
       urls: getServiceUrls(),
+      previewUrls: getServiceUrls().map((url) => `${url}/api/public/home`),
       config: store.getConfigSummary(),
-      cloudReady: store.getMode() === 'cloud',
-      writeTarget: store.getMode() === 'cloud' ? 'cloud' : 'unavailable',
-      collaboration: {
-        pageConflictProtection: store.getMode() === 'cloud'
+      limits: {
+        defaultJsonMb: DEFAULT_JSON_BODY_LIMIT_BYTES / 1024 / 1024,
+        csvImportMb: CSV_BODY_LIMIT_BYTES / 1024 / 1024
       }
     });
     return;
@@ -1949,7 +2096,7 @@ async function handleApi(req, res, pathname) {
   }
 
   if (parts[1] === 'import' && parts[2] === 'question-bank-csv' && req.method === 'POST') {
-    const body = await readBody(req);
+    const body = await readBody(req, { limitBytes: CSV_BODY_LIMIT_BYTES });
     const action = parts[3] || 'preview';
     const csvText = String(body.csvText || '');
     const fileName = String(body.fileName || '');
@@ -2132,7 +2279,12 @@ async function handleApi(req, res, pathname) {
 }
 
 const server = http.createServer(async (req, res) => {
+  res.__corsHeaders = buildCorsHeaders(req);
   if (req.method === 'OPTIONS') {
+    if (req.headers.origin && !res.__corsHeaders['Access-Control-Allow-Origin']) {
+      sendJson(res, 403, { ok: false, message: '当前来源未被允许访问后台接口' });
+      return;
+    }
     sendJson(res, 200, { ok: true });
     return;
   }

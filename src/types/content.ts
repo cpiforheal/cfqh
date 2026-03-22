@@ -162,9 +162,38 @@ export interface TeachersPage {
 
 // 成果页配置
 export interface SuccessPage {
-  hero: HeroSection;
-  stats: StatItem[];
-  cta: CtaSection;
+  header: {
+    title: string;
+    subtitle: string;
+  };
+  directionTabs: Array<{
+    key: string;
+    label: string;
+  }>;
+  pathTabs: Array<{
+    key: string;
+    label: string;
+  }>;
+  featuredSection: {
+    title: string;
+  };
+  listSection: {
+    title: string;
+    loadMoreText: string;
+  };
+  supportSection: {
+    title: string;
+    subtitle: string;
+    items: Array<{
+      icon: string;
+      title: string;
+      desc: string;
+    }>;
+  };
+  ctaByDirection: {
+    math: CtaSection;
+    medical: CtaSection;
+  };
 }
 
 // 关于页配置
@@ -270,6 +299,22 @@ export interface Teacher {
 // 成功案例
 export interface SuccessCase {
   _id: string;
+  direction: string;
+  pathTags: string[];
+  studentName: string;
+  studentAvatarText: string;
+  scoreGain: string;
+  scoreLabel: string;
+  chips: string[];
+  startingLabel: string;
+  startingScore: string;
+  finalLabel: string;
+  finalScore: string;
+  quote: string;
+  fitAudience: string;
+  listTitle: string;
+  listDesc: string;
+  detailButtonText: string;
   title: string;
   subtitle: string;
   coverUrl: string;

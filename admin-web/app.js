@@ -1,120 +1,120 @@
 const NAV_ITEMS = [
-  { key: 'overview', label: '总览', icon: 'grid' },
-  { key: 'directions', label: '方向', icon: 'compass' },
-  { key: 'questionBank', label: '题库', icon: 'search' },
-  { key: 'teachers', label: '师资', icon: 'users' },
-  { key: 'results', label: '成果', icon: 'award' },
-  { key: 'about', label: '关于', icon: 'info' },
-  { key: 'contact', label: '联系', icon: 'phone' },
-  { key: 'media', label: '媒体', icon: 'image' },
-  { key: 'accounts', label: '角色管理', icon: 'users' }
+  { key: 'overview', label: '首页', icon: 'grid' },
+  { key: 'directions', label: '课程方向', icon: 'compass' },
+  { key: 'questionBank', label: '题库管理', icon: 'search' },
+  { key: 'teachers', label: '师资团队', icon: 'users' },
+  { key: 'results', label: '学员成果', icon: 'award' },
+  { key: 'about', label: '关于我们', icon: 'info' },
+  { key: 'contact', label: '联系方式', icon: 'phone' },
+  { key: 'media', label: '素材资源', icon: 'image' },
+  { key: 'accounts', label: '账号管理', icon: 'users' }
 ];
 
 const VIEW_CONFIG = {
   overview: {
     key: 'overview',
-    kicker: 'CMS',
-    breadcrumb: 'Dashboard',
-    title: '总览',
-    subtitle: '实时查看当前 CMS 内容状态与最近更新。'
+    kicker: '工作台',
+    breadcrumb: '首页',
+    title: '工作台',
+    subtitle: '查看内容更新状态，快速进入常用功能。'
   },
   home: {
     key: 'home',
-    kicker: '内容',
-    breadcrumb: '首页配置',
-    title: '首页配置',
-    subtitle: '维护首页 Hero、优势、环境与 CTA 等内容。', 
+    kicker: '页面',
+    breadcrumb: '首页内容',
+    title: '首页内容',
+    subtitle: '编辑小程序首页展示的标题、数据卡、功能入口和咨询区。', 
     pageKey: 'home',
-    pageLabel: '首页页面',
+    pageLabel: '首页',
     collections: []
   },
   directions: {
     key: 'directions',
-    kicker: '内容',
-    breadcrumb: '开设方向',
-    title: '方向管理',
-    subtitle: '维护方向页配置与方向列表。',
+    kicker: '页面',
+    breadcrumb: '课程方向',
+    title: '课程方向',
+    subtitle: '管理开设的课程方向，设置首页推荐和方向卡片内容。',
     pageKey: 'courses',
-    pageLabel: '开设方向页面',
+    pageLabel: '课程方向页',
     collections: [{ key: 'directions', label: '方向列表' }]
   },
   questionBank: {
     key: 'questionBank',
-    kicker: '内容',
-    breadcrumb: '医护题库',
+    kicker: '页面',
+    breadcrumb: '题库管理',
     title: '题库管理',
-    subtitle: '维护三个题库子页面当前真实显示的标题与说明，并通过 CSV 热更新模拟题题目与套卷。',
+    subtitle: '管理题库页面内容，支持批量导入题目和试卷。',
     pageKey: 'questionBank',
     pageLabel: '题库页面',
     collections: [
-      { key: 'medicalQuestions', label: '模拟题题目' },
-      { key: 'pastPapers', label: '模拟题套卷' },
-      { key: 'questionImports', label: '纯文本导入' }
+      { key: 'medicalQuestions', label: '题目列表' },
+      { key: 'pastPapers', label: '试卷列表' },
+      { key: 'questionImports', label: '导入记录' }
     ]
   },
   teachers: {
     key: 'teachers',
-    kicker: '内容',
+    kicker: '页面',
     breadcrumb: '师资团队',
-    title: '师资管理',
-    subtitle: '维护师资页配置与教师条目。',
+    title: '师资团队',
+    subtitle: '管理老师信息，设置师资页面展示内容。',
     pageKey: 'teachers',
     pageLabel: '师资页面',
-    collections: [{ key: 'teachers', label: '师资列表' }]
+    collections: [{ key: 'teachers', label: '老师列表' }]
   },
   results: {
     key: 'results',
-    kicker: '内容',
-    breadcrumb: '办学成果',
-    title: '成果管理',
-    subtitle: '维护成果页配置与成果案例。',
+    kicker: '页面',
+    breadcrumb: '学员成果',
+    title: '学员成果',
+    subtitle: '管理学员上岸案例，展示教学成果。',
     pageKey: 'success',
     pageLabel: '成果页面',
-    collections: [{ key: 'successCases', label: '成果案例' }]
+    collections: [{ key: 'successCases', label: '案例列表' }]
   },
   about: {
     key: 'about',
-    kicker: '内容',
+    kicker: '页面',
     breadcrumb: '关于我们',
     title: '关于我们',
-    subtitle: '维护机构介绍、理念与环境展示内容。',
+    subtitle: '编辑机构介绍、教学理念和联系方式。',
     pageKey: 'about',
-    pageLabel: '关于我们页面',
+    pageLabel: '关于页面',
     collections: []
   },
   contact: {
     key: 'contact',
-    kicker: '内容',
+    kicker: '设置',
     breadcrumb: '联系方式',
-    title: '站点设置',
-    subtitle: '维护机构名称、电话、微信、地址等公共信息。',
+    title: '联系方式',
+    subtitle: '设置机构名称、电话、微信、地址等联系信息。',
     pageKey: 'site',
     pageLabel: '站点设置',
     collections: []
   },
   media: {
     key: 'media',
-    kicker: '内容',
-    breadcrumb: '媒体资源',
-    title: '资源中心',
-    subtitle: '维护教材资料页面、媒体资源和资料条目。',
+    kicker: '页面',
+    breadcrumb: '教材资料',
+    title: '教材资料',
+    subtitle: '管理教材资料页面，上传和整理学习资源。',
     pageKey: 'materials',
-    pageLabel: '教材资料页面',
+    pageLabel: '资料页面',
     collections: [
-      { key: 'mediaAssets', label: '媒体资源' },
-      { key: 'materialPackages', label: '主推套系包' },
-      { key: 'materialItems', label: '货架资料卡' }
+      { key: 'mediaAssets', label: '素材库' },
+      { key: 'materialPackages', label: '资料套餐' },
+      { key: 'materialItems', label: '资料列表' }
     ]
   },
   accounts: {
     key: 'accounts',
-    kicker: '权限',
-    breadcrumb: '角色管理',
-    title: '角色管理',
-    subtitle: '用表格维护老师登录账号、角色权限和启停状态，所有数据都直接同步到小程序云端数据库。',
+    kicker: '设置',
+    breadcrumb: '账号管理',
+    title: '账号管理',
+    subtitle: '管理后台登录账号，设置角色权限。',
     pageKey: null,
     pageLabel: '',
-    collections: [{ key: 'adminUsers', label: '角色成员' }]
+    collections: [{ key: 'adminUsers', label: '账号列表' }]
   }
 };
 
@@ -138,7 +138,9 @@ const ICONS = {
   moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"></path>',
   edit: '<path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path>',
   copy: '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>',
-  trash: '<path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>'
+  trash: '<path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>',
+  help: '<circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path>',
+  history: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l4 2"></path>'
 };
 
 const state = {
@@ -151,6 +153,9 @@ const state = {
     authenticated: false,
     bootstrapRequired: false,
     cloudReady: true,
+    mode: 'unavailable',
+    modeLabel: '待检测',
+    writeNotice: '',
     user: null,
     permissions: null
   },
@@ -162,6 +167,8 @@ const state = {
 };
 
 const refs = {
+  bootSplash: document.getElementById('boot-splash'),
+  authRoot: document.getElementById('auth-root'),
   app: document.getElementById('app'),
   nav: document.getElementById('sidebar-nav'),
   topbarKicker: document.getElementById('topbar-kicker'),
@@ -180,6 +187,166 @@ const refs = {
 };
 
 let authVisualCleanup = null;
+let bootSplashDismissed = false;
+const CACHE_TTL = 5 * 60 * 1000;
+const TABLE_RENDER_BATCH = 24;
+const dataCache = {
+  entries: new Map(),
+  pending: new Map(),
+  get(key) {
+    const cached = this.entries.get(key);
+    if (!cached) return null;
+    if (Date.now() - cached.timestamp > CACHE_TTL) {
+      this.entries.delete(key);
+      return null;
+    }
+    return cached;
+  },
+  set(key, value, version = '') {
+    this.entries.set(key, {
+      value,
+      version,
+      timestamp: Date.now()
+    });
+    return value;
+  },
+  invalidate(key) {
+    this.entries.delete(key);
+  },
+  invalidatePrefix(prefix) {
+    for (const key of this.entries.keys()) {
+      if (key.startsWith(prefix)) {
+        this.entries.delete(key);
+      }
+    }
+  },
+  clear() {
+    this.entries.clear();
+  }
+};
+const performanceMonitor = {
+  marks: {},
+  start(key) {
+    this.marks[key] = performance.now();
+  },
+  end(key) {
+    const startedAt = this.marks[key];
+    if (!startedAt) return 0;
+    const duration = performance.now() - startedAt;
+    delete this.marks[key];
+    console.log(`[perf] ${key}: ${duration.toFixed(2)}ms`);
+    return duration;
+  }
+};
+
+function getPageCacheVersion(pageData) {
+  if (!pageData) return 'page:empty';
+  return pageData._meta?.revision || `${getUpdatedAt(pageData)}:${Object.keys(pageData || {}).length}`;
+}
+
+function getCollectionCacheVersion(items = []) {
+  const latestUpdatedAt = (items || [])
+    .map((item) => getUpdatedAt(item))
+    .filter(Boolean)
+    .sort()
+    .pop() || '';
+  return `${items.length}:${latestUpdatedAt}`;
+}
+
+function withPendingCache(key, loader) {
+  if (dataCache.pending.has(key)) {
+    return dataCache.pending.get(key);
+  }
+  const task = Promise.resolve()
+    .then(loader)
+    .finally(() => dataCache.pending.delete(key));
+  dataCache.pending.set(key, task);
+  return task;
+}
+
+const preloadManager = {
+  queue: new Set(),
+  timer: null,
+  isRunning: false,
+  add(viewKey) {
+    if (!viewKey || !VIEW_CONFIG[viewKey] || viewKey === state.activeView) return;
+    this.queue.add(viewKey);
+  },
+  schedule(delay = 180) {
+    if (this.timer) {
+      window.clearTimeout(this.timer);
+    }
+    this.timer = window.setTimeout(() => {
+      this.timer = null;
+      this.execute().catch((error) => {
+        console.warn('[preload] 预加载任务异常:', error);
+      });
+    }, delay);
+  },
+  async execute() {
+    if (this.isRunning || !this.queue.size || !state.meta) return;
+    this.isRunning = true;
+    const queue = [...this.queue];
+    this.queue.clear();
+
+    for (const viewKey of queue) {
+      try {
+        if (viewKey === 'overview') {
+          if (!dataCache.get('overview')?.value) {
+            await loadOverviewData();
+          }
+        } else {
+          const view = VIEW_CONFIG[viewKey];
+          if (view && !dataCache.get(`module:${viewKey}`)?.value) {
+            await loadModuleData(view);
+          }
+        }
+      } catch (error) {
+        console.warn(`[preload] ${viewKey} 预加载失败:`, error);
+      }
+
+      await new Promise((resolve) => window.setTimeout(resolve, 80));
+    }
+
+    this.isRunning = false;
+    if (this.queue.size) {
+      this.schedule(120);
+    }
+  },
+  preloadView(viewKey, delay = 120) {
+    this.add(viewKey);
+    this.schedule(delay);
+  },
+  preloadAdjacent(currentViewKey) {
+    const visibleItems = getVisibleNavItems();
+    const currentIndex = visibleItems.findIndex((item) => item.key === currentViewKey);
+    if (currentIndex === -1) return;
+
+    [visibleItems[currentIndex - 1], visibleItems[currentIndex + 1]]
+      .filter(Boolean)
+      .forEach((item) => this.add(item.key));
+
+    this.schedule(260);
+  }
+};
+
+function getVisibleRowCount(collectionKey) {
+  const ui = getViewUi();
+  ui.visibleCounts = ui.visibleCounts || {};
+  return ui.visibleCounts[collectionKey] || TABLE_RENDER_BATCH;
+}
+
+function increaseVisibleRowCount(collectionKey) {
+  const ui = getViewUi();
+  ui.visibleCounts = ui.visibleCounts || {};
+  ui.visibleCounts[collectionKey] = getVisibleRowCount(collectionKey) + TABLE_RENDER_BATCH;
+}
+
+function resetVisibleRowCount(collectionKey) {
+  const ui = getViewUi();
+  ui.visibleCounts = ui.visibleCounts || {};
+  ui.visibleCounts[collectionKey] = TABLE_RENDER_BATCH;
+}
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -230,6 +397,15 @@ function finishBootAnimation() {
       refs.app.dataset.boot = 'ready';
     });
   });
+}
+
+function dismissBootSplash() {
+  if (bootSplashDismissed || !refs.bootSplash) return;
+  bootSplashDismissed = true;
+  refs.bootSplash.dataset.state = 'exit';
+  window.setTimeout(() => {
+    refs.bootSplash?.classList.add('is-hidden');
+  }, 320);
 }
 
 function formatDateTime(value) {
@@ -291,7 +467,13 @@ function request(path, options = {}) {
 }
 
 function applyAuthShell(locked) {
+  document.body.dataset.screen = locked ? 'auth' : 'app';
   refs.app.dataset.auth = locked ? 'locked' : 'ready';
+  if (locked) {
+    document.body.classList.remove('modal-open');
+  } else if (refs.authRoot) {
+    refs.authRoot.innerHTML = '';
+  }
 }
 
 function isPrimaryAdminAccount() {
@@ -344,29 +526,31 @@ function renderAuthScreen(message = '') {
   }
   const { bootstrapRequired, cloudReady } = state.auth;
   const helper = !cloudReady
-    ? '当前 3200 后台只在云端 CMS 模式下开放账号登录。请先配置 CloudBase 环境变量，再刷新页面。'
+    ? (state.auth.writeNotice || '当前后台还没有接上可写数据源，请先检查云环境配置。')
     : bootstrapRequired
-      ? '首次启用后台，请先创建一个可登录的管理员账号。账号信息只会写入小程序云端数据库。'
-      : '请输入云端后台账号和密码。登录成功后才会进入内容管理工作台。';
-  const title = !cloudReady ? 'Cloud CMS required' : bootstrapRequired ? 'Create admin account' : 'Welcome back!';
-  const subtitle = !cloudReady ? 'Please connect your cloud environment' : bootstrapRequired ? 'Set up the first admin for your CMS' : 'Please enter your details';
+      ? '首次使用，请先创建管理员账号。'
+      : '请输入账号和密码登录。';
+  const title = !cloudReady ? '暂未连接' : bootstrapRequired ? '创建管理员' : '欢迎回来';
+  const subtitle = !cloudReady ? `${state.auth.modeLabel || '云环境未就绪'}，暂不可进入正式工作台` : bootstrapRequired ? '设置第一个管理员账号' : '请输入登录信息';
   renderLockedSidebar();
-  refs.topbarKicker.textContent = '权限';
-  refs.topbarBreadcrumb.textContent = '登录后台';
+  refs.topbarKicker.textContent = '登录';
+  refs.topbarBreadcrumb.textContent = '后台登录';
   refs.viewTitle.textContent = bootstrapRequired ? '创建管理员' : '老师登录';
-  setStatus(cloudReady ? (bootstrapRequired ? '等待创建首个管理员' : '等待老师登录') : '等待连接云端 CMS', cloudReady ? 'ok' : 'warn');
-
-  refs.content.innerHTML = `<section class="auth-shell">
-    <div class="auth-visual">
+  setStatus(cloudReady ? (bootstrapRequired ? '等待创建管理员' : '等待登录') : '正在连接系统...', cloudReady ? 'ok' : 'warn');
+  refs.content.innerHTML = '';
+  refs.authRoot.innerHTML = `<section class="auth-shell">
+    <div class="auth-visual" data-auth-visual>
       <div class="auth-brand">
         <div class="auth-brand-mark">启</div>
         <div class="auth-brand-copy">
           <strong>CareerCompass</strong>
+          <span>运营后台</span>
         </div>
       </div>
       <div class="auth-hero">
         <div class="auth-hero-copy">
-          <h2>乘帆起航</h2>
+          <h2>乘帆启航</h2>
+          <p>先完成身份验证，再进入全屏内容工作台。</p>
         </div>
         <div class="auth-scene" aria-hidden="true" data-auth-scene>
           <div class="auth-figure auth-figure-a" data-auth-figure>
@@ -395,11 +579,11 @@ function renderAuthScreen(message = '') {
             <b></b>
           </div>
         </div>
-        <div class="auth-visual-footer">
-          <span>Privacy Policy</span>
-          <span>Terms of Service</span>
-          <span>Contact</span>
-        </div>
+      </div>
+      <div class="auth-visual-footer">
+        <span>Privacy Policy</span>
+        <span>Terms of Service</span>
+        <span>Contact</span>
       </div>
     </div>
     <div class="auth-panel">
@@ -414,7 +598,7 @@ function renderAuthScreen(message = '') {
         ${!cloudReady ? `
           <div class="auth-disabled-card">
             <strong>当前状态</strong>
-            <span>未检测到可用的 CloudBase 云环境配置。</span>
+            <span>${escapeHtml(state.auth.writeNotice || '未检测到可用的 CloudBase 云环境配置。')}</span>
           </div>
         ` : `
           <form class="auth-form" data-auth-form="${bootstrapRequired ? 'bootstrap' : 'login'}">
@@ -425,11 +609,11 @@ function renderAuthScreen(message = '') {
               </label>
             ` : ''}
             <label class="auth-field">
-              <span>${bootstrapRequired ? 'Admin email or account' : 'Email'}</span>
-              <input name="loginAccount" type="text" placeholder="${bootstrapRequired ? 'you@example.com' : 'you@example.com'}" autocomplete="username" />
+              <span>${bootstrapRequired ? '管理员账号' : '用户名'}</span>
+              <input name="loginAccount" type="text" placeholder="请输入用户名" autocomplete="username" />
             </label>
             <label class="auth-field auth-field-password">
-              <span>Password</span>
+              <span>密码</span>
               <div class="auth-password-input">
                 <input name="password" type="password" placeholder="••••••••" autocomplete="${bootstrapRequired ? 'new-password' : 'current-password'}" />
                 <button class="auth-password-toggle" type="button" data-action="toggle-password" aria-label="显示或隐藏密码" aria-pressed="false">
@@ -440,19 +624,20 @@ function renderAuthScreen(message = '') {
             <div class="auth-form-meta">
               <label class="auth-check">
                 <input type="checkbox" name="remember" ${bootstrapRequired ? '' : 'checked'} />
-                <span>Remember for 30 days</span>
+                <span>记住我30天</span>
               </label>
-              <button class="auth-text-action" type="button" data-action="forgot-password">Forgot password?</button>
+              <button class="auth-text-action" type="button" data-action="forgot-password">忘记密码？请联系管理员</button>
             </div>
-            <button class="auth-submit" type="submit">${bootstrapRequired ? 'Create admin' : 'Log In'}</button>
+            <button class="auth-submit" type="submit">${bootstrapRequired ? '创建管理员并进入系统' : '开始畅游！'}</button>
             <div class="auth-form-footer">
-              <span>${escapeHtml(bootstrapRequired ? 'The first admin will enter the CMS with owner permission.' : 'Need access? Contact the system admin to create or reset your account.')}</span>
+              <span>${escapeHtml(bootstrapRequired ? '首个管理员创建成功后，将直接以系统所有者身份进入工作台。' : 'Need access? Contact the system admin to create or reset your account.')}</span>
             </div>
           </form>
         `}
       </div>
     </div>
   </section>`;
+  dismissBootSplash();
   initAuthVisualMotion();
   syncModalState();
 }
@@ -462,11 +647,12 @@ function initAuthVisualMotion() {
     authVisualCleanup();
     authVisualCleanup = null;
   }
-  const shell = refs.content.querySelector('.auth-shell');
-  const scene = refs.content.querySelector('[data-auth-scene]');
-  if (!shell || !scene) return;
+  const shell = refs.authRoot?.querySelector('.auth-shell');
+  const scene = refs.authRoot?.querySelector('[data-auth-scene]');
+  const visual = refs.authRoot?.querySelector('[data-auth-visual]');
+  if (!shell || !scene || !visual) return;
 
-  const passwordInput = refs.content.querySelector('.auth-form input[name="password"]');
+  const passwordInput = refs.authRoot.querySelector('.auth-form input[name="password"]');
   const eyeRows = Array.from(scene.querySelectorAll('.eye-row'));
   const maxOffset = 7.5;
 
@@ -509,16 +695,16 @@ function initAuthVisualMotion() {
     resetEyes();
   };
 
-  window.addEventListener('mousemove', handlePointerMove);
-  scene.addEventListener('mouseleave', handlePointerLeave);
+  visual.addEventListener('mousemove', handlePointerMove);
+  visual.addEventListener('mouseleave', handlePointerLeave);
   if (passwordInput) {
     passwordInput.addEventListener('focus', handlePasswordFocus);
     passwordInput.addEventListener('blur', handlePasswordBlur);
   }
 
   authVisualCleanup = () => {
-    window.removeEventListener('mousemove', handlePointerMove);
-    scene.removeEventListener('mouseleave', handlePointerLeave);
+    visual.removeEventListener('mousemove', handlePointerMove);
+    visual.removeEventListener('mouseleave', handlePointerLeave);
     if (passwordInput) {
       passwordInput.removeEventListener('focus', handlePasswordFocus);
       passwordInput.removeEventListener('blur', handlePasswordBlur);
@@ -552,6 +738,7 @@ function renderSessionControl() {
         </div>
         <button class="topbar-session-action" type="button" data-action="logout">退出登录</button>
       </div>
+      <button id="help-button" class="topbar-icon-button" type="button" aria-label="帮助" title="查看帮助文档">${icon('help')}</button>
       <button id="refresh-view" class="topbar-icon-button" type="button" aria-label="刷新"></button>
     `;
   }
@@ -576,7 +763,10 @@ async function loadAuthState() {
   state.auth.authenticated = Boolean(result.data?.authenticated);
   state.auth.bootstrapRequired = Boolean(result.data?.bootstrapRequired);
   state.auth.cloudReady = result.data?.cloudReady !== false;
-  state.auth.user = result.data?.admin || null;
+  state.auth.mode = result.data?.mode || 'unavailable';
+  state.auth.modeLabel = result.data?.modeLabel || '待检测';
+  state.auth.writeNotice = result.data?.writeNotice || '';
+  state.auth.user = result.data?.user || null;
   state.auth.permissions = result.data?.permissions || null;
   ensureActiveViewAvailable();
   return state.auth;
@@ -608,6 +798,54 @@ async function logoutCurrentUser() {
   await loadAuthState();
   renderSessionControl();
   renderAuthScreen('已退出当前后台账号。');
+}
+
+async function handleAuthFormSubmit(form) {
+  const mode = form.dataset.authForm;
+  const formData = new FormData(form);
+  try {
+    setStatus(mode === 'bootstrap' ? '正在创建管理员...' : '正在登录后台...', 'loading');
+    if (mode === 'bootstrap') {
+      await submitBootstrap(formData);
+    } else {
+      await submitLogin(formData);
+    }
+    await loadAuthState();
+    renderSessionControl();
+    if (state.auth.authenticated) {
+      applyAuthShell(false);
+      await hydrateMeta();
+      await renderActiveView(true);
+      setStatus(mode === 'bootstrap' ? '管理员已创建并登录' : '登录成功');
+      finishBootAnimation();
+    } else {
+      renderAuthScreen('登录未完成，请检查账号状态。');
+    }
+  } catch (error) {
+    renderAuthScreen(error.message || '登录失败，请稍后重试。');
+    setStatus(error.message || '登录失败', 'error');
+  }
+}
+
+function handleAuthAction(button) {
+  const { action } = button.dataset;
+  if (action === 'toggle-password') {
+    const field = button.closest('.auth-password-input');
+    const input = field?.querySelector('input[name="password"]');
+    if (!input) return true;
+    const nextType = input.type === 'password' ? 'text' : 'password';
+    input.type = nextType;
+    button.setAttribute('aria-pressed', nextType === 'text' ? 'true' : 'false');
+    field.classList.toggle('is-visible', nextType === 'text');
+    return true;
+  }
+
+  if (action === 'forgot-password') {
+    setStatus('请联系系统管理员重置后台密码。', 'warn');
+    return true;
+  }
+
+  return false;
 }
 
 function getViewUi(viewKey = state.activeView) {
@@ -755,6 +993,27 @@ function getCollectionMeta(collectionKey) {
   return state.meta?.listOptions?.find((item) => item.key === collectionKey) || { key: collectionKey, label: collectionKey };
 }
 
+function normalizeFieldList(value) {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => {
+        if (typeof item === 'string') return item.trim();
+        if (item && typeof item === 'object') return item.label || item.name || item.title || item.id || '';
+        return '';
+      })
+      .filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    return value
+      .split(/[\n,，|/、]+/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+}
+
 function getPrimaryLabel(item, collectionKey) {
   if (!item) return '未命名';
   if (collectionKey === 'adminUsers') return item.name || item.loginAccount || item._id || '未命名账号';
@@ -763,7 +1022,7 @@ function getPrimaryLabel(item, collectionKey) {
   if (collectionKey === 'pastPapers') return item.title || item.paperId || item._id || '未命名试卷';
   if (collectionKey === 'questionImports') return item.title || item.sourceType || item._id || '未命名导入';
   if (collectionKey === 'teachers') return item.name || item.role || item._id || '未命名老师';
-  if (collectionKey === 'successCases') return item.title || item.subtitle || item._id || '未命名案例';
+  if (collectionKey === 'successCases') return item.studentName || item.listTitle || item.title || item._id || '未命名案例';
   if (collectionKey === 'materialPackages') return item.title || item.badge || item._id || '未命名套系包';
   if (collectionKey === 'materialItems') return item.title || item.subtitle || item._id || '未命名单品';
   if (collectionKey === 'mediaAssets') return item.name || item.alt || item.url || item._id || '未命名资源';
@@ -778,7 +1037,7 @@ function getSecondaryLabel(item, collectionKey) {
   if (collectionKey === 'pastPapers') return [item.direction, item.year, item.status].filter(Boolean).join(' / ');
   if (collectionKey === 'questionImports') return [item.direction, item.sourceType, item.status].filter(Boolean).join(' / ');
   if (collectionKey === 'teachers') return [item.role, item.tag].filter(Boolean).join(' / ');
-  if (collectionKey === 'successCases') return [item.category, item.year].filter(Boolean).join(' / ');
+  if (collectionKey === 'successCases') return [item.direction, ...normalizeFieldList(item.pathTags).slice(0, 2), item.year].filter(Boolean).join(' / ');
   if (collectionKey === 'materialPackages') return [item.direction, item.stage].filter(Boolean).join(' / ');
   if (collectionKey === 'materialItems') return [item.direction, item.stage, item.type].filter(Boolean).join(' / ');
   if (collectionKey === 'mediaAssets') return [item.module, item.type, item.status].filter(Boolean).join(' / ');
@@ -841,6 +1100,12 @@ const FIELD_LABELS = {
   footnote: '底部说明',
   categories: '分类',
   suggestions: '建议',
+  pathTabs: '路径筛选标签',
+  featuredSection: '首推案例区',
+  listSection: '案例列表区',
+  loadMoreText: '加载更多文案',
+  supportSection: '深色支持区',
+  ctaByDirection: '分方向 CTA',
   header: '顶部标题区',
   searchLabel: '搜索按钮提示',
   directionTabs: '顶部方向切换',
@@ -871,6 +1136,28 @@ const FIELD_LABELS = {
   authChannels: '登录方式',
   lastLoginAt: '最近登录时间',
   direction: '方向',
+  pathTags: '路径标签',
+  studentName: '学生姓名',
+  studentAvatarText: '头像文字',
+  scoreGain: '提分标签',
+  scoreLabel: '成绩标签',
+  startingLabel: '起点说明',
+  startingScore: '起点成绩',
+  finalLabel: '结果说明',
+  finalScore: '最终成绩',
+  quote: '案例原话',
+  fitAudience: '适合参考人群',
+  listTitle: '列表标题',
+  listDesc: '列表说明',
+  detailButtonText: '详情按钮文案',
+  startingLabel: '起点说明',
+  startingScore: '起点成绩',
+  finalLabel: '结果说明',
+  finalScore: '最终成绩',
+  quote: '案例原话',
+  fitAudience: '适合参考人群',
+  listTitle: '列表标题',
+  listDesc: '列表说明',
   questionType: '题型',
   stem: '题干',
   options: '选项',
@@ -928,6 +1215,7 @@ const LINE_LIST_FIELDS = new Set([
   'chips',
   'categories',
   'suggestions',
+  'pathTags',
   'features',
   'featuredDirectionIds',
   'contentItemIds',
@@ -939,7 +1227,6 @@ const OBJECT_ARRAY_FIELDS = new Set([
   'quickLinks',
   'advantages',
   'cards',
-  'features',
   'stats',
   'values',
   'environmentImages',
@@ -958,14 +1245,61 @@ const ARRAY_TEMPLATES = {
   environmentImages: { label: '', imageUrl: '', imageSeed: '' },
   directionTabs: { key: '', label: '', icon: '' },
   stageTabs: { key: '', label: '' },
+  pathTabs: { key: '', label: '' },
   options: { id: '', text: '' },
   tags: '',
   categories: '',
   suggestions: '',
+  pathTags: '',
   featuredDirectionIds: '',
   contentItemIds: '',
   specialties: '',
   questionIds: ''
+};
+const QUESTION_BANK_COLLECTION_SCOPES = new Set([
+  'collection:medicalQuestions',
+  'collection:pastPapers',
+  'collection:questionImports'
+]);
+const STRUCTURED_FIELD_DEFAULTS = {
+  'collection:medicalQuestions': {
+    questionId: '',
+    direction: 'medical',
+    questionType: 'single_choice',
+    year: new Date().getFullYear(),
+    paperId: '',
+    status: 'draft',
+    sort: 100,
+    stem: '',
+    options: [
+      { id: 'A', text: '' },
+      { id: 'B', text: '' },
+      { id: 'C', text: '' },
+      { id: 'D', text: '' }
+    ],
+    answer: '',
+    explanation: '',
+    tags: []
+  },
+  'collection:pastPapers': {
+    paperId: '',
+    title: '',
+    year: new Date().getFullYear(),
+    direction: 'medical',
+    status: 'draft',
+    sort: 100,
+    description: '',
+    questionIds: []
+  },
+  'collection:questionImports': {
+    title: '',
+    direction: 'medical',
+    sourceType: 'paper',
+    status: 'draft',
+    sort: 100,
+    rawText: '',
+    note: ''
+  }
 };
 const SELECT_FIELD_OPTIONS = {
   status: [
@@ -1179,6 +1513,75 @@ const EDITOR_LAYOUTS = {
       }
     ]
   },
+  'collection:materialPackages': {
+    hero: {
+      title: '资料套系信息',
+      desc: '先确定套系标题、方向和适用阶段，再填写适合谁、解决什么问题以及套系里包含哪些资料。'
+    },
+    sections: [
+      {
+        title: '套系基础信息',
+        desc: '对应教材页主推套系卡最先展示的标题、角标、方向与阶段。',
+        keys: ['title', 'badge', 'direction', 'stage', 'status', 'sort']
+      },
+      {
+        title: '适用人群与解决问题',
+        desc: '建议直接按“适合谁 / 解决什么问题”去写，老师第一次接手也更容易理解。',
+        keys: ['target', 'solves']
+      },
+      {
+        title: '套系内容',
+        desc: '卖点支持一行一条填写，套系包含资料可直接按名称选择，不需要手动填 ID。',
+        keys: ['features', 'contentItemIds']
+      }
+    ]
+  },
+  'collection:materialItems': {
+    hero: {
+      title: '资料单项信息',
+      desc: '这里对应教材页里的单张资料卡，先改标题、副标题和类型，再补说明和封面色。'
+    },
+    sections: [
+      {
+        title: '卡片基础信息',
+        desc: '决定资料卡最先看到的标题、类型、方向与阶段。',
+        keys: ['title', 'subtitle', 'type', 'direction', 'stage', 'status', 'sort']
+      },
+      {
+        title: '文案说明',
+        desc: '短说明适合卡片摘要，详细介绍适合继续展开后的补充内容。',
+        keys: ['desc', 'details']
+      },
+      {
+        title: '封面视觉',
+        desc: '两种颜色会组成资料卡封面渐变，建议保持同色系搭配。',
+        keys: ['accentStart', 'accentEnd']
+      }
+    ]
+  },
+  'collection:mediaAssets': {
+    hero: {
+      title: '素材资源信息',
+      desc: '先维护资源名称、使用模块和链接地址，标签与缩略图放到后面，减少第一次上手时的理解压力。'
+    },
+    sections: [
+      {
+        title: '资源基础信息',
+        desc: '先明确素材叫什么、会被哪个页面模块使用、当前是否发布。',
+        keys: ['name', 'module', 'type', 'status', 'sort']
+      },
+      {
+        title: '资源链接',
+        desc: '主链接是实际资源地址，缩略图可选填，替代文本建议写成老师一眼能看懂的说明。',
+        keys: ['url', 'thumbUrl', 'alt']
+      },
+      {
+        title: '标签',
+        desc: '一行一条填写，适合按页面、用途或主题给素材做归类。',
+        keys: ['tags']
+      }
+    ]
+  },
   'collection:adminUsers': {
     hero: {
       title: '后台账号信息',
@@ -1267,25 +1670,30 @@ const EDITOR_LAYOUTS = {
   'page:success': {
     hero: {
       title: '成果页主配置',
-      desc: '这里维护的是成果页当前真实会显示的结果首屏、结果证明数据和底部咨询承接区。'
+      desc: '这里维护的是成果页首屏标题、方向切换、路径筛选、案例区、深色支持区和分方向 CTA。'
     },
     sections: [
       {
-        title: '结果首屏',
-        desc: '对应成果页顶部的大标题、说明和首屏标签。',
-        keys: ['hero']
+        title: '首屏标题区',
+        desc: '对应成果页顶部的大标题和副标题。',
+        keys: ['header']
       },
       {
-        title: '结果证明数据',
-        desc: '对应成果页首屏里的 3 张结果证明数据卡。',
-        keys: ['stats']
+        title: '切换与筛选',
+        desc: '对应高数/医护切换和下方路径筛选标签。',
+        keys: ['directionTabs', 'pathTabs']
+      },
+      {
+        title: '案例区标题',
+        desc: '对应首推案例区和案例列表区标题。',
+        keys: ['featuredSection', 'listSection']
       }
     ],
     secondarySections: [
       {
-        title: '底部咨询承接区',
-        desc: '对应成果页最下方的咨询承接卡片。',
-        keys: ['cta']
+        title: '深色支持区与 CTA',
+        desc: '对应底部深色支持模块和高数/医护分方向 CTA。',
+        keys: ['supportSection', 'ctaByDirection']
       }
     ],
     foldLabel: '成果页补充区块'
@@ -1451,22 +1859,48 @@ function isIndexedObject(value) {
   return keys.length > 0 && keys.every((key) => /^\d+$/.test(key));
 }
 
-function normalizeCmsValue(value) {
+function shouldJoinIndexedCharacters(fieldKey, value) {
+  if (!Array.isArray(value) || !fieldKey) return false;
+  if (LINE_LIST_FIELDS.has(fieldKey) || OBJECT_ARRAY_FIELDS.has(fieldKey)) return false;
+  return value.length > 1 && value.every((item) => typeof item === 'string' && item.length <= 1);
+}
+
+function normalizeCmsValue(value, fieldKey = '') {
   if (Array.isArray(value)) {
     return value.map((item) => normalizeCmsValue(item));
   }
 
   if (isIndexedObject(value)) {
-    return Object.keys(value)
+    const normalized = Object.keys(value)
       .sort((left, right) => Number(left) - Number(right))
-      .map((key) => normalizeCmsValue(value[key]));
+      .map((key) => normalizeCmsValue(value[key], key));
+    return shouldJoinIndexedCharacters(fieldKey, normalized) ? normalized.join('') : normalized;
   }
 
   if (value && typeof value === 'object') {
-    return Object.fromEntries(Object.entries(value).map(([key, itemValue]) => [key, normalizeCmsValue(itemValue)]));
+    return Object.fromEntries(Object.entries(value).map(([key, itemValue]) => [key, normalizeCmsValue(itemValue, key)]));
   }
 
   return value;
+}
+
+function normalizeMediaAssetItem(item) {
+  if (!item || typeof item !== 'object' || Array.isArray(item)) return item;
+  const nextItem = { ...item };
+  if (!nextItem.name && nextItem.title) nextItem.name = nextItem.title;
+  if (!nextItem.module && nextItem.category) nextItem.module = nextItem.category;
+  if (!nextItem.type) nextItem.type = 'image';
+  delete nextItem.title;
+  delete nextItem.category;
+  return nextItem;
+}
+
+function normalizeCollectionItem(collectionKey, item) {
+  const normalized = normalizeCmsValue(item);
+  if (collectionKey === 'mediaAssets') {
+    return normalizeMediaAssetItem(normalized);
+  }
+  return normalized;
 }
 
 function humanizeLabel(key) {
@@ -1557,19 +1991,41 @@ const SCOPED_FIELD_LABELS = {
     'cta.buttonText': '承接按钮文案'
   },
   'page:success': {
-    hero: '结果首屏',
-    'hero.chip': '首屏小角标',
-    'hero.title': '结果首屏主标题',
-    'hero.desc': '结果首屏说明',
-    stats: '结果证明数据',
-    'stats.*': '结果证明卡',
-    'stats.*.value': '证明数值',
-    'stats.*.label': '证明标签',
-    'stats.*.note': '补充说明',
-    cta: '底部咨询承接区',
-    'cta.title': '承接区标题',
-    'cta.desc': '承接区说明',
-    'cta.buttonText': '承接按钮文案'
+    header: '首屏标题区',
+    'header.title': '页面标题',
+    'header.subtitle': '页面副标题',
+    directionTabs: '方向切换',
+    'directionTabs.*': '方向按钮',
+    'directionTabs.*.key': '方向标识',
+    'directionTabs.*.label': '方向名称',
+    pathTabs: '路径筛选标签',
+    'pathTabs.*': '路径标签',
+    'pathTabs.*.key': '标签标识',
+    'pathTabs.*.label': '标签名称',
+    featuredSection: '首推案例区',
+    'featuredSection.title': '区块标题',
+    listSection: '案例列表区',
+    'listSection.title': '列表标题',
+    'listSection.loadMoreText': '加载更多文案',
+    supportSection: '深色支持区',
+    'supportSection.title': '区块标题',
+    'supportSection.subtitle': '区块说明',
+    'supportSection.items': '支持项',
+    'supportSection.items.*': '支持卡片',
+    'supportSection.items.*.icon': '图标标识',
+    'supportSection.items.*.title': '标题',
+    'supportSection.items.*.desc': '说明',
+    ctaByDirection: '分方向 CTA',
+    'ctaByDirection.math': '高数 CTA',
+    'ctaByDirection.math.title': '标题',
+    'ctaByDirection.math.desc': '说明',
+    'ctaByDirection.math.buttonText': '按钮文案',
+    'ctaByDirection.math.footnote': '补充说明',
+    'ctaByDirection.medical': '医护 CTA',
+    'ctaByDirection.medical.title': '标题',
+    'ctaByDirection.medical.desc': '说明',
+    'ctaByDirection.medical.buttonText': '按钮文案',
+    'ctaByDirection.medical.footnote': '补充说明'
   },
   'page:about': {
     hero: '关于页首屏',
@@ -1671,8 +2127,24 @@ const SCOPED_FIELD_LABELS = {
     status: '发布状态'
   },
   'collection:successCases': {
-    title: '上岸故事标题',
-    subtitle: '上岸故事说明',
+    direction: '所属方向',
+    pathTags: '路径标签',
+    studentName: '学生姓名',
+    studentAvatarText: '头像文字',
+    scoreGain: '提分标签',
+    scoreLabel: '成绩标签',
+    chips: '案例标签',
+    startingLabel: '起点说明',
+    startingScore: '起点成绩',
+    finalLabel: '结果说明',
+    finalScore: '最终成绩',
+    quote: '案例原话',
+    fitAudience: '适合参考人群',
+    listTitle: '列表标题',
+    listDesc: '列表说明',
+    detailButtonText: '详情按钮文案',
+    title: '兼容标题',
+    subtitle: '兼容副标题',
     coverUrl: '封面图片地址',
     coverSeed: '封面备用图标识',
     year: '上岸年份',
@@ -1738,9 +2210,10 @@ const SCOPED_FIELD_LABELS = {
     status: '发布状态'
   },
   'collection:mediaAssets': {
-    title: '资源名称',
-    category: '资源分类',
+    name: '资源名称',
+    title: '旧版资源名称',
     module: '使用模块',
+    category: '旧版资源分类',
     type: '资源类型',
     url: '资源地址',
     thumbUrl: '缩略图地址',
@@ -2079,9 +2552,20 @@ function renderPrimitiveInput(scope, path, fieldKey, value) {
   const selectOptions = getSelectOptions(scope, fieldKey);
   const referenceOptions = getReferenceOptions(scope, path);
   const isImageUrlField = /(?:image|background|avatar|cover|thumb)Url$/i.test(fieldKey);
-  const inputPlaceholder = isImageUrlField ? '直接粘贴图床链接' : '';
+  const isMediaAssetScope = scope === 'collection:mediaAssets';
+  const inputPlaceholder = fieldKey === 'avatarUrl'
+    ? '例如：https://your-cdn.com/teachers/teacher-01.jpg'
+    : isMediaAssetScope && fieldKey === 'url'
+      ? '例如：https://your-cdn.com/materials/banner-01.png'
+      : isMediaAssetScope && fieldKey === 'thumbUrl'
+        ? '例如：https://your-cdn.com/materials/banner-01-thumb.png'
+        : isMediaAssetScope && fieldKey === 'module'
+          ? '例如：首页主视觉 / 教材资料 / 成果案例'
+    : isImageUrlField
+      ? '直接粘贴图床链接'
+      : '';
   const isDirectionScope = scope === 'collection:directions' || scope === 'page:courses';
-  const useWideField = isImageUrlField || isDirectionScope;
+  const useWideField = isImageUrlField || isDirectionScope || (isMediaAssetScope && ['url', 'thumbUrl', 'module'].includes(fieldKey));
 
   if (referenceOptions) {
     return `<label class="form-field form-field-wide">
@@ -2247,10 +2731,27 @@ function renderFormNode(scope, value, path = [], fieldKey = '') {
   return renderPrimitiveInput(scope, path, fieldKey, value);
 }
 
+function getStructuredFieldValue(scope, value, key) {
+  if (Object.prototype.hasOwnProperty.call(value || {}, key)) {
+    return value[key];
+  }
+
+  if (Object.prototype.hasOwnProperty.call(STRUCTURED_FIELD_DEFAULTS[scope] || {}, key)) {
+    return cloneValue(STRUCTURED_FIELD_DEFAULTS[scope][key]);
+  }
+
+  return undefined;
+}
+
 function renderFieldsForKeys(scope, value, keys) {
+  const forceRenderMissingKeys = QUESTION_BANK_COLLECTION_SCOPES.has(scope);
   return keys
-    .filter((key) => Object.prototype.hasOwnProperty.call(value || {}, key) && !isManagedField(key) && !shouldHideField(scope, [key]))
-    .map((key) => renderFormNode(scope, value[key], [key], key))
+    .filter((key) =>
+      !isManagedField(key) &&
+      !shouldHideField(scope, [key]) &&
+      (forceRenderMissingKeys || Object.prototype.hasOwnProperty.call(value || {}, key))
+    )
+    .map((key) => renderFormNode(scope, getStructuredFieldValue(scope, value, key), [key], key))
     .join('');
 }
 
@@ -2366,11 +2867,7 @@ const TABLE_COLLECTIONS = new Set([
   'medicalQuestions',
   'pastPapers',
   'questionImports',
-  'teachers',
-  'successCases',
-  'mediaAssets',
-  'materialPackages',
-  'materialItems'
+  'successCases'
 ]);
 
 const TABLE_COLUMNS = {
@@ -2455,7 +2952,7 @@ const TABLE_COLUMNS = {
     },
     { key: 'direction', label: '方向', render: (item) => escapeHtml(item.direction || '-') },
     { key: 'year', label: '年份', render: (item) => escapeHtml(String(item.year ?? '-')) },
-    { key: 'questionIds', label: '题目数', render: (item) => escapeHtml(String((item.questionIds || []).length || 0)) },
+    { key: 'questionIds', label: '题目数', render: (item) => escapeHtml(String(normalizeFieldList(item.questionIds).length || 0)) },
     {
       key: 'status',
       label: '状态',
@@ -2496,7 +2993,7 @@ const TABLE_COLUMNS = {
       render: (item) => `<strong class="data-table-title">${escapeHtml(item.name || '未命名老师')}</strong><span class="data-table-sub">${escapeHtml(item.tag || item._id || '')}</span>`
     },
     { key: 'role', label: '角色', render: (item) => escapeHtml(item.role || '-') },
-    { key: 'specialties', label: '擅长', render: (item) => escapeHtml((item.specialties || []).slice(0, 2).join(' / ') || '-') },
+    { key: 'specialties', label: '擅长', render: (item) => escapeHtml(normalizeFieldList(item.specialties).slice(0, 2).join(' / ') || '-') },
     {
       key: 'status',
       label: '状态',
@@ -2512,11 +3009,13 @@ const TABLE_COLUMNS = {
   ],
   successCases: [
     {
-      key: 'title',
-      label: '案例标题',
-      render: (item) => `<strong class="data-table-title">${escapeHtml(item.title || '未命名案例')}</strong><span class="data-table-sub">${escapeHtml(item.subtitle || item._id || '')}</span>`
+      key: 'studentName',
+      label: '案例对象',
+      render: (item) => `<strong class="data-table-title">${escapeHtml(item.studentName || item.title || '未命名案例')}</strong><span class="data-table-sub">${escapeHtml(item.listTitle || item.subtitle || item._id || '')}</span>`
     },
-    { key: 'category', label: '分类', render: (item) => escapeHtml(item.category || '-') },
+    { key: 'direction', label: '方向', render: (item) => escapeHtml(item.direction || '-') },
+    { key: 'pathTags', label: '路径', render: (item) => escapeHtml(normalizeFieldList(item.pathTags).join(' / ') || '-') },
+    { key: 'finalScore', label: '结果', render: (item) => escapeHtml(item.finalScore || item.scoreGain || '-') },
     { key: 'year', label: '年份', render: (item) => escapeHtml(String(item.year ?? '-')) },
     {
       key: 'status',
@@ -2560,7 +3059,7 @@ const TABLE_COLUMNS = {
     },
     { key: 'direction', label: '方向', render: (item) => escapeHtml(item.direction || '-') },
     { key: 'stage', label: '阶段', render: (item) => escapeHtml(item.stage || '-') },
-    { key: 'features', label: '卖点数', render: (item) => escapeHtml(String((item.features || []).length || 0)) },
+    { key: 'features', label: '卖点数', render: (item) => escapeHtml(String(normalizeFieldList(item.features).length || 0)) },
     {
       key: 'status',
       label: '状态',
@@ -3239,27 +3738,43 @@ function getPageSectionRows(pageKey, page = {}) {
   if (pageKey === 'success') {
     return [
       {
-        id: 'hero',
-        title: '结果首屏',
-        desc: '对应成果页顶部的大标题、说明和首屏标签。',
-        meta: page.hero?.title || page.hero?.desc || '首屏标题 / 说明',
-        location: '首屏标题 / 首屏说明 / 首屏标签',
-        keys: ['hero']
+        id: 'header',
+        title: '首屏标题区',
+        desc: '对应成果页顶部的大标题和副标题。',
+        meta: page.header?.title || page.header?.subtitle || '首屏标题 / 副标题',
+        location: '页面标题 / 页面副标题',
+        keys: ['header']
       },
       {
-        id: 'stats',
-        title: '结果证明数据',
-        desc: '对应成果页首屏里的 3 张结果证明数据卡。',
-        meta: `${(page.stats || []).length} 项结果证明`,
-        location: '数据数值 / 数据标签 / 补充说明',
-        keys: ['stats']
+        id: 'directionTabs',
+        title: '方向切换',
+        desc: '对应高数和医护两个切换按钮，切换后案例和 CTA 都会同步变化。',
+        meta: `${(page.directionTabs || []).length} 个方向按钮`,
+        location: '方向按钮名称',
+        keys: ['directionTabs']
+      },
+      {
+        id: 'pathTabs',
+        title: '路径筛选标签',
+        desc: '对应基础薄弱、跨专业考、时间紧张、冲刺逆袭这些筛选标签。',
+        meta: `${(page.pathTabs || []).length} 个路径标签`,
+        location: '标签名称 / 标签顺序',
+        keys: ['pathTabs']
+      },
+      {
+        id: 'featuredSection',
+        title: '首推案例区',
+        desc: '对应“与你相似的首推案例”标题。',
+        meta: page.featuredSection?.title || '首推案例标题',
+        location: '区块标题',
+        keys: ['featuredSection']
       },
       {
         id: 'successCases',
-        title: '上岸案例条目',
-        desc: '对应成果页里的代表案例和后续案例时间线。',
+        title: '案例条目',
+        desc: '对应首推案例卡和下方案例列表，切换方向和路径后都会从这里筛选内容。',
         meta: `${(state.currentData?.collections?.successCases || []).length} 个成果案例`,
-        location: '案例标题 / 案例说明 / 上岸年份 / 案例分类 / 封面图片',
+        location: '学生姓名 / 路径标签 / 起点成绩 / 最终成绩 / 原话 / 适合人群',
         keys: [],
         linkOnly: true,
         targetView: 'results',
@@ -3268,12 +3783,28 @@ function getPageSectionRows(pageKey, page = {}) {
         statusText: '已跳转到成果案例列表，请修改上岸故事条目。'
       },
       {
-        id: 'cta',
-        title: '底部咨询承接区',
-        desc: '对应成果页最下方的咨询承接卡片。',
-        meta: page.cta?.title || page.cta?.buttonText || '咨询区标题 / 按钮',
-        location: '咨询区标题 / 咨询区说明 / 咨询按钮文案',
-        keys: ['cta']
+        id: 'listSection',
+        title: '案例列表区',
+        desc: '对应“更多相似路径”和加载更多按钮。',
+        meta: page.listSection?.title || page.listSection?.loadMoreText || '列表标题 / 加载更多',
+        location: '列表标题 / 加载更多文案',
+        keys: ['listSection']
+      },
+      {
+        id: 'supportSection',
+        title: '深色支持区',
+        desc: '对应底部深色模块里的标题、说明和支持项。',
+        meta: page.supportSection?.title || `${(page.supportSection?.items || []).length} 项支持`,
+        location: '区块标题 / 区块说明 / 支持项',
+        keys: ['supportSection']
+      },
+      {
+        id: 'ctaByDirection',
+        title: '分方向 CTA',
+        desc: '对应高数和医护切换后的 CTA 文案同步变化。',
+        meta: page.ctaByDirection?.math?.buttonText || page.ctaByDirection?.medical?.buttonText || '分方向 CTA',
+        location: '高数 CTA / 医护 CTA',
+        keys: ['ctaByDirection']
       }
     ];
   }
@@ -3552,6 +4083,20 @@ function renderPageSectionNavCards(pageKey, rows, selectedSectionId, actionName)
   </div>`;
 }
 
+function renderPageSectionRowsList(pageKey, rows, selectedSectionId, actionName) {
+  if (!rows.length) return '';
+
+  return `<div class="record-list compact-list page-workspace-row-list workspace-enter" style="--enter-delay: 150ms;">
+    ${rows.map((row, index) => `<button class="record-row workspace-row-enter${row.id === selectedSectionId ? ' active' : ''}" type="button" style="--enter-delay: ${180 + index * 24}ms;" data-action="${escapeHtml(getPageSectionAction(row, actionName))}" data-page-key="${escapeHtml(pageKey)}" data-section-id="${escapeHtml(row.id)}" ${row.linkOnly ? getLinkedWorkspaceDataset(row) : ''}>
+      <span class="record-row-main">
+        <strong class="record-row-title">${escapeHtml(row.title)}</strong>
+        <span class="record-row-meta">${escapeHtml(row.desc || row.meta || '点击进入编辑')}</span>
+      </span>
+      <span class="record-pill">${escapeHtml(getPageSectionActionLabel(row))}</span>
+    </button>`).join('')}
+  </div>`;
+}
+
 function renderPageSectionFieldWorkbench(pageKey, page, section) {
   if (usesDirectSectionEditor(pageKey)) {
     return renderDirectSectionEditor(pageKey, page, section);
@@ -3630,39 +4175,491 @@ function renderPageSectionsTable(pageKey, rows, selectedSectionId, actionName) {
   </div>`;
 }
 
-function renderPageWorkflowGuide(pageKey, rows = []) {
-  if (pageKey !== 'materials' || !rows.length) {
+function renderWorkbenchCardAction(card) {
+  if (!card) return '';
+  if (card.href) {
+    return `<a class="teacher-guide-link" href="${escapeHtml(card.href)}">${escapeHtml(card.actionLabel || '前往')}</a>`;
+  }
+  if (!card.action) {
     return '';
   }
 
-  const cards = [
-    {
-      title: '先改页面顶部',
-      desc: '如果你只是想先让页面顺眼一点，先点“第 1 步 · 页面顶部”。',
-      meta: '标题 / 方向切换 / 阶段按钮'
-    },
-    {
-      title: '再改主推大卡',
-      desc: '主推套系是学生最容易停下来阅读的地方，优先改这里。',
-      meta: '角标 / 主标题 / 卖点 / 适合人群'
-    },
-    {
-      title: '最后补货架和咨询',
-      desc: '资料卡和底部咨询条放在最后改，节奏更清楚，也不容易乱。',
-      meta: '资料卡 / 咨询按钮'
-    }
-  ];
+  const attrs = Object.entries(card.action)
+    .map(([key, value]) => `data-${escapeHtml(key)}="${escapeHtml(String(value))}"`)
+    .join(' ');
 
-  return `<div class="page-workflow-guide workspace-enter" style="--enter-delay: 140ms;">
-    <div class="page-workflow-guide-head">
-      <strong>推荐修改顺序</strong>
-      <span>不用把所有词条一次看完，按这个顺序改就能快速完成一张页面。</span>
+  return `<button class="teacher-guide-link" type="button" ${attrs}>${escapeHtml(card.actionLabel || '前往')}</button>`;
+}
+
+function getViewWorkbenchGuide(view, data = {}) {
+  const counts = Object.fromEntries((view.collections || []).map((collection) => [collection.key, (data.collections?.[collection.key] || []).length]));
+
+  if (view.key === 'home') {
+    return {
+      title: '首页按页面阅读顺序维护',
+      desc: '先改老师最常看到的首屏，再补方向和咨询区，不用一开始就研究所有字段名。',
+      note: '首页内容已经拆成前端区块任务，你只需要按页面顺序点卡片进入编辑。',
+      checklist: ['先改首屏主标题与按钮', '再检查热门方向和学习支持', '最后确认底部咨询区'],
+      cards: [
+        {
+          step: '第 1 步',
+          title: '首页首屏主视觉',
+          desc: '先改大标题、说明、标签和首个按钮，学生一进来先看到这里。',
+          meta: '标题 / 标签 / 说明 / 主按钮',
+          actionLabel: '打开首屏区块',
+          action: { action: 'open-page-section-editor', 'page-key': view.pageKey, 'section-id': 'hero' }
+        },
+        {
+          step: '第 2 步',
+          title: '热门方向与功能入口',
+          desc: '把最常用的功能入口和推荐方向改清楚，首页就会顺很多。',
+          meta: '功能入口 / 热门方向 / 学习支持',
+          actionLabel: '打开功能入口',
+          action: { action: 'open-page-section-editor', 'page-key': view.pageKey, 'section-id': 'quickLinks' }
+        },
+        {
+          step: '第 3 步',
+          title: '底部咨询与环境',
+          desc: '最后补联系方式、校区环境和咨询承接，避免用户看到断层。',
+          meta: '环境图片区 / 底部咨询区',
+          actionLabel: '打开咨询区块',
+          action: { action: 'open-page-section-editor', 'page-key': view.pageKey, 'section-id': 'cta' }
+        }
+      ]
+    };
+  }
+
+  if (view.key === 'teachers') {
+    return {
+      title: '师资页先改代表老师，再补老师列表',
+      desc: '新接手的老师最容易在“首屏说明”和“老师条目排序”这里迷路，这里已经按展示顺序排好了。',
+      note: '师资页顶部文案来自页面配置，具体每位老师的头像、身份和简介在下方老师列表维护。',
+      checklist: ['先改代表老师首屏', '再维护老师头像与简介', '最后确认底部咨询区'],
+      cards: [
+        {
+          step: '第 1 步',
+          title: '页面首屏说明',
+          desc: '先把师资页的大标题、说明和带学方式说清楚。',
+          meta: '首屏标题 / 说明卡 / 协作亮点',
+          actionLabel: '打开页面配置',
+          action: { action: 'open-page-editor', 'page-key': view.pageKey }
+        },
+        {
+          step: '第 2 步',
+          title: '老师列表',
+          desc: `下方 ${counts.teachers || 0} 位老师会直接影响前端展示顺序，第一位会作为代表老师展示。`,
+          meta: '头像 / 姓名 / 身份 / 标签 / 排序',
+          actionLabel: '跳到老师列表',
+          href: '#cms-section-teachers'
+        },
+        {
+          step: '第 3 步',
+          title: '确认咨询承接',
+          desc: '最后检查底部咨询区，确保老师介绍页有明确下一步。',
+          meta: '咨询标题 / 说明 / 按钮',
+          actionLabel: '回到页面配置',
+          action: { action: 'open-page-editor', 'page-key': view.pageKey }
+        }
+      ]
+    };
+  }
+
+  if (view.key === 'results') {
+    return {
+      title: '成果页按“切换逻辑 -> 案例 -> CTA”维护',
+      desc: '成果页最怕先改案例后忘记切换标签，所以先处理方向和路径，再改案例内容。',
+      note: '方向按钮、路径标签和 CTA 文案在页面配置里；具体案例条目在下方列表。',
+      checklist: ['先确认高数 / 医护切换', '再补首推案例和列表案例', '最后校对 CTA 文案'],
+      cards: [
+        {
+          step: '第 1 步',
+          title: '方向与路径切换',
+          desc: '先看顶部切换是否清楚，避免学生点进去读不懂。',
+          meta: '方向按钮 / 路径标签 / 首推区标题',
+          actionLabel: '打开页面配置',
+          action: { action: 'open-page-editor', 'page-key': view.pageKey }
+        },
+        {
+          step: '第 2 步',
+          title: '案例列表',
+          desc: `下方 ${counts.successCases || 0} 条成果案例会影响首推卡和更多案例列表。`,
+          meta: '学生信息 / 分数结果 / 路径标签 / 原话',
+          actionLabel: '跳到案例列表',
+          href: '#cms-section-successCases'
+        },
+        {
+          step: '第 3 步',
+          title: '底部支持与 CTA',
+          desc: '最后确认深色支持区和分方向 CTA，保证转化链路完整。',
+          meta: '支持区 / 分方向 CTA',
+          actionLabel: '继续编辑页面',
+          action: { action: 'open-page-editor', 'page-key': view.pageKey }
+        }
+      ]
+    };
+  }
+
+  if (view.key === 'media') {
+    return {
+      title: '教材资料按 5 步任务流维护',
+      desc: '这里延续文档里的教师工作台思路，不再要求老师先理解套餐、素材、资料卡三套字段结构。',
+      note: '先处理页面大结构，再去下方维护素材库、主推套系和资料卡，页面和集合不会再重复展示。',
+      checklist: ['先改页面顶部与主推区', '再维护套系和资料卡', '最后检查素材与咨询承接'],
+      cards: [
+        {
+          step: '第 1 步',
+          title: '页面顶部与主推区',
+          desc: '先改教材页顶部标题、方向切换和主推区标题，统一页面第一印象。',
+          meta: '顶部标题 / 方向切换 / 主推区说明',
+          actionLabel: '打开页面配置',
+          action: { action: 'open-page-editor', 'page-key': view.pageKey }
+        },
+        {
+          step: '第 2 步',
+          title: '主推套系与资料卡',
+          desc: `下方 ${counts.materialPackages || 0} 个套系和 ${counts.materialItems || 0} 张资料卡决定老师实际推荐内容。`,
+          meta: '套系卖点 / 资料卡标题 / 适合谁 / 解决什么问题',
+          actionLabel: '跳到资料套餐',
+          href: '#cms-section-materialPackages'
+        },
+        {
+          step: '第 3 步',
+          title: '素材资源',
+          desc: `素材库里的 ${counts.mediaAssets || 0} 条资源建议最后改，避免一开始就被链接和缩略图打断。`,
+          meta: '资源名称 / 使用模块 / 链接 / 缩略图',
+          actionLabel: '跳到素材库',
+          href: '#cms-section-mediaAssets'
+        }
+      ]
+    };
+  }
+
+  if (view.key === 'questionBank') {
+    return {
+      title: '题库管理先校验来源，再导入题目',
+      desc: '题库页最容易让新老师紧张的是 CSV 导入，这里把顺序拆开，先看规则，再决定是否正式导入。',
+      note: '页面说明和导入入口在当前页顶部，题目、试卷和导入记录在下方三块列表中分别维护。',
+      checklist: ['先确认题库页说明', '再预览 CSV 导入', '最后检查题目、试卷和导入记录'],
+      cards: [
+        {
+          step: '第 1 步',
+          title: '题库页说明',
+          desc: '先检查题库页标题、说明和入口，不要一上来就导入数据。',
+          meta: '页面说明 / 分类入口 / 教师提示',
+          actionLabel: '打开页面配置',
+          action: { action: 'open-page-editor', 'page-key': view.pageKey }
+        },
+        {
+          step: '第 2 步',
+          title: 'CSV 模拟题导入',
+          desc: '先预览再导入，确认可导入行数和错误行后再提交。',
+          meta: '预览校验 / 错误行 / 套卷归档',
+          actionLabel: '打开导入工具',
+          action: { action: 'open-question-bank-import' }
+        },
+        {
+          step: '第 3 步',
+          title: '题目与试卷复查',
+          desc: `导入后再检查 ${counts.medicalQuestions || 0} 道题和 ${counts.pastPapers || 0} 套试卷是否归档正确。`,
+          meta: '题目 / 试卷 / 导入记录',
+          actionLabel: '跳到题目列表',
+          href: '#cms-section-medicalQuestions'
+        }
+      ]
+    };
+  }
+
+  if (view.key === 'accounts') {
+    return {
+      title: '账号管理先建账号，再分角色',
+      desc: '老师最容易搞混的是“能不能看”“能不能改”“能不能发布”，这里直接按创建顺序整理。',
+      note: '账号列表是独立维护区，保存后会直接影响对应老师登录后的可见范围。',
+      checklist: ['先创建账号与姓名', '再分配角色权限', '最后检查启停状态'],
+      cards: [
+        {
+          step: '第 1 步',
+          title: '新增老师账号',
+          desc: '先补姓名、登录账号和默认密码，保证老师能进系统。',
+          meta: '姓名 / 账号 / 密码',
+          actionLabel: '跳到账号列表',
+          href: '#cms-section-adminUsers'
+        },
+        {
+          step: '第 2 步',
+          title: '分配角色权限',
+          desc: '根据老师职责选择“查看 / 编辑 / 发布”，不要一开始全部给满权限。',
+          meta: '角色 / 权限范围 / 状态',
+          actionLabel: '继续管理账号',
+          href: '#cms-section-adminUsers'
+        },
+        {
+          step: '第 3 步',
+          title: '启停与复查',
+          desc: '最后检查是否启用、是否需要重置密码，以及老师是否能正常登录。',
+          meta: '状态 / 更新时间 / 登录可用性',
+          actionLabel: '查看账号列表',
+          href: '#cms-section-adminUsers'
+        }
+      ]
+    };
+  }
+
+  if (view.key === 'directions') {
+    return {
+      title: '课程方向先改总控，再看方向条目',
+      desc: '方向页同时有页面配置和方向条目，建议先改总控，再整理每个方向的文案与排序。',
+      note: '这张表里第一行是页面总控，其余都是方向条目；首页推荐也会受这里的排序和精选状态影响。',
+      checklist: ['先看页面总控', '再整理方向摘要与排序', '最后检查首页精选状态'],
+      cards: [
+        {
+          step: '第 1 步',
+          title: '页面总控',
+          desc: '先调整判断首屏和两张重点方向卡的承接逻辑。',
+          meta: '判断首屏 / 重点方向卡 / 咨询区',
+          actionLabel: '打开页面配置',
+          action: { action: 'open-page-editor', 'page-key': view.pageKey }
+        },
+        {
+          step: '第 2 步',
+          title: '方向条目',
+          desc: `当前共有 ${counts.directions || 0} 个方向条目，排序和首页精选会直接影响学生看到的顺序。`,
+          meta: '名称 / 分类 / 摘要 / 排序 / 首页精选',
+          actionLabel: '在下方表中编辑',
+          href: '#cms-section-directions'
+        },
+        {
+          step: '第 3 步',
+          title: '复查首页推荐',
+          desc: '最后确认首页推荐池和方向页排序是否一致，避免前端与后台判断不一致。',
+          meta: '首页精选 / featuredDirectionIds',
+          actionLabel: '继续检查方向表',
+          href: '#cms-section-directions'
+        }
+      ]
+    };
+  }
+
+  if (view.key === 'about') {
+    return {
+      title: '关于页按“机构介绍 -> 环境 -> 咨询”维护',
+      desc: '关于页不需要一次改完所有字段，先把机构故事讲清楚，再补环境和咨询承接。',
+      note: '联系方式来自站点设置，关于页这里只负责页面结构和展示语气。',
+      checklist: ['先改首屏和介绍卡', '再补理念与环境图', '最后确认底部咨询区'],
+      cards: [
+        {
+          step: '第 1 步',
+          title: '机构首屏与介绍',
+          desc: '先调整机构标题、说明和介绍卡内容。',
+          meta: '首屏标题 / 介绍卡 / 理念',
+          actionLabel: '打开首屏区块',
+          action: { action: 'open-page-section-editor', 'page-key': view.pageKey, 'section-id': 'hero' }
+        },
+        {
+          step: '第 2 步',
+          title: '环境图片区',
+          desc: '再补校区环境图，让家长和学生看到真实空间。',
+          meta: '环境图片 / 图片标题',
+          actionLabel: '打开环境图片区',
+          action: { action: 'open-page-section-editor', 'page-key': view.pageKey, 'section-id': 'environmentImages' }
+        },
+        {
+          step: '第 3 步',
+          title: '站点联系信息',
+          desc: '关于页底部联系方式来自站点设置，需要单独维护公共电话、微信和地址。',
+          meta: '品牌 / 电话 / 微信 / 地址',
+          actionLabel: '打开站点设置',
+          action: { action: 'open-view', 'target-view': 'contact' }
+        }
+      ]
+    };
+  }
+
+  if (view.key === 'contact') {
+    return {
+      title: '站点设置先保品牌与联系方式，再补二维码',
+      desc: '这是多个页面共用的公共信息区，先改核心联系信息，再补充二维码和简介。',
+      note: '这里的电话、微信、地址会被关于页、底部咨询区等多个位置复用。',
+      checklist: ['先核对品牌名和联系电话', '再补服务时间与微信', '最后检查二维码和地址'],
+      cards: [
+        {
+          step: '第 1 步',
+          title: '品牌与联系',
+          desc: '先维护品牌名、电话、微信和服务时间，这些字段复用最广。',
+          meta: '品牌 / 电话 / 微信 / 服务时间',
+          actionLabel: '打开站点设置',
+          action: { action: 'open-page-editor', 'page-key': view.pageKey }
+        },
+        {
+          step: '第 2 步',
+          title: '二维码与地址',
+          desc: '再补二维码、地址和机构简介，避免首屏信息过载。',
+          meta: '二维码 / 地址 / 简介',
+          actionLabel: '继续编辑设置',
+          action: { action: 'open-page-editor', 'page-key': view.pageKey }
+        }
+      ]
+    };
+  }
+
+  return null;
+}
+
+function renderTeacherWorkbenchGuide(view, data = {}) {
+  const guide = getViewWorkbenchGuide(view, data);
+  if (!guide?.cards?.length) {
+    return '';
+  }
+
+  return `<article class="panel teacher-guide-panel workspace-panel-enter" style="--enter-delay: 80ms;">
+    <div class="teacher-guide-head">
+      <div>
+        <span class="teacher-guide-badge">新手老师友好工作台</span>
+        <h3>${escapeHtml(guide.title)}</h3>
+        <p>${escapeHtml(guide.desc)}</p>
+      </div>
+      <div class="teacher-guide-note">${escapeHtml(guide.note || '按顺序修改会更稳，也更不容易漏掉关键内容。')}</div>
     </div>
-    <div class="page-workflow-guide-grid">
-      ${cards.map((card) => `<div class="page-workflow-guide-card">
+    <div class="teacher-guide-grid">
+      ${guide.cards.map((card, index) => `<article class="teacher-guide-card workspace-enter" style="--enter-delay: ${100 + index * 22}ms;">
+        <span class="teacher-guide-step">${escapeHtml(card.step || `步骤 ${index + 1}`)}</span>
         <strong>${escapeHtml(card.title)}</strong>
         <p>${escapeHtml(card.desc)}</p>
-        <em>${escapeHtml(card.meta)}</em>
+        <div class="teacher-guide-meta">${escapeHtml(card.meta || '点击继续')}</div>
+        ${renderWorkbenchCardAction(card)}
+      </article>`).join('')}
+    </div>
+    ${guide.checklist?.length ? `<div class="teacher-guide-checklist">
+      ${guide.checklist.map((item) => `<span class="teacher-guide-check">${escapeHtml(item)}</span>`).join('')}
+    </div>` : ''}
+  </article>`;
+}
+
+function getCollectionWorkbenchGuide(collectionKey, items = []) {
+  const count = items.length;
+  const commonNote = `当前共 ${count} 条，建议先找一条真实会展示到前端的内容试改，再批量调整。`;
+
+  const guides = {
+    teachers: {
+      title: '老师列表怎么改最稳',
+      desc: '先把头像、姓名、身份做准，再补简介和擅长方向，最后调整排序。',
+      note: commonNote,
+      cards: [
+        { title: '先改卡片第一眼信息', meta: '头像 / 姓名 / 身份 / 标签' },
+        { title: '再补老师简介', meta: '简介 / 擅长方向 / 补充说明' },
+        { title: '最后调排序和状态', meta: '排序 / 发布状态' }
+      ]
+    },
+    successCases: {
+      title: '案例列表按真实阅读顺序维护',
+      desc: '先让学生知道“是谁、从哪到哪”，再补原话和适合人群。',
+      note: commonNote,
+      cards: [
+        { title: '案例对象与结果', meta: '学生姓名 / 起点 / 结果 / 年份' },
+        { title: '路径标签与适配人群', meta: '路径标签 / 适合谁 / 方向' },
+        { title: '原话与状态', meta: '原话 / 排序 / 发布状态' }
+      ]
+    },
+    mediaAssets: {
+      title: '素材库先保证“能辨认、能使用”',
+      desc: '素材资源页最怕只剩链接，所以先填能看懂的名称和使用模块，再补链接与缩略图。',
+      note: commonNote,
+      cards: [
+        { title: '资源名称先写清楚', meta: '资源名称 / 使用模块 / 类型' },
+        { title: '再填主链接', meta: '资源地址 / 缩略图 / 替代说明' },
+        { title: '最后检查可复用性', meta: '是否能被老师再次找到' }
+      ]
+    },
+    materialPackages: {
+      title: '主推套系先讲清适合谁',
+      desc: '先把标题和卖点写明白，再补适合人群、解决问题和包含资料。',
+      note: commonNote,
+      cards: [
+        { title: '先写标题与角标', meta: '角标 / 套系标题 / 副标题' },
+        { title: '再写卖点与适合人群', meta: '卖点 / 适合谁 / 解决什么问题' },
+        { title: '最后补包含资料', meta: '资料项 / 状态 / 排序' }
+      ]
+    },
+    materialItems: {
+      title: '资料卡先保标题、副标题和类型',
+      desc: '每张卡只要先让老师一眼看懂是什么资料，页面就会整洁很多。',
+      note: commonNote,
+      cards: [
+        { title: '先写卡片标题', meta: '标题 / 副标题 / 资料类型' },
+        { title: '再补说明与封面色', meta: '说明 / 渐变色 / 标签' },
+        { title: '最后检查跳转链接', meta: '按钮文案 / 资源地址' }
+      ]
+    },
+    medicalQuestions: {
+      title: '题目列表先检查题干和答案',
+      desc: '题目编辑最容易出错的是答案格式和套卷归属，先看这两项。',
+      note: commonNote,
+      cards: [
+        { title: '先校对题干和题型', meta: '题干 / 题型 / 年份' },
+        { title: '再核对答案与解析', meta: '答案 / 选项 / 解析' },
+        { title: '最后确认试卷归属', meta: 'paperId / 状态 / 更新时间' }
+      ]
+    },
+    pastPapers: {
+      title: '试卷列表先看标题和题目归档',
+      desc: '试卷页重点不是写很多文案，而是确认题目有没有被正确归到这一套卷里。',
+      note: commonNote,
+      cards: [
+        { title: '先看试卷标题', meta: '试卷标题 / paperId / 年份' },
+        { title: '再看题目数量', meta: '题目数 / 方向' },
+        { title: '最后看状态', meta: '发布状态 / 更新时间' }
+      ]
+    },
+    questionImports: {
+      title: '导入记录只做追溯，不用重复编辑',
+      desc: '这块主要用来回看导入结果和原始来源，确认是否需要重新导入。',
+      note: commonNote,
+      cards: [
+        { title: '先看导入来源', meta: '来源类型 / 原始文本' },
+        { title: '再看方向与状态', meta: '方向 / 状态' },
+        { title: '最后结合时间判断', meta: '更新时间 / 是否需要重导' }
+      ]
+    },
+    adminUsers: {
+      title: '账号列表先保证能登录，再谈权限',
+      desc: '先创建并核对账号信息，再分配角色，最后再看启停。',
+      note: commonNote,
+      cards: [
+        { title: '先看姓名和账号', meta: '姓名 / 登录账号' },
+        { title: '再分配角色', meta: '查看老师 / 编辑老师 / 发布老师' },
+        { title: '最后检查状态', meta: '启用状态 / 更新时间' }
+      ]
+    },
+    directions: {
+      title: '方向条目先看摘要，再看首页精选',
+      desc: '先让方向名称和摘要清楚，再决定是否放首页推荐。',
+      note: commonNote,
+      cards: [
+        { title: '先写方向名称与分类', meta: '名称 / 分类 / 摘要' },
+        { title: '再补适合人群', meta: '适合谁 / 亮点 / 标签' },
+        { title: '最后看推荐与排序', meta: '首页精选 / 排序 / 状态' }
+      ]
+    }
+  };
+
+  return guides[collectionKey] || null;
+}
+
+function renderCollectionWorkbenchGuide(collectionKey, items = []) {
+  const guide = getCollectionWorkbenchGuide(collectionKey, items);
+  if (!guide?.cards?.length) {
+    return '';
+  }
+
+  return `<div class="collection-guide-strip workspace-enter" style="--enter-delay: 30ms;">
+    <div class="collection-guide-head">
+      <strong>${escapeHtml(guide.title)}</strong>
+      <span>${escapeHtml(guide.desc)}</span>
+      <em>${escapeHtml(guide.note || '')}</em>
+    </div>
+    <div class="collection-guide-grid">
+      ${guide.cards.map((card) => `<div class="collection-guide-card">
+        <strong>${escapeHtml(card.title)}</strong>
+        <span>${escapeHtml(card.meta)}</span>
       </div>`).join('')}
     </div>
   </div>`;
@@ -3682,7 +4679,7 @@ function renderQuestionBankPagePanel(view, page) {
     rows[0]?.id ||
     '';
 
-  return `<section class="collection-section workspace-motion-scope">
+  return `<section class="collection-section workspace-motion-scope" id="cms-section-questionBankPage">
     <div class="table-layout table-layout-single">
       <article class="panel table-panel table-panel-focus workspace-panel-enter">
         <div class="panel-head workspace-enter" style="--enter-delay: 0ms;">
@@ -3853,8 +4850,10 @@ function renderPageWorkspace(view, data) {
   const rows = getPageSectionRows(view.pageKey, data.page || {});
   const ui = getViewUi();
   const selectedSectionId = ui.selectedIds[`page-section:${view.pageKey}`] || rows[0]?.id || '';
+  const prefersRowList = view.pageKey === 'home';
 
   return `<section class="module-page workspace-motion-scope page-workspace-scope">
+    ${renderEnvironmentBanner(view.pageLabel || view.title)}
     <article class="panel module-hero-panel module-hero-compact workspace-panel-enter">
       <div class="panel-head workspace-enter" style="--enter-delay: 0ms;">
         <div>
@@ -3867,6 +4866,7 @@ function renderPageWorkspace(view, data) {
       </div>
       ${renderModuleSummary(view, data)}
     </article>
+    ${renderTeacherWorkbenchGuide(view, data)}
 
     <section class="collection-section">
       <div class="table-layout table-layout-single">
@@ -3882,8 +4882,7 @@ function renderPageWorkspace(view, data) {
             <span>${escapeHtml(`共 ${rows.length} 个核心区块，字段名称和前端展示位置已统一，建议按从上到下逐块维护。`)}</span>
             <em>${escapeHtml(`当前页面字段 ${Object.keys(data.page || {}).length} 个`)}</em>
           </div>
-          ${renderPageWorkflowGuide(view.pageKey, rows)}
-          ${renderPageSectionNavCards(view.pageKey, rows, selectedSectionId, 'open-page-section-editor')}
+          ${prefersRowList ? renderPageSectionRowsList(view.pageKey, rows, selectedSectionId, 'open-page-section-editor') : renderPageSectionNavCards(view.pageKey, rows, selectedSectionId, 'open-page-section-editor')}
           ${view.pageKey === 'materials' ? '' : renderPageSectionsTable(view.pageKey, rows, selectedSectionId, 'open-page-section-editor')}
         </article>
         ${renderPageSectionOverlay(view.pageKey, view.pageLabel, data.page, rows)}
@@ -4115,9 +5114,11 @@ function renderDirectionsWorkspace(view, data) {
     : `共 ${rows.length} 行，已发布 ${publishedCount} 条，首页推荐 ${featuredCount} 条。`;
 
   return `<section class="module-page workspace-motion-scope directions-motion-scope">
+    ${renderEnvironmentBanner(view.title)}
+    ${renderTeacherWorkbenchGuide(view, data)}
     <section class="collection-section">
       <div class="table-layout table-layout-single">
-        <article class="panel table-panel table-panel-focus directions-panel-enter">
+        <article class="panel table-panel table-panel-focus directions-panel-enter" id="cms-section-directions">
           <div class="panel-head workspace-enter directions-enter" style="--enter-delay: 0ms;">
             <div>
               <h3>方向工作区</h3>
@@ -4142,6 +5143,7 @@ function renderDirectionsWorkspace(view, data) {
             <span>${escapeHtml(activeSummary)}</span>
             <em>当前展示 ${escapeHtml(String(filteredRows.length))} / ${escapeHtml(String(rows.length))} 行，建议新排序 ${escapeHtml(String(nextSort))}</em>
           </div>
+          ${renderCollectionWorkbenchGuide('directions', directions)}
           <div class="table-shell workspace-enter directions-enter" style="--enter-delay: 180ms;">
             ${filteredRows.length ? `<table class="data-table data-table-compact">
               <thead>
@@ -4189,6 +5191,8 @@ function renderDirectionsWorkspace(view, data) {
 function renderTableCollectionSection(collectionKey, items) {
   const collectionMeta = getCollectionMeta(collectionKey);
   const filteredItems = getFilteredCollectionItems(collectionKey, items);
+  const visibleCount = getVisibleRowCount(collectionKey);
+  const visibleItems = filteredItems.slice(0, visibleCount);
   const selected = getSelectedCollectionState(collectionKey, filteredItems.length ? filteredItems : items);
   const filterState = getCollectionFilterState(collectionKey);
   const ui = getViewUi();
@@ -4196,7 +5200,7 @@ function renderTableCollectionSection(collectionKey, items) {
   const columns = TABLE_COLUMNS[collectionKey] || [];
   const publishedCount = (items || []).filter((item) => item.status === 'published').length;
 
-  return `<section class="collection-section workspace-motion-scope">
+  return `<section class="collection-section workspace-motion-scope" id="cms-section-${escapeHtml(collectionKey)}">
     <div class="table-layout table-layout-single">
       <article class="panel table-panel table-panel-focus workspace-panel-enter">
         <div class="panel-head workspace-enter" style="--enter-delay: 0ms;">
@@ -4220,19 +5224,24 @@ function renderTableCollectionSection(collectionKey, items) {
         <div class="editor-meta workspace-enter" style="--enter-delay: 120ms;">
           <span class="meta-chip">共 ${escapeHtml(String(items.length))} 条</span>
           <span class="meta-chip">已发布 ${escapeHtml(String(publishedCount))}</span>
-          <span class="meta-chip">当前展示 ${escapeHtml(String(filteredItems.length))}</span>
+          <span class="meta-chip">当前展示 ${escapeHtml(String(Math.min(filteredItems.length, visibleItems.length)))} / ${escapeHtml(String(filteredItems.length))}</span>
         </div>
+        ${renderCollectionWorkbenchGuide(collectionKey, items)}
         <div class="table-shell workspace-enter" style="--enter-delay: 180ms;">
-          ${filteredItems.length ? `<table class="data-table">
+          ${filteredItems.length ? `<table class="data-table data-table-compact">
             <thead>
               <tr>${columns.map((column) => `<th>${escapeHtml(column.label)}</th>`).join('')}</tr>
             </thead>
             <tbody>
-              ${filteredItems.map((item, index) => `<tr class="workspace-row-enter${isEditorOpen && selected.itemId === item._id && !selected.isDraft ? ' active' : ''}" style="--enter-delay: ${220 + index * 28}ms;" data-action="select-item" data-collection-key="${escapeHtml(collectionKey)}" data-item-id="${escapeHtml(item._id || '')}">
+              ${visibleItems.map((item, index) => `<tr class="workspace-row-enter${isEditorOpen && selected.itemId === item._id && !selected.isDraft ? ' active' : ''}" style="--enter-delay: ${220 + index * 18}ms;" data-action="select-item" data-collection-key="${escapeHtml(collectionKey)}" data-item-id="${escapeHtml(item._id || '')}">
                 ${columns.map((column) => `<td>${column.render(item)}</td>`).join('')}
               </tr>`).join('')}
             </tbody>
-          </table>` : '<div class="empty-state">当前筛选下没有数据，试试切换状态或新建一条内容。</div>'}
+          </table>
+          ${filteredItems.length > visibleItems.length ? `<div class="table-load-more">
+            <button class="system-action" type="button" data-action="load-more-rows" data-collection-key="${escapeHtml(collectionKey)}">继续加载 ${escapeHtml(String(Math.min(TABLE_RENDER_BATCH, filteredItems.length - visibleItems.length)))} 条</button>
+            <span>剩余 ${escapeHtml(String(filteredItems.length - visibleItems.length))} 条未渲染，点击后再显示，减少首屏卡顿。</span>
+          </div>` : ''}` : '<div class="empty-state">当前筛选下没有数据，试试切换状态或新建一条内容。</div>'}
         </div>
       </article>
       ${renderCollectionEditor(collectionKey, selected, collectionMeta)}
@@ -4254,8 +5263,68 @@ function setTopbar(view) {
 }
 
 function setStatus(message, tone = 'ok') {
-  refs.statusPill.textContent = message;
+  // 优化错误提示，使用更友好的语言
+  const friendlyMessages = {
+    '请求失败: 500': '服务器开小差了，请稍后重试',
+    '请求失败: 404': '找不到相关内容，请检查链接是否正确',
+    '请求失败: 403': '抱歉，您没有权限执行此操作',
+    '请求失败: 401': '登录已过期，请重新登录',
+    '请求失败: 400': '输入信息有误，请检查后重试',
+    '网络错误': '网络连接不稳定，请检查网络后重试',
+    '加载失败': '内容加载失败，请刷新页面重试',
+    '保存失败': '保存失败，请检查网络后重试',
+    '删除失败': '删除失败，请稍后重试',
+    '登录失败': '登录失败，请检查账号密码是否正确',
+    '数据同步失败': '数据同步失败，请检查网络连接',
+    'CSV 预览失败': 'CSV文件预览失败，请检查文件格式',
+    'JSON 更新失败': '数据格式有误，请检查输入内容',
+    '操作失败': '操作失败，请稍后重试'
+  };
+
+  // 查找友好的错误提示
+  let friendlyMessage = message;
+  for (const [original, friendly] of Object.entries(friendlyMessages)) {
+    if (message.includes(original)) {
+      friendlyMessage = friendly;
+      break;
+    }
+  }
+
+  // 添加解决建议
+  if (tone === 'error' || tone === 'warn') {
+    const suggestions = {
+      '网络': '💡 建议：检查网络连接，或稍后重试',
+      '权限': '💡 建议：联系管理员获取相应权限',
+      '登录': '💡 建议：尝试重新登录，或联系管理员',
+      '保存': '💡 建议：检查网络连接，确保数据已填写完整',
+      '加载': '💡 建议：刷新页面重试，或联系技术支持',
+      '格式': '💡 建议：检查输入格式是否正确',
+      '服务器': '💡 建议：服务器可能正在维护，请稍后重试'
+    };
+
+    for (const [keyword, suggestion] of Object.entries(suggestions)) {
+      if (friendlyMessage.includes(keyword)) {
+        friendlyMessage += '\n' + suggestion;
+        break;
+      }
+    }
+  }
+
+  refs.statusPill.textContent = friendlyMessage;
   refs.statusPill.dataset.tone = tone;
+  
+  // 如果是错误提示，添加点击查看详情的功能
+  if (tone === 'error' && message !== friendlyMessage) {
+    refs.statusPill.title = `原始信息：${message}`;
+    refs.statusPill.style.cursor = 'pointer';
+    refs.statusPill.onclick = () => {
+      window.alert(`详细信息：${message}\n\n如果问题持续存在，请联系技术支持。`);
+    };
+  } else {
+    refs.statusPill.title = '';
+    refs.statusPill.style.cursor = '';
+    refs.statusPill.onclick = null;
+  }
 }
 
 function isCloudWriteReady() {
@@ -4264,6 +5333,67 @@ function isCloudWriteReady() {
 
 function getCloudConnectionLabel() {
   return isCloudWriteReady() ? '已锁定云端 CMS 写入' : '云端 CMS 未就绪';
+}
+
+function getEnvironmentBannerInfo(contextLabel = '当前工作区') {
+  const health = state.health || {};
+  const mode = health.mode || state.auth?.mode || 'unavailable';
+  const modeLabel = health.modeLabel || state.auth?.modeLabel || '待检测';
+  const writeTarget = health.writeTarget || 'unavailable';
+  const writeTargetLabel = health.writeTargetLabel || (writeTarget === 'cloud' ? '云端 CMS' : writeTarget === 'local' ? '本地 JSON' : '暂停写入');
+  const writeNotice = health.writeNotice || state.auth?.writeNotice || '请先确认当前后台连接的数据源，再开始批量维护。';
+  const conflictGuard = Boolean(health.collaboration?.pageConflictProtection);
+  const previewUrl = state.meta?.previewUrls?.[0] || health.previewUrls?.[0] || '';
+  const envId = health.config?.envId || health.config?.expectedEnvId || '';
+  const operatorName = state.auth?.user?.name || state.auth?.user?.loginAccount || '';
+
+  let tone = 'warn';
+  let title = '当前后台连接状态待确认';
+  let desc = `${contextLabel}的保存路径还需要再确认后再批量操作。`;
+
+  if (mode === 'cloud' && writeTarget === 'cloud') {
+    tone = 'success';
+    title = '当前正在维护云端正式内容';
+    desc = `${contextLabel}的保存会直接写入云端 CMS，小程序联调会读取到最新数据。`;
+  } else if (mode === 'local' || writeTarget === 'local') {
+    tone = 'warn';
+    title = '当前只连接到本地数据文件';
+    desc = `${contextLabel}现在更适合排查和演示，修改不会同步到生产环境。`;
+  } else if (mode === 'unavailable' || writeTarget === 'unavailable') {
+    tone = 'danger';
+    title = '当前后台未连上可写的数据源';
+    desc = `${contextLabel}暂时只能查看，请先补齐云环境配置后再进行正式维护。`;
+  }
+
+  const chips = [
+    `数据源 ${modeLabel}`,
+    `写入目标 ${writeTargetLabel}`,
+    `冲突保护 ${conflictGuard ? '已启用' : '未启用'}`,
+    envId ? `环境 ${envId}` : '',
+    operatorName ? `当前账号 ${operatorName}` : '',
+    previewUrl ? `预览 ${previewUrl.replace(/^https?:\/\//, '')}` : ''
+  ].filter(Boolean);
+
+  return { tone, title, desc, writeNotice, chips };
+}
+
+function renderEnvironmentBanner(contextLabel = '当前工作区') {
+  const info = getEnvironmentBannerInfo(contextLabel);
+  return `<article class="environment-banner environment-banner-${escapeHtml(info.tone)} workspace-panel-enter" style="--enter-delay: 0ms;">
+    <div class="environment-banner-main">
+      <div class="environment-banner-icon">${icon('info')}</div>
+      <div class="environment-banner-copy">
+        <strong>${escapeHtml(info.title)}</strong>
+        <p>${escapeHtml(info.desc)}</p>
+      </div>
+    </div>
+    <div class="environment-banner-side">
+      <div class="environment-banner-note">${escapeHtml(info.writeNotice)}</div>
+      <div class="environment-banner-chips">
+        ${info.chips.map((chip) => `<span class="meta-chip">${escapeHtml(chip)}</span>`).join('')}
+      </div>
+    </div>
+  </article>`;
 }
 
 function isPageConflictError(error) {
@@ -4282,16 +5412,47 @@ function hasOpenEditor(viewKey = state.activeView) {
 }
 
 function syncModalState() {
-  document.body.classList.toggle('modal-open', hasOpenEditor());
+  const hasOpen = hasOpenEditor();
+  document.body.classList.toggle('modal-open', hasOpen);
+  if (hasOpen) {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        applyResponsiveModalLayout();
+      });
+    });
+  }
 }
 
-function renderLoading() {
-  refs.content.innerHTML = `<section class="module-page"><article class="panel empty-panel"><div class="empty-state">正在加载当前模块数据...</div></article></section>`;
+function renderLoading(view = VIEW_CONFIG[state.activeView]) {
+  const isOverview = view?.key === 'overview';
+  const skeletonCards = isOverview
+    ? `<div class="skeleton-stats-grid">
+        ${Array.from({ length: 4 }).map(() => `<div class="skeleton-card"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-value"></div><div class="skeleton skeleton-text short"></div></div>`).join('')}
+      </div>`
+    : `<div class="skeleton-summary-row">
+        <div class="skeleton-card"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div></div>
+        <div class="skeleton-card"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text short"></div></div>
+      </div>`;
+
+  refs.content.innerHTML = `<section class="module-page">
+    <article class="panel empty-panel skeleton-shell">
+      ${skeletonCards}
+      <div class="skeleton-table">
+        ${Array.from({ length: 5 }).map(() => `<div class="skeleton-row">
+          <div class="skeleton skeleton-cell long"></div>
+          <div class="skeleton skeleton-cell"></div>
+          <div class="skeleton skeleton-cell short"></div>
+        </div>`).join('')}
+      </div>
+    </article>
+  </section>`;
+  dismissBootSplash();
   syncModalState();
 }
 
 function renderError(message) {
   refs.content.innerHTML = `<section class="module-page"><article class="panel empty-panel"><div class="empty-state">${escapeHtml(message)}</div></article></section>`;
+  dismissBootSplash();
   syncModalState();
 }
 
@@ -4307,8 +5468,62 @@ function renderOverview(data) {
     ? '当前写入已锁定到小程序云端数据库。'
     : '云环境未完成，当前后台已暂停生产写入。';
   const conflictGuardLabel = state.health?.collaboration?.pageConflictProtection ? '已启用' : '待补齐';
+  const operatorName = state.auth?.user?.name || state.auth?.user?.loginAccount || '老师';
+  const quickActions = [
+    {
+      label: '首页内容',
+      desc: '先看首页有没有需要更新的文案和入口',
+      view: 'home',
+      icon: '🏠'
+    },
+    {
+      label: '教材资料',
+      desc: '按步骤维护套餐、资料和素材',
+      view: 'media',
+      icon: '🧰'
+    },
+    {
+      label: '师资团队',
+      desc: '维护老师介绍和头像展示',
+      view: 'teachers',
+      icon: '👨‍🏫'
+    },
+    {
+      label: '题库管理',
+      desc: '导入题目、检查试卷和导入记录',
+      view: 'questionBank',
+      icon: '📚'
+    }
+  ];
+  const onboardingSteps = [
+    '先从首页内容开始，确认欢迎文案和咨询入口',
+    '再进入教材资料，按推荐顺序维护套餐、资料和素材',
+    '最后检查题库与师资，再到小程序里预览'
+  ];
+  const kickoffCards = [
+    {
+      label: '先改首页',
+      desc: '先把首屏文案、常用入口和咨询按钮改清楚，老师最容易先从这里建立维护节奏。',
+      meta: '首页内容 / 首屏 / CTA',
+      view: 'home'
+    },
+    {
+      label: '再改教材资料',
+      desc: '教材页已经按 5 步任务流整理过，适合新老师顺着页面阅读顺序往下改。',
+      meta: '教材资料 / 套系 / 素材',
+      view: 'media'
+    },
+    {
+      label: '最后检查师资与题库',
+      desc: '把老师信息、头像和题库导入规则复查一遍，基本就完成了日常维护闭环。',
+      meta: '师资团队 / 题库管理',
+      view: 'teachers'
+    }
+  ];
+  const onboardingDismissed = localStorage.getItem('admin-web-onboarding-dismissed') === 'true';
 
   refs.content.innerHTML = `<section class="dashboard-page workspace-motion-scope">
+    ${renderEnvironmentBanner('总览工作台')}
     <div class="stats-grid">
       <article class="stat-card tone-indigo workspace-enter" style="--enter-delay: 0ms;">
         <div class="stat-card-head"><h2>页面配置</h2><span class="stat-card-icon">${icon('grid')}</span></div>
@@ -4331,6 +5546,72 @@ function renderOverview(data) {
         <div class="stat-card-foot"><strong class="positive">实时</strong><span>来自当前数据源</span></div>
       </article>
     </div>
+
+    <div class="dashboard-intro-grid">
+      <div class="dashboard-intro-stack">
+        <article class="welcome-section workspace-panel-enter" style="--enter-delay: 165ms;">
+          <div class="welcome-content">
+            <h2>👋 欢迎回来，${escapeHtml(operatorName)}</h2>
+            <p>这里按老师日常维护顺序整理了常用入口，不需要懂代码，也可以顺着流程更新小程序内容。</p>
+          </div>
+          <div class="welcome-meta">
+            <span class="welcome-chip">写入源 ${escapeHtml(writeSourceLabel)}</span>
+            <span class="welcome-chip">今日更新 ${escapeHtml(String(todayUpdates))} 项</span>
+            <span class="welcome-chip">冲突保护 ${escapeHtml(conflictGuardLabel)}</span>
+          </div>
+        </article>
+
+        <article class="quick-actions panel workspace-panel-enter" style="--enter-delay: 175ms;">
+          <div class="panel-head">
+            <div>
+              <h3>🚀 常用操作</h3>
+              <p>从最常见的维护任务开始，下面的 row 行总览和运行区会继续保留。</p>
+            </div>
+          </div>
+          <div class="action-grid">
+            ${quickActions.map((item) => `<button class="action-card" type="button" data-action="open-view" data-target-view="${escapeHtml(item.view)}">
+              <span class="action-icon" aria-hidden="true">${escapeHtml(item.icon)}</span>
+              <span class="action-label">${escapeHtml(item.label)}</span>
+              <span class="action-desc">${escapeHtml(item.desc)}</span>
+            </button>`).join('')}
+          </div>
+        </article>
+      </div>
+
+      ${onboardingDismissed ? '' : `<article class="onboarding-section workspace-panel-enter" style="--enter-delay: 190ms;">
+        <div class="onboarding-content">
+          <h3>🎓 新手引导</h3>
+          <p>第一次接手后台时，可以先按这三步走：</p>
+          <div class="onboarding-steps">
+            ${onboardingSteps.map((step, index) => `<div class="onboarding-step">
+              <span class="step-number">${escapeHtml(['1️⃣', '2️⃣', '3️⃣'][index] || String(index + 1))}</span>
+              <span class="step-text">${escapeHtml(step)}</span>
+            </div>`).join('')}
+          </div>
+          <div class="onboarding-actions">
+            <button class="onboarding-btn primary" type="button" data-action="open-view" data-target-view="home">开始引导</button>
+            <button class="onboarding-btn secondary" type="button" data-action="dismiss-onboarding">跳过</button>
+          </div>
+        </div>
+      </article>`}
+    </div>
+
+    <article class="panel teacher-kickoff-panel workspace-panel-enter" style="--enter-delay: 210ms;">
+      <div class="panel-head">
+        <div>
+          <h3>新手老师建议顺序</h3>
+          <p>先按页面阅读顺序维护，不用一开始就理解 CMS 字段关系。下面三步是最稳的日常改法。</p>
+        </div>
+      </div>
+      <div class="teacher-kickoff-grid">
+        ${kickoffCards.map((card, index) => `<button class="teacher-kickoff-card workspace-enter" style="--enter-delay: ${220 + index * 28}ms;" type="button" data-action="open-view" data-target-view="${escapeHtml(card.view)}">
+          <span class="teacher-guide-step">步骤 ${escapeHtml(String(index + 1))}</span>
+          <strong>${escapeHtml(card.label)}</strong>
+          <p>${escapeHtml(card.desc)}</p>
+          <em>${escapeHtml(card.meta)}</em>
+        </button>`).join('')}
+      </div>
+    </article>
 
     <div class="dashboard-main">
       <article class="panel trend-panel workspace-panel-enter" style="--enter-delay: 180ms;">
@@ -4369,6 +5650,26 @@ function renderOverview(data) {
     </div>
 
     <div class="dashboard-bottom">
+      <!-- 最近操作区域 -->
+      <article class="panel operations-panel workspace-panel-enter" style="--enter-delay: 280ms;">
+        <div class="panel-head">
+          <div>
+            <h3>🕒 最近操作</h3>
+            <p>你的操作历史记录，方便快速回溯。</p>
+          </div>
+        </div>
+        <div class="operations-list">
+          ${getRecentOperations(5).length ? getRecentOperations(5).map((op) => `<div class="operation-item">
+            <div class="operation-icon">${getOperationIcon(op.operation)}</div>
+            <div class="operation-content">
+              <strong>${escapeHtml(op.operation)}</strong>
+              <span class="operation-details">${escapeHtml(op.details)}</span>
+              <span class="operation-time">${formatOperationTime(op.timestamp)}</span>
+            </div>
+          </div>`).join('') : '<div class="empty-state">暂无操作记录，开始使用系统后会自动记录。</div>'}
+        </div>
+      </article>
+
       <article class="panel updates-panel workspace-panel-enter" style="--enter-delay: 300ms;">
         <div class="panel-head">
           <div>
@@ -4449,7 +5750,7 @@ function renderPageConfigLauncher(view, page) {
     page.hero?.desc ||
     `${Object.keys(page || {}).length} 个一级字段`;
 
-  return `<article class="panel page-config-row-card workspace-panel-enter" style="--enter-delay: 120ms;">
+  return `<article class="panel page-config-row-card workspace-panel-enter" id="cms-page-config-${escapeHtml(view.pageKey)}" style="--enter-delay: 120ms;">
     <div class="panel-head workspace-enter" style="--enter-delay: 150ms;">
       <div>
         <h3>${escapeHtml(view.pageLabel || '页面配置')}</h3>
@@ -4475,6 +5776,7 @@ function renderPageConfigLauncher(view, page) {
 
 function renderTableFirstModule(view, data) {
   return `<section class="module-page workspace-motion-scope">
+    ${renderEnvironmentBanner(view.title)}
     <article class="panel module-hero-panel module-hero-compact workspace-panel-enter">
       <div class="panel-head workspace-enter" style="--enter-delay: 0ms;">
         <div>
@@ -4487,6 +5789,7 @@ function renderTableFirstModule(view, data) {
       </div>
       ${renderModuleSummary(view, data)}
     </article>
+    ${renderTeacherWorkbenchGuide(view, data)}
     ${view.key === 'questionBank' ? renderQuestionBankPagePanel(view, data.page) : ''}
     ${(view.collections || []).map((collection) => renderCollectionSection(collection.key, data.collections[collection.key] || [])).join('')}
     ${view.key !== 'questionBank' && view.pageKey ? renderPageConfigLauncher(view, data.page) : ''}
@@ -4495,120 +5798,41 @@ function renderTableFirstModule(view, data) {
 }
 
 function renderCollectionSection(collectionKey, items) {
-  if (collectionKey === 'adminUsers') {
-    return renderAdminUsersSection(collectionKey, items);
-  }
-
   if (TABLE_COLLECTIONS.has(collectionKey)) {
     return renderTableCollectionSection(collectionKey, items);
   }
 
   const collectionMeta = getCollectionMeta(collectionKey);
   const selected = getSelectedCollectionState(collectionKey, items);
-  const ui = getViewUi();
-  const keyword = (ui.filters[collectionKey] || '').toLowerCase();
-  const statusFilter = ui.statusFilters[collectionKey] || 'all';
 
-  // 过滤数据
-  const filteredItems = items.filter(item => {
-    // 状态过滤
-    if (statusFilter !== 'all' && item.status !== statusFilter) {
-      return false;
-    }
-
-    // 关键词搜索
-    if (keyword) {
-      const searchText = [
-        getPrimaryLabel(item, collectionKey),
-        getSecondaryLabel(item, collectionKey),
-        item._id,
-        item.slug,
-        item.category
-      ].filter(Boolean).join(' ').toLowerCase();
-
-      return searchText.includes(keyword);
-    }
-
-    return true;
-  });
-
-  const editorLabel = selected.isDraft ? '新建条目' : selected.item ? `编辑 ${getPrimaryLabel(selected.item, collectionKey)}` : '暂无条目';
-  const publishedCount = items.filter(item => item.status === 'published').length;
-
-  return `<section class=”collection-section workspace-motion-scope”>
-    <div class=”table-layout table-layout-single”>
-      <article class=”panel table-panel table-panel-focus workspace-panel-enter”>
-        <div class=”panel-head workspace-enter” style=”--enter-delay: 0ms;”>
-          <div>
-            <h3>${escapeHtml(collectionMeta.label)}</h3>
-            <p>表格展示关键信息，点击行编辑详细内容。</p>
+  return `<section class="collection-section workspace-motion-scope" id="cms-section-${escapeHtml(collectionKey)}">
+    <article class="panel list-panel workspace-panel-enter">
+      <div class="panel-head workspace-enter" style="--enter-delay: 0ms;">
+        <div>
+          <h3>${escapeHtml(collectionMeta.label)}</h3>
+          <p>主区先看 row 概览，详细字段统一收进弹出表单里，避免把主控区拉得太长。</p>
+        </div>
+        <div class="panel-actions">
+          <button class="system-action" type="button" data-action="new-item" data-collection-key="${escapeHtml(collectionKey)}">新建</button>
+        </div>
+      </div>
+      ${renderCollectionWorkbenchGuide(collectionKey, items)}
+      <div class="record-list">
+        ${items.length ? items.map((item, index) => `<div class="record-row workspace-row-enter${selected.itemId === item._id && !selected.isDraft ? ' active' : ''}" style="--enter-delay: ${120 + index * 26}ms;">
+          <button class="record-row-main-button" type="button" data-action="select-item" data-collection-key="${escapeHtml(collectionKey)}" data-item-id="${escapeHtml(item._id || '')}">
+            <span class="record-row-main">
+              <strong class="record-row-title">${escapeHtml(getPrimaryLabel(item, collectionKey))}</strong>
+              <span class="record-row-meta">${escapeHtml(getSecondaryLabel(item, collectionKey) || '暂无补充说明')}</span>
+            </span>
+          </button>
+          <div class="record-row-side">
+            <span class="record-pill ${item.status === 'published' ? 'success' : ''}">${escapeHtml(item.status || 'draft')}</span>
+            <button class="row-action" type="button" data-action="select-item" data-collection-key="${escapeHtml(collectionKey)}" data-item-id="${escapeHtml(item._id || '')}">编辑</button>
           </div>
-          <div class=”panel-actions”>
-            <button class=”system-action” type=”button” data-action=”reload-view”>刷新</button>
-            <button class=”system-action” type=”button” data-action=”new-item” data-collection-key=”${escapeHtml(collectionKey)}”>新建</button>
-          </div>
-        </div>
-        <div class=”table-toolbar workspace-enter” style=”--enter-delay: 40ms;”>
-          <label class=”table-search”>
-            ${icon('search')}
-            <input type=”text” value=”${escapeHtml(keyword)}” placeholder=”搜索${collectionMeta.label}” data-list-filter=”${escapeHtml(collectionKey)}” />
-          </label>
-          <div class=”table-filters”>
-            ${STATUS_FILTER_OPTIONS.map((option) => `<button class=”segment${statusFilter === option.key ? ' active' : ''}” type=”button” data-action=”set-status-filter” data-collection-key=”${escapeHtml(collectionKey)}” data-status-key=”${escapeHtml(option.key)}”>${escapeHtml(option.label)}</button>`).join('')}
-          </div>
-        </div>
-        <div class=”workspace-compact-summary workspace-enter” style=”--enter-delay: 80ms;”>
-          <strong>${escapeHtml(selected.item ? `当前编辑：${getPrimaryLabel(selected.item, collectionKey)}` : collectionMeta.label)}</strong>
-          <span>共 ${items.length} 条记录，已发布 ${publishedCount} 条${filteredItems.length !== items.length ? `，当前显示 ${filteredItems.length} 条` : ''}</span>
-          <em>${selected.item ? `ID: ${selected.itemId}` : '点击表格行进入编辑'}</em>
-        </div>
-        <div class=”table-shell workspace-enter” style=”--enter-delay: 120ms;”>
-          ${filteredItems.length ? `<table class=”data-table data-table-compact”>
-            <thead>
-              <tr>
-                <th style=”width: 40px;”>
-                  <input type=”checkbox” class=”table-checkbox” data-action=”toggle-all-items” data-collection-key=”${escapeHtml(collectionKey)}” />
-                </th>
-                <th>名称</th>
-                <th>详情</th>
-                <th style=”width: 100px;”>状态</th>
-                <th style=”width: 120px;”>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${filteredItems.map((item, index) => {
-                const isActive = selected.itemId === item._id && !selected.isDraft;
-                return `<tr class=”workspace-row-enter${isActive ? ' active' : ''}” style=”--enter-delay: ${160 + index * 20}ms;”>
-                  <td>
-                    <input type=”checkbox” class=”table-checkbox” data-item-id=”${escapeHtml(item._id || '')}” />
-                  </td>
-                  <td>
-                    <div class=”table-cell-content”>
-                      <span class=”status-dot status-${item.status === 'published' ? 'published' : 'draft'}”></span>
-                      <strong class=”data-table-title”>${escapeHtml(getPrimaryLabel(item, collectionKey))}</strong>
-                    </div>
-                  </td>
-                  <td>
-                    <span class=”data-table-sub”>${escapeHtml(getSecondaryLabel(item, collectionKey) || '-')}</span>
-                  </td>
-                  <td>
-                    <span class=”record-pill${item.status === 'published' ? ' success' : ''}”>${escapeHtml(item.status || 'draft')}</span>
-                  </td>
-                  <td>
-                    <div class=”table-actions”>
-                      <button class=”row-action” type=”button” data-action=”select-item” data-collection-key=”${escapeHtml(collectionKey)}” data-item-id=”${escapeHtml(item._id || '')}” title=”编辑”>${icon('edit')}</button>
-                      <button class=”row-action” type=”button” data-action=”duplicate-item” data-collection-key=”${escapeHtml(collectionKey)}” data-item-id=”${escapeHtml(item._id || '')}” title=”复制”>${icon('copy')}</button>
-                      <button class=”row-action danger” type=”button” data-action=”delete-item” data-collection-key=”${escapeHtml(collectionKey)}” data-item-id=”${escapeHtml(item._id || '')}” title=”删除”>${icon('trash')}</button>
-                    </div>
-                  </td>
-                </tr>`;
-              }).join('')}
-            </tbody>
-          </table>` : '<div class=”empty-state”>当前筛选条件下没有数据，试试调整搜索或状态过滤。</div>'}
-        </div>
-      </article>
-      ${renderCollectionEditorOverlay(collectionKey, collectionMeta.label, selected)}
-    </div>
+        </div>`).join('') : '<div class="empty-state">当前集合还没有数据，点击右上角“新建”即可开始。</div>'}
+      </div>
+    </article>
+    ${renderCollectionEditor(collectionKey, selected, collectionMeta)}
   </section>`;
 }
 
@@ -4622,28 +5846,38 @@ function renderCollectionEditorOverlay(collectionKey, collectionLabel, selected)
 
   const editorLabel = selected.isDraft ? `新建${collectionLabel}` : `编辑 ${getPrimaryLabel(selected.item, collectionKey)}`;
 
-  return `<div class="editor-overlay editor-overlay-open">
-    <article class="editor-modal directions-enter-modal">
-      <div class="editor-modal-head directions-enter-modal-item" style="--enter-delay: 0ms;">
+  return `<div class="editor-overlay is-visible directions-editor-overlay" data-editor-collection="${escapeHtml(collectionKey)}">
+    <button class="editor-overlay-backdrop" type="button" aria-label="关闭编辑弹层" data-action="close-editor" data-collection-key="${escapeHtml(collectionKey)}"></button>
+    <article class="panel editor-panel editor-modal-shell editor-modal-shell-directions directions-enter-modal">
+      <div class="panel-head editor-modal-head directions-enter-modal-item" style="--enter-delay: 0ms;">
         <div>
-          <h2>${escapeHtml(editorLabel)}</h2>
+          <h3>${escapeHtml(editorLabel)}</h3>
           <p>修改完成后点击保存，或按 ESC 关闭。</p>
         </div>
-        <button class="editor-close" type="button" data-action="close-editor" data-editor-key="${escapeHtml(collectionKey)}" aria-label="关闭编辑器">${icon('close')}</button>
+        <div class="panel-actions">
+          <button class="system-action" type="button" data-action="save-item" data-collection-key="${escapeHtml(collectionKey)}">保存</button>
+          <button class="topbar-icon-button editor-close-button" type="button" data-action="close-editor" data-editor-key="${escapeHtml(collectionKey)}" aria-label="关闭编辑器">${icon('close')}</button>
+        </div>
       </div>
-      <div class="editor-meta directions-enter-modal-item" style="--enter-delay: 20ms;">
-        <span class="meta-chip">ID ${escapeHtml(selected.itemId || '新建中')}</span>
-        <span class="meta-chip">更新时间 ${escapeHtml(formatDateTime(getUpdatedAt(selected.item)))}</span>
-        <span class="meta-chip">集合 ${escapeHtml(collectionLabel)}</span>
-      </div>
-      <div class="editor-body directions-enter-modal-item" style="--enter-delay: 40ms;">
-        ${renderFriendlyEditor(`collection:${collectionKey}`, selected.item)}
-      </div>
-      <div class="editor-actions directions-enter-modal-item" style="--enter-delay: 60ms;">
-        <button class="system-action" type="button" data-action="save-item" data-collection-key="${escapeHtml(collectionKey)}">保存</button>
-        <button class="system-action" type="button" data-action="reload-view">重新拉取</button>
-        ${selected.item && !selected.isDraft ? `<button class="system-action danger-action" type="button" data-action="delete-item" data-collection-key="${escapeHtml(collectionKey)}" data-item-id="${escapeHtml(selected.itemId)}">删除</button>` : ''}
-        <button class="system-action" type="button" data-action="close-editor" data-editor-key="${escapeHtml(collectionKey)}">关闭</button>
+      <div class="editor-modal-body">
+        <div class="editor-meta directions-enter-modal-item" style="--enter-delay: 20ms;">
+          <span class="meta-chip">ID ${escapeHtml(selected.itemId || '新建中')}</span>
+          <span class="meta-chip">更新时间 ${escapeHtml(formatDateTime(getUpdatedAt(selected.item)))}</span>
+          <span class="meta-chip">集合 ${escapeHtml(collectionLabel)}</span>
+        </div>
+        <div class="drawer-focus-bar directions-enter-modal-item" style="--enter-delay: 40ms;">
+          <strong>${escapeHtml(getPrimaryLabel(selected.item, collectionKey))}</strong>
+          <span>${escapeHtml(getSecondaryLabel(selected.item, collectionKey) || '已进入明细编辑')}</span>
+        </div>
+        <div class="directions-enter-modal-item" style="--enter-delay: 60ms;">
+          ${renderFriendlyEditor(`collection:${collectionKey}`, selected.item)}
+        </div>
+        <div class="editor-actions directions-enter-modal-item" style="--enter-delay: 80ms;">
+          <button class="system-action" type="button" data-action="save-item" data-collection-key="${escapeHtml(collectionKey)}">保存</button>
+          <button class="system-action" type="button" data-action="reload-view">重新拉取</button>
+          ${selected.item && !selected.isDraft ? `<button class="system-action danger-action" type="button" data-action="delete-item" data-collection-key="${escapeHtml(collectionKey)}" data-item-id="${escapeHtml(selected.itemId)}">删除</button>` : ''}
+          <button class="system-action" type="button" data-action="close-editor" data-editor-key="${escapeHtml(collectionKey)}">关闭</button>
+        </div>
       </div>
     </article>
   </div>`;
@@ -4669,6 +5903,7 @@ function renderModule(view, data) {
   }
 
   refs.content.innerHTML = `<section class="module-page workspace-motion-scope">
+    ${renderEnvironmentBanner(view.title)}
     <article class="panel module-hero-panel workspace-panel-enter">
       <div class="panel-head workspace-enter" style="--enter-delay: 0ms;">
         <div>
@@ -4681,6 +5916,7 @@ function renderModule(view, data) {
       </div>
       ${renderModuleSummary(view, data)}
     </article>
+    ${renderTeacherWorkbenchGuide(view, data)}
     ${view.pageKey ? renderPageConfigLauncher(view, data.page) : ''}
     ${(view.collections || []).map((collection) => renderCollectionSection(collection.key, data.collections[collection.key] || [])).join('')}
     ${view.pageKey ? renderPageEditorOverlay(view.pageKey, view.pageLabel, data.page) : ''}
@@ -4689,78 +5925,126 @@ function renderModule(view, data) {
 }
 
 async function loadOverviewData() {
-  const pageOptions = state.meta?.pageOptions || [];
-  const listOptions = state.meta?.listOptions || [];
+  const cached = dataCache.get('overview');
+  if (cached?.value) {
+    return cached.value;
+  }
 
-  const pageEntries = await Promise.all(pageOptions.map(async (page) => {
-    const result = await request(`/api/page/${page.key}`);
-    return [page.key, normalizeCmsValue(result.data || null)];
-  }));
+  return withPendingCache('overview', async () => {
+    const pageOptions = state.meta?.pageOptions || [];
+    const listOptions = state.meta?.listOptions || [];
 
-  const collectionEntries = await Promise.all(listOptions.map(async (collection) => {
-    const result = await request(`/api/collection/${collection.key}`);
-    return [collection.key, Array.isArray(result.data) ? result.data.map((item) => normalizeCmsValue(item)) : []];
-  }));
+    const pageEntries = await Promise.all(pageOptions.map(async (page) => {
+      const cacheKey = `page:${page.key}`;
+      const pageCached = dataCache.get(cacheKey);
+      if (pageCached?.value) {
+        return [page.key, pageCached.value];
+      }
+      const result = await request(`/api/page/${page.key}`);
+      const value = normalizeCmsValue(result.data || null);
+      dataCache.set(cacheKey, value, getPageCacheVersion(value));
+      return [page.key, value];
+    }));
 
-  const pages = Object.fromEntries(pageEntries);
-  const collections = Object.fromEntries(collectionEntries);
-  const pageLabels = Object.fromEntries(pageOptions.map((item) => [item.key, item.label]));
+    const collectionEntries = await Promise.all(listOptions.map(async (collection) => {
+      const cacheKey = `collection:${collection.key}`;
+      const collectionCached = dataCache.get(cacheKey);
+      if (collectionCached?.value) {
+        return [collection.key, collectionCached.value];
+      }
+      const result = await request(`/api/collection/${collection.key}`);
+      const value = Array.isArray(result.data) ? result.data.map((item) => normalizeCollectionItem(collection.key, item)) : [];
+      dataCache.set(cacheKey, value, getCollectionCacheVersion(value));
+      return [collection.key, value];
+    }));
 
-  const recentUpdates = [
-    ...Object.entries(pages).map(([key, value]) => ({
-      title: pageLabels[key] || key,
-      module: '页面配置',
-      updatedAt: getUpdatedAt(value)
-    })),
-    ...Object.entries(collections).flatMap(([key, items]) => items.map((item) => ({
-      title: getPrimaryLabel(item, key),
-      module: getCollectionMeta(key).label,
-      updatedAt: getUpdatedAt(item)
-    })))
-  ]
-    .filter((item) => item.updatedAt)
-    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+    const pages = Object.fromEntries(pageEntries);
+    const collections = Object.fromEntries(collectionEntries);
+    const pageLabels = Object.fromEntries(pageOptions.map((item) => [item.key, item.label]));
 
-  const healthMap = [
-    { label: '首页配置', pageKey: 'home', collectionKey: null },
-    { label: '师资团队', pageKey: 'teachers', collectionKey: 'teachers' },
-    { label: '开设方向', pageKey: 'courses', collectionKey: 'directions' },
-    { label: '媒体资源', pageKey: 'materials', collectionKey: 'mediaAssets' },
-    { label: '模拟题题目', pageKey: 'questionBank', collectionKey: 'medicalQuestions' }
-  ];
+    const recentUpdates = [
+      ...Object.entries(pages).map(([key, value]) => ({
+        title: pageLabels[key] || key,
+        module: '页面配置',
+        updatedAt: getUpdatedAt(value)
+      })),
+      ...Object.entries(collections).flatMap(([key, items]) => items.map((item) => ({
+        title: getPrimaryLabel(item, key),
+        module: getCollectionMeta(key).label,
+        updatedAt: getUpdatedAt(item)
+      })))
+    ]
+      .filter((item) => item.updatedAt)
+      .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
 
-  const healthRows = healthMap.map((item) => {
-    const pageReady = pages[item.pageKey] ? 45 : 0;
-    const entries = item.collectionKey ? collections[item.collectionKey] || [] : [];
-    const publishedRatio = entries.length ? Math.round((entries.filter((entry) => entry.status === 'published').length / entries.length) * 55) : item.collectionKey ? 10 : 55;
-    const value = Math.min(100, pageReady + publishedRatio);
-    return {
-      label: item.label,
-      value,
-      tone: value >= 80 ? 'green' : 'amber'
-    };
+    const healthMap = [
+      { label: '首页配置', pageKey: 'home', collectionKey: null },
+      { label: '师资团队', pageKey: 'teachers', collectionKey: 'teachers' },
+      { label: '开设方向', pageKey: 'courses', collectionKey: 'directions' },
+      { label: '媒体资源', pageKey: 'materials', collectionKey: 'mediaAssets' },
+      { label: '模拟题题目', pageKey: 'questionBank', collectionKey: 'medicalQuestions' }
+    ];
+
+    const healthRows = healthMap.map((item) => {
+      const pageReady = pages[item.pageKey] ? 45 : 0;
+      const entries = item.collectionKey ? collections[item.collectionKey] || [] : [];
+      const publishedRatio = entries.length ? Math.round((entries.filter((entry) => entry.status === 'published').length / entries.length) * 55) : item.collectionKey ? 10 : 55;
+      const value = Math.min(100, pageReady + publishedRatio);
+      return {
+        label: item.label,
+        value,
+        tone: value >= 80 ? 'green' : 'amber'
+      };
+    });
+
+    return dataCache.set('overview', { pages, collections, pageLabels, recentUpdates, healthRows });
   });
-
-  return { pages, collections, pageLabels, recentUpdates, healthRows };
 }
 
 async function loadModuleData(view) {
-  const data = {
-    page: null,
-    collections: {}
-  };
-
-  if (view.pageKey) {
-    const pageResult = await request(`/api/page/${view.pageKey}`);
-    data.page = normalizeCmsValue(pageResult.data || {});
+  const moduleCacheKey = `module:${view.key}`;
+  const cached = dataCache.get(moduleCacheKey);
+  if (cached?.value) {
+    return cached.value;
   }
 
-  for (const collection of view.collections || []) {
-    const result = await request(`/api/collection/${collection.key}`);
-    data.collections[collection.key] = Array.isArray(result.data) ? result.data.map((item) => normalizeCmsValue(item)) : [];
-  }
+  return withPendingCache(moduleCacheKey, async () => {
+    const data = {
+      page: null,
+      collections: {}
+    };
 
-  return data;
+    if (view.pageKey) {
+      const pageCacheKey = `page:${view.pageKey}`;
+      const pageCached = dataCache.get(pageCacheKey);
+      if (pageCached?.value) {
+        data.page = pageCached.value;
+      } else {
+        const pageResult = await request(`/api/page/${view.pageKey}`);
+        data.page = normalizeCmsValue(pageResult.data || {});
+        dataCache.set(pageCacheKey, data.page, getPageCacheVersion(data.page));
+      }
+    }
+
+    for (const collection of view.collections || []) {
+      const collectionCacheKey = `collection:${collection.key}`;
+      const collectionCached = dataCache.get(collectionCacheKey);
+      if (collectionCached?.value) {
+        data.collections[collection.key] = collectionCached.value;
+      } else {
+        const result = await request(`/api/collection/${collection.key}`);
+        const items = Array.isArray(result.data) ? result.data.map((item) => normalizeCollectionItem(collection.key, item)) : [];
+        data.collections[collection.key] = items;
+        dataCache.set(collectionCacheKey, items, getCollectionCacheVersion(items));
+      }
+    }
+
+    return dataCache.set(moduleCacheKey, data);
+  });
+}
+
+function schedulePreloadForView(viewKey) {
+  preloadManager.preloadAdjacent(viewKey);
 }
 
 async function renderActiveView(force = false) {
@@ -4772,12 +6056,17 @@ async function renderActiveView(force = false) {
   ensureActiveViewAvailable();
   const view = VIEW_CONFIG[state.activeView];
   if (!view) return;
+  if (force) {
+    dataCache.invalidate('overview');
+    dataCache.invalidate(`module:${state.activeView}`);
+  }
   setTopbar(view);
   renderSidebar();
-  renderLoading();
+  renderLoading(view);
   state.loading = true;
   state.error = '';
   setStatus('正在同步数据...', 'loading');
+  performanceMonitor.start(`switch:${state.activeView}`);
 
   try {
     state.currentData = state.activeView === 'overview' ? await loadOverviewData() : await loadModuleData(view);
@@ -4787,6 +6076,7 @@ async function renderActiveView(force = false) {
       renderModule(view, state.currentData);
     }
     setStatus(getCloudConnectionLabel(), isCloudWriteReady() ? 'ok' : 'warn');
+    schedulePreloadForView(state.activeView);
   } catch (error) {
     if (error.statusCode === 401) {
       await loadAuthState();
@@ -4800,6 +6090,7 @@ async function renderActiveView(force = false) {
     setStatus('数据同步失败', 'error');
   } finally {
     state.loading = false;
+    performanceMonitor.end(`switch:${state.activeView}`);
   }
 }
 
@@ -4810,11 +6101,17 @@ async function savePage(pageKey) {
     method: 'PUT',
     body: JSON.stringify(payload)
   });
+  dataCache.invalidate(`page:${pageKey}`);
+  dataCache.invalidate(`module:${resolveViewFromPageKey(pageKey)}`);
+  dataCache.invalidate('overview');
 }
 
 async function saveCollectionItem(collectionKey) {
-  const payload = cloneValue(getFormSource(`collection:${collectionKey}`));
+  let payload = cloneValue(getFormSource(`collection:${collectionKey}`));
   if (!payload) throw new Error('未找到条目编辑数据');
+  if (collectionKey === 'mediaAssets') {
+    payload = normalizeMediaAssetItem(payload);
+  }
   const ui = getViewUi();
   const itemId = payload._id || ui.selectedIds[collectionKey] || '';
 
@@ -4825,6 +6122,10 @@ async function saveCollectionItem(collectionKey) {
     });
     ui.selectedIds[collectionKey] = itemId;
     delete ui.drafts[collectionKey];
+    resetVisibleRowCount(collectionKey);
+    dataCache.invalidate(`collection:${collectionKey}`);
+    dataCache.invalidate(`module:${state.activeView}`);
+    dataCache.invalidate('overview');
     return;
   }
 
@@ -4834,6 +6135,10 @@ async function saveCollectionItem(collectionKey) {
   });
   ui.selectedIds[collectionKey] = created.data?._id || '';
   delete ui.drafts[collectionKey];
+  resetVisibleRowCount(collectionKey);
+  dataCache.invalidate(`collection:${collectionKey}`);
+  dataCache.invalidate(`module:${state.activeView}`);
+  dataCache.invalidate('overview');
 }
 
 async function deleteCollectionItem(collectionKey, itemId) {
@@ -4844,12 +6149,16 @@ async function deleteCollectionItem(collectionKey, itemId) {
   const ui = getViewUi();
   delete ui.selectedIds[collectionKey];
   delete ui.drafts[collectionKey];
+  resetVisibleRowCount(collectionKey);
+  dataCache.invalidate(`collection:${collectionKey}`);
+  dataCache.invalidate(`module:${state.activeView}`);
+  dataCache.invalidate('overview');
 }
 
 async function createCollectionDraft(collectionKey) {
   const result = await request(`/api/template/${collectionKey}`);
   const ui = getViewUi();
-  ui.drafts[collectionKey] = result.data || {};
+  ui.drafts[collectionKey] = normalizeCollectionItem(collectionKey, result.data || {});
   delete ui.selectedIds[collectionKey];
 }
 
@@ -4869,7 +6178,7 @@ async function switchView(viewKey) {
   if (!VIEW_CONFIG[viewKey]) return;
   if (!getVisibleNavItems().some((item) => item.key === viewKey)) return;
   state.activeView = viewKey;
-  await renderActiveView(true);
+  await renderActiveView(false);
 }
 
 function closeCurrentEditor() {
@@ -4884,40 +6193,93 @@ function closeCurrentEditor() {
   return true;
 }
 
+function getViewportSize() {
+  const viewport = window.visualViewport;
+  return {
+    width: Math.round(viewport?.width || window.innerWidth || document.documentElement.clientWidth || 1280),
+    height: Math.round(viewport?.height || window.innerHeight || document.documentElement.clientHeight || 720)
+  };
+}
+
+function getResponsiveModalMetrics() {
+  const viewport = getViewportSize();
+  const edge = viewport.width <= 720 ? 12 : viewport.width <= 1080 ? 20 : 32;
+  const preferredWidth = viewport.width <= 720
+    ? viewport.width - edge * 2
+    : viewport.width <= 1280
+      ? Math.min(760, viewport.width - edge * 2)
+      : Math.min(820, Math.round(viewport.width * 0.68));
+  const modalWidth = Math.max(320, preferredWidth);
+  const modalMaxHeight = Math.max(360, viewport.height - edge * 2);
+
+  return {
+    modalWidth,
+    modalMaxHeight
+  };
+}
+
+function applyResponsiveModalLayout() {
+  if (!hasOpenEditor()) return;
+  const { modalWidth, modalMaxHeight } = getResponsiveModalMetrics();
+  document.querySelectorAll('.editor-modal-shell').forEach((shell) => {
+    shell.style.setProperty('--modal-responsive-width', `${modalWidth}px`);
+    shell.style.setProperty('--modal-responsive-max-height', `${modalMaxHeight}px`);
+  });
+}
+
+function bindResponsiveModalLayout() {
+  const sync = () => {
+    applyResponsiveModalLayout();
+  };
+  window.addEventListener('resize', sync);
+  window.addEventListener('orientationchange', sync);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', sync);
+    window.visualViewport.addEventListener('scroll', sync);
+  }
+}
+
 function bindGlobalActions() {
+  bindResponsiveModalLayout();
+
   refs.nav.addEventListener('click', async (event) => {
     const button = event.target.closest('[data-nav]');
     if (!button || state.loading) return;
     await switchView(button.dataset.nav);
   });
 
+  refs.nav.addEventListener('mouseover', (event) => {
+    const button = event.target.closest('[data-nav]');
+    if (!button) return;
+    preloadManager.preloadView(button.dataset.nav, 90);
+  });
+
+  refs.nav.addEventListener('focusin', (event) => {
+    const button = event.target.closest('[data-nav]');
+    if (!button) return;
+    preloadManager.preloadView(button.dataset.nav, 90);
+  });
+
+  refs.authRoot?.addEventListener('submit', async (event) => {
+    const form = event.target.closest('[data-auth-form]');
+    if (!form) return;
+    event.preventDefault();
+    await handleAuthFormSubmit(form);
+  });
+
+  refs.authRoot?.addEventListener('click', async (event) => {
+    const button = event.target.closest('[data-action]');
+    if (!button) return;
+    if (handleAuthAction(button)) {
+      return;
+    }
+  });
+
   refs.content.addEventListener('submit', async (event) => {
     const form = event.target.closest('[data-auth-form]');
     if (!form) return;
     event.preventDefault();
-    const mode = form.dataset.authForm;
-    const formData = new FormData(form);
-    try {
-      setStatus(mode === 'bootstrap' ? '正在创建管理员...' : '正在登录后台...', 'loading');
-      if (mode === 'bootstrap') {
-        await submitBootstrap(formData);
-      } else {
-        await submitLogin(formData);
-      }
-      await loadAuthState();
-      renderSessionControl();
-      if (state.auth.authenticated) {
-        await hydrateMeta();
-        await renderActiveView(true);
-        setStatus(mode === 'bootstrap' ? '管理员已创建并登录' : '登录成功');
-        finishBootAnimation();
-      } else {
-        renderAuthScreen('登录未完成，请检查账号状态。');
-      }
-    } catch (error) {
-      renderAuthScreen(error.message || '登录失败，请稍后重试。');
-      setStatus(error.message || '登录失败', 'error');
-    }
+    await handleAuthFormSubmit(form);
   });
 
   refs.content.addEventListener('click', async (event) => {
@@ -4932,23 +6294,30 @@ function bindGlobalActions() {
       }
 
       if (action === 'reload-view') {
+        const currentView = VIEW_CONFIG[state.activeView];
+        if (currentView?.pageKey) {
+          dataCache.invalidate(`page:${currentView.pageKey}`);
+        }
+        for (const collection of currentView?.collections || []) {
+          dataCache.invalidate(`collection:${collection.key}`);
+          resetVisibleRowCount(collection.key);
+        }
+        dataCache.invalidate(`module:${state.activeView}`);
+        dataCache.invalidate('overview');
         await renderActiveView(true);
         return;
       }
 
-      if (action === 'toggle-password') {
-        const field = button.closest('.auth-password-input');
-        const input = field?.querySelector('input[name="password"]');
-        if (!input) return;
-        const nextType = input.type === 'password' ? 'text' : 'password';
-        input.type = nextType;
-        button.setAttribute('aria-pressed', nextType === 'text' ? 'true' : 'false');
-        field.classList.toggle('is-visible', nextType === 'text');
+      if (action === 'dismiss-onboarding') {
+        localStorage.setItem('admin-web-onboarding-dismissed', 'true');
+        if (state.activeView === 'overview') {
+          renderOverview(state.currentData);
+        }
+        setStatus('已隐藏新手引导，可通过清理浏览器本地存储后恢复。');
         return;
       }
 
-      if (action === 'forgot-password') {
-        setStatus('请联系系统管理员重置后台密码。', 'warn');
+      if (handleAuthAction(button)) {
         return;
       }
 
@@ -5164,6 +6533,13 @@ function bindGlobalActions() {
       if (action === 'set-status-filter' && collectionKey) {
         const ui = getViewUi();
         ui.statusFilters[collectionKey] = button.dataset.statusKey || 'all';
+        resetVisibleRowCount(collectionKey);
+        renderModule(VIEW_CONFIG[state.activeView], state.currentData);
+        return;
+      }
+
+      if (action === 'load-more-rows' && collectionKey) {
+        increaseVisibleRowCount(collectionKey);
         renderModule(VIEW_CONFIG[state.activeView], state.currentData);
         return;
       }
@@ -5211,6 +6587,18 @@ function bindGlobalActions() {
     }
   });
 
+  refs.content.addEventListener('mouseover', (event) => {
+    const target = event.target.closest('[data-target-view]');
+    if (!target) return;
+    preloadManager.preloadView(target.dataset.targetView, 110);
+  });
+
+  refs.content.addEventListener('focusin', (event) => {
+    const target = event.target.closest('[data-target-view]');
+    if (!target) return;
+    preloadManager.preloadView(target.dataset.targetView, 110);
+  });
+
   function handleFormMutation(event) {
     const csvInput = event.target.closest('[data-question-bank-csv-input]');
     if (csvInput) {
@@ -5241,6 +6629,7 @@ function bindGlobalActions() {
       const ui = getViewUi();
       const collectionKey = listFilter.dataset.listFilter;
       ui.filters[collectionKey] = listFilter.value || '';
+      resetVisibleRowCount(collectionKey);
       renderModule(VIEW_CONFIG[state.activeView], state.currentData);
       return;
     }
@@ -5250,6 +6639,7 @@ function bindGlobalActions() {
       const ui = getViewUi();
       const collectionKey = roleFilter.dataset.roleFilter;
       ui.roleFilters[collectionKey] = roleFilter.value || 'all';
+      resetVisibleRowCount(collectionKey);
       renderModule(VIEW_CONFIG[state.activeView], state.currentData);
       return;
     }
@@ -5259,6 +6649,7 @@ function bindGlobalActions() {
       const ui = getViewUi();
       const collectionKey = accountStatusFilter.dataset.accountStatusFilter;
       ui.statusFilters[collectionKey] = accountStatusFilter.value || 'all';
+      resetVisibleRowCount(collectionKey);
       renderModule(VIEW_CONFIG[state.activeView], state.currentData);
       return;
     }
@@ -5327,6 +6718,11 @@ function bindGlobalActions() {
       return;
     }
 
+    if (event.target.closest('#help-button')) {
+      showHelpModal();
+      return;
+    }
+
     if (event.target.closest('#topbar-search')) {
       window.alert('当前版本先聚焦内容编辑，搜索入口下一轮再补。');
       return;
@@ -5338,11 +6734,406 @@ function bindGlobalActions() {
   });
 }
 
+// 帮助文档弹窗功能
+function showHelpModal() {
+  const currentView = VIEW_CONFIG[state.activeView];
+  const viewTitle = currentView?.title || '当前页面';
+  
+  const helpContent = getHelpContent(state.activeView);
+  
+  const modal = document.createElement('div');
+  modal.className = 'help-modal-overlay';
+  modal.innerHTML = `
+    <div class="help-modal">
+      <div class="help-modal-header">
+        <h2>📖 ${escapeHtml(viewTitle)}帮助</h2>
+        <button class="help-modal-close" onclick="this.closest('.help-modal-overlay').remove()">×</button>
+      </div>
+      <div class="help-modal-body">
+        ${helpContent}
+      </div>
+      <div class="help-modal-footer">
+        <button class="system-action" onclick="this.closest('.help-modal-overlay').remove()">我知道了</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // 点击背景关闭
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.remove();
+    }
+  });
+  
+  // ESC键关闭
+  const handleEsc = (e) => {
+    if (e.key === 'Escape') {
+      modal.remove();
+      document.removeEventListener('keydown', handleEsc);
+    }
+  };
+  document.addEventListener('keydown', handleEsc);
+}
+
+function getHelpContent(viewKey) {
+  const helpData = {
+    overview: {
+      title: '工作台',
+      sections: [
+        {
+          title: '🎯 主要功能',
+          content: `
+            <ul>
+              <li><strong>数据概览</strong>：查看页面配置、内容条目、媒体资源等统计数据</li>
+              <li><strong>快速操作</strong>：常用功能的快捷入口</li>
+              <li><strong>最近更新</strong>：查看最新的内容更新记录</li>
+              <li><strong>模块健康度</strong>：了解各模块的配置状态</li>
+            </ul>
+          `
+        },
+        {
+          title: '💡 使用建议',
+          content: `
+            <ul>
+              <li>首次使用请先完成新手引导</li>
+              <li>通过快速操作可以快速进入常用功能</li>
+              <li>定期查看最近更新，了解内容变化</li>
+            </ul>
+          `
+        }
+      ]
+    },
+    home: {
+      title: '首页内容',
+      sections: [
+        {
+          title: '📝 主要功能',
+          content: `
+            <ul>
+              <li><strong>首页大屏</strong>：编辑首页顶部的标题、说明和按钮</li>
+              <li><strong>数据卡</strong>：配置首屏展示的3个数据统计卡</li>
+              <li><strong>功能入口</strong>：设置4个快捷功能入口</li>
+              <li><strong>热门方向</strong>：选择推荐的课程方向</li>
+              <li><strong>学习支持</strong>：编辑学习支持卡片内容</li>
+            </ul>
+          `
+        },
+        {
+          title: '⚠️ 注意事项',
+          content: `
+            <ul>
+              <li>数据卡最多只能配置3个</li>
+              <li>功能入口最多只能配置4个</li>
+              <li>热门方向需要先在方向管理中创建</li>
+              <li>修改后记得点击保存按钮</li>
+            </ul>
+          `
+        }
+      ]
+    },
+    directions: {
+      title: '课程方向',
+      sections: [
+        {
+          title: '📚 主要功能',
+          content: `
+            <ul>
+              <li><strong>方向管理</strong>：创建和编辑课程方向</li>
+              <li><strong>首页推荐</strong>：设置哪些方向在首页展示</li>
+              <li><strong>方向卡片</strong>：配置方向的展示样式</li>
+              <li><strong>排序管理</strong>：调整方向的显示顺序</li>
+            </ul>
+          `
+        },
+        {
+          title: '🔧 操作说明',
+          content: `
+            <ul>
+              <li>点击"新建方向"创建新的课程方向</li>
+              <li>点击表格行可以编辑方向详情</li>
+              <li>使用"首页精选"标记推荐方向</li>
+              <li>通过排序值控制显示顺序</li>
+            </ul>
+          `
+        }
+      ]
+    },
+    questionBank: {
+      title: '题库管理',
+      sections: [
+        {
+          title: '❓ 主要功能',
+          content: `
+            <ul>
+              <li><strong>题目管理</strong>：创建、编辑和删除题目</li>
+              <li><strong>试卷管理</strong>：组织题目成套卷</li>
+              <li><strong>CSV导入</strong>：批量导入题目数据</li>
+              <li><strong>导入记录</strong>：查看导入历史</li>
+            </ul>
+          `
+        },
+        {
+          title: '📤 CSV导入说明',
+          content: `
+            <ul>
+              <li>支持的字段：questionId, direction, questionType, stem, optionA-F, answer, explanation, year, paperId, paperTitle, tags, status</li>
+              <li>单选答案示例：A</li>
+              <li>多选答案示例：A|C|D</li>
+              <li>判断答案示例：T / F</li>
+              <li>同一paperId的题目会自动归为一套试卷</li>
+            </ul>
+          `
+        }
+      ]
+    },
+    teachers: {
+      title: '师资团队',
+      sections: [
+        {
+          title: '👨‍🏫 主要功能',
+          content: `
+            <ul>
+              <li><strong>老师管理</strong>：添加和编辑老师信息</li>
+              <li><strong>头像设置</strong>：上传老师头像</li>
+              <li><strong>擅长标签</strong>：标注老师的专业领域</li>
+              <li><strong>排序控制</strong>：调整老师展示顺序</li>
+            </ul>
+          `
+        },
+        {
+          title: '📋 字段说明',
+          content: `
+            <ul>
+              <li><strong>姓名</strong>：老师的真实姓名</li>
+              <li><strong>角色</strong>：如主讲老师、辅导老师等</li>
+              <li><strong>标签</strong>：简短的身份标识</li>
+              <li><strong>简介</strong>：老师的详细介绍</li>
+              <li><strong>擅长</strong>：专业领域标签</li>
+            </ul>
+          `
+        }
+      ]
+    },
+    results: {
+      title: '学员成果',
+      sections: [
+        {
+          title: '🏆 主要功能',
+          content: `
+            <ul>
+              <li><strong>案例管理</strong>：添加和编辑学员成功案例</li>
+              <li><strong>路径标签</strong>：标注学员的学习路径</li>
+              <li><strong>成绩展示</strong>：展示学员的提分效果</li>
+              <li><strong>案例筛选</strong>：按方向和路径筛选案例</li>
+            </ul>
+          `
+        },
+        {
+          title: '✨ 案例要素',
+          content: `
+            <ul>
+              <li><strong>学生姓名</strong>：案例主人公</li>
+              <li><strong>起点/终点</strong>：展示提分效果</li>
+              <li><strong>案例原话</strong>：学员的真实评价</li>
+              <li><strong>适合人群</strong>：哪些学员适合参考</li>
+            </ul>
+          `
+        }
+      ]
+    },
+    about: {
+      title: '关于我们',
+      sections: [
+        {
+          title: '🏢 主要功能',
+          content: `
+            <ul>
+              <li><strong>机构介绍</strong>：编辑机构的基本信息</li>
+              <li><strong>教学理念</strong>：展示机构的教学理念</li>
+              <li><strong>环境展示</strong>：上传校区环境图片</li>
+              <li><strong>联系方式</strong>：设置联系信息</li>
+            </ul>
+          `
+        }
+      ]
+    },
+    contact: {
+      title: '联系方式',
+      sections: [
+        {
+          title: '📞 主要功能',
+          content: `
+            <ul>
+              <li><strong>品牌信息</strong>：设置机构名称和品牌</li>
+              <li><strong>联系电话</strong>：设置咨询电话</li>
+              <li><strong>微信咨询</strong>：设置微信号</li>
+              <li><strong>地址信息</strong>：设置校区地址</li>
+              <li><strong>服务时间</strong>：设置咨询服务时间</li>
+            </ul>
+          `
+        }
+      ]
+    },
+    media: {
+      title: '教材资料',
+      sections: [
+        {
+          title: '📚 主要功能',
+          content: `
+            <ul>
+              <li><strong>资料管理</strong>：上传和管理学习资料</li>
+              <li><strong>套系包</strong>：组织资料成套系</li>
+              <li><strong>素材库</strong>：管理图片、视频等素材</li>
+              <li><strong>方向分类</strong>：按方向和阶段分类</li>
+            </ul>
+          `
+        }
+      ]
+    },
+    accounts: {
+      title: '账号管理',
+      sections: [
+        {
+          title: '👥 主要功能',
+          content: `
+            <ul>
+              <li><strong>账号创建</strong>：为老师创建登录账号</li>
+              <li><strong>角色分配</strong>：设置账号的权限角色</li>
+              <li><strong>状态管理</strong>：启用或停用账号</li>
+              <li><strong>密码管理</strong>：重置账号密码</li>
+            </ul>
+          `
+        },
+        {
+          title: '🔐 角色权限',
+          content: `
+            <ul>
+              <li><strong>管理员</strong>：拥有所有权限</li>
+              <li><strong>发布老师</strong>：可以发布内容</li>
+              <li><strong>编辑老师</strong>：可以编辑内容</li>
+              <li><strong>查看老师</strong>：只能查看内容</li>
+            </ul>
+          `
+        }
+      ]
+    }
+  };
+
+  const help = helpData[viewKey] || {
+    title: '帮助',
+    sections: [
+      {
+        title: '📖 使用帮助',
+        content: '<p>暂无该页面的详细帮助文档。</p>'
+      }
+    ]
+  };
+
+  return help.sections.map(section => `
+    <div class="help-section">
+      <h3>${section.title}</h3>
+      ${section.content}
+    </div>
+  `).join('');
+}
+
+// 操作记录功能
+const operationHistory = [];
+const MAX_HISTORY_SIZE = 50;
+
+function recordOperation(operation, details = '') {
+  const record = {
+    id: Date.now(),
+    operation,
+    details,
+    timestamp: new Date().toISOString(),
+    view: state.activeView
+  };
+  
+  operationHistory.unshift(record);
+  
+  // 限制历史记录数量
+  if (operationHistory.length > MAX_HISTORY_SIZE) {
+    operationHistory.pop();
+  }
+  
+  // 保存到本地存储
+  try {
+    localStorage.setItem('admin-web-operations', JSON.stringify(operationHistory.slice(0, 10)));
+  } catch (e) {
+    // 忽略存储错误
+  }
+}
+
+function loadOperationHistory() {
+  try {
+    const saved = localStorage.getItem('admin-web-operations');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      operationHistory.push(...parsed);
+    }
+  } catch (e) {
+    // 忽略加载错误
+  }
+}
+
+function getRecentOperations(limit = 5) {
+  return operationHistory.slice(0, limit);
+}
+
+function formatOperationTime(timestamp) {
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diff = now - date;
+  
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+  
+  if (diff < minute) return '刚刚';
+  if (diff < hour) return `${Math.floor(diff / minute)} 分钟前`;
+  if (diff < day) return `${Math.floor(diff / hour)} 小时前`;
+  return `${Math.floor(diff / day)} 天前`;
+}
+
+function getOperationIcon(operation) {
+  const iconMap = {
+    '登录': '🔐',
+    '退出': '🚪',
+    '保存': '💾',
+    '删除': '🗑️',
+    '新建': '➕',
+    '编辑': '✏️',
+    '导入': '📤',
+    '导出': '📥',
+    '刷新': '🔄',
+    '搜索': '🔍',
+    '上传': '⬆️',
+    '下载': '⬇️',
+    '复制': '📋',
+    '粘贴': '📌',
+    '撤销': '↩️',
+    '重做': '↪️'
+  };
+  
+  // 查找匹配的图标
+  for (const [key, icon] of Object.entries(iconMap)) {
+    if (operation.includes(key)) {
+      return icon;
+    }
+  }
+  
+  return '📝'; // 默认图标
+}
+
 async function bootstrap() {
   applyTheme('light');
   applySidebarCollapsed(preferredSidebarCollapsed());
   renderSessionControl();
   bindGlobalActions();
+  loadOperationHistory();
 
   try {
     await loadAuthState();

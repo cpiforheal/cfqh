@@ -48,5 +48,6 @@ export const adminListOptions = [
   { key: 'materialPackages', label: '主推套系包', collection: 'material_packages' },
   { key: 'materialItems', label: '货架资料卡', collection: 'material_items' },
   { key: 'mediaAssets', label: '媒体资源', collection: 'media_assets' },
-  { key: 'adminUsers', label: '管理员', collection: 'admin_users' }
+  { key: 'adminUsers', label: '管理员', collection: 'admin_users' },
+  { key: 'questionBankImport', label: '题库数据导入', collection: 'question_bank_import' }
 ];

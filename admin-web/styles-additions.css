@@ -1,0 +1,644 @@
+/* 工作台顶部恢复为引导 + 快捷入口 + 原有总览并存 */
+.dashboard-intro-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+  gap: 24px;
+}
+
+.dashboard-intro-stack {
+  display: grid;
+  gap: 24px;
+}
+
+/* 欢迎区域 */
+.dashboard-page .welcome-section {
+  position: relative;
+  overflow: hidden;
+  padding: 32px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 18px 40px rgba(102, 126, 234, 0.22);
+}
+
+.welcome-section {
+  margin-bottom: 0;
+}
+
+.welcome-content h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  color: white;
+}
+
+.welcome-content p {
+  font-size: 16px;
+  margin: 0;
+  opacity: 0.9;
+  color: white;
+}
+
+.welcome-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.welcome-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  backdrop-filter: blur(10px);
+}
+
+/* 快速操作区域 */
+.quick-actions {
+  background: var(--panel-bg);
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid var(--line-faint);
+}
+
+.quick-actions h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 16px 0;
+  color: var(--text);
+}
+
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.action-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px;
+  background: var(--panel-bg-strong);
+  border: 1px solid var(--line-faint);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.action-card:hover {
+  background: var(--accent);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.action-card:hover .action-label,
+.action-card:hover .action-desc {
+  color: white;
+}
+
+.action-icon {
+  display: block;
+  font-size: 32px;
+  line-height: 1;
+  margin-bottom: 12px;
+}
+
+.action-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.action-desc {
+  font-size: 12px;
+  color: var(--text-soft);
+  line-height: 1.4;
+}
+
+/* 新手引导区域 */
+.dashboard-page .onboarding-section {
+  position: relative;
+  overflow: hidden;
+  padding: 24px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 18px 40px rgba(245, 87, 108, 0.22);
+}
+
+.onboarding-section {
+  margin-bottom: 0;
+}
+
+.onboarding-content h3 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  color: white;
+}
+
+.onboarding-content > p {
+  font-size: 14px;
+  margin: 0 0 20px 0;
+  opacity: 0.9;
+  color: white;
+}
+
+.onboarding-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.onboarding-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+}
+
+.step-number {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.step-text {
+  font-size: 14px;
+  color: white;
+  font-weight: 500;
+}
+
+.onboarding-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.onboarding-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.onboarding-btn.primary {
+  background: white;
+  color: #f5576c;
+}
+
+.onboarding-btn.primary:hover {
+  background: #f8f9fa;
+  transform: translateY(-1px);
+}
+
+.onboarding-btn.secondary {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.onboarding-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+@media (max-width: 1440px) {
+  .dashboard-intro-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .welcome-section,
+  .quick-actions,
+  .onboarding-section {
+    padding: 20px;
+  }
+
+  .welcome-meta,
+  .onboarding-actions {
+    flex-direction: column;
+  }
+
+  .onboarding-btn {
+    width: 100%;
+  }
+}
+
+/* 帮助文档弹窗样式 */
+.help-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.help-modal {
+  background: var(--panel-bg);
+  border-radius: 16px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.help-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--line-faint);
+  background: var(--panel-bg-strong);
+}
+
+.help-modal-header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.help-modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--text-soft);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.help-modal-close:hover {
+  background: var(--accent);
+  color: white;
+}
+
+.help-modal-body {
+  padding: 24px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.help-section {
+  margin-bottom: 24px;
+}
+
+.help-section:last-child {
+  margin-bottom: 0;
+}
+
+.help-section h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 12px 0;
+}
+
+.help-section ul {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text-soft);
+  line-height: 1.6;
+}
+
+.help-section li {
+  margin-bottom: 8px;
+}
+
+.help-section strong {
+  color: var(--text);
+}
+
+.help-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--line-faint);
+  background: var(--panel-bg-strong);
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* 操作记录区域样式 */
+.operations-panel {
+  background: var(--panel-bg);
+  border-radius: 16px;
+  border: 1px solid var(--line-faint);
+}
+
+.operations-list {
+  padding: 0 24px 24px;
+}
+
+.operation-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line-faint);
+}
+
+.operation-item:last-child {
+  border-bottom: none;
+}
+
+.operation-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--panel-bg-strong);
+  border-radius: 8px;
+}
+
+.operation-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.operation-content strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.operation-details {
+  display: block;
+  font-size: 12px;
+  color: var(--text-soft);
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+.operation-time {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* 新手老师工作台引导 */
+.teacher-guide-panel,
+.teacher-kickoff-panel {
+  border-radius: 20px;
+  border: 1px solid rgba(240, 175, 197, 0.4);
+  background:
+    radial-gradient(circle at top left, rgba(255, 235, 242, 0.92), transparent 42%),
+    linear-gradient(180deg, rgba(255, 250, 252, 0.98), rgba(255, 245, 249, 0.94));
+  box-shadow: 0 18px 40px rgba(205, 121, 155, 0.12);
+}
+
+.teacher-guide-head,
+.collection-guide-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.teacher-guide-head h3,
+.collection-guide-head strong {
+  margin: 8px 0 8px;
+  font-size: 22px;
+  line-height: 1.2;
+  color: var(--text);
+}
+
+.teacher-guide-head p,
+.collection-guide-head span {
+  margin: 0;
+  color: var(--text-soft);
+  line-height: 1.6;
+}
+
+.teacher-guide-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(223, 98, 146, 0.12);
+  border: 1px solid rgba(223, 98, 146, 0.18);
+  color: #b54472;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.teacher-guide-note,
+.collection-guide-head em {
+  max-width: 320px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(240, 175, 197, 0.28);
+  color: var(--text-soft);
+  font-size: 13px;
+  line-height: 1.6;
+  font-style: normal;
+}
+
+.teacher-guide-grid,
+.teacher-kickoff-grid,
+.collection-guide-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.teacher-guide-grid,
+.teacher-kickoff-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.collection-guide-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.teacher-guide-card,
+.teacher-kickoff-card,
+.collection-guide-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 20px;
+  border-radius: 18px;
+  border: 1px solid rgba(240, 175, 197, 0.28);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 10px 24px rgba(205, 121, 155, 0.08);
+}
+
+.teacher-kickoff-card {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.teacher-kickoff-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(223, 98, 146, 0.34);
+  box-shadow: 0 14px 32px rgba(205, 121, 155, 0.14);
+}
+
+.teacher-guide-card strong,
+.teacher-kickoff-card strong,
+.collection-guide-card strong {
+  font-size: 17px;
+  line-height: 1.35;
+  color: var(--text);
+}
+
+.teacher-guide-card p,
+.teacher-kickoff-card p {
+  margin: 0;
+  color: var(--text-soft);
+  line-height: 1.6;
+}
+
+.teacher-guide-step {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(255, 237, 242, 0.92);
+  color: #b54472;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.teacher-guide-meta,
+.teacher-kickoff-card em,
+.collection-guide-card span {
+  color: #8c6475;
+  font-size: 13px;
+  line-height: 1.55;
+  font-style: normal;
+}
+
+.teacher-guide-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(223, 98, 146, 0.24);
+  background: rgba(255, 244, 248, 0.96);
+  color: #b54472;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.teacher-guide-link:hover {
+  background: rgba(255, 235, 242, 1);
+  border-color: rgba(223, 98, 146, 0.38);
+  transform: translateY(-1px);
+}
+
+.teacher-guide-checklist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.teacher-guide-check {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(240, 175, 197, 0.26);
+  color: #8c6475;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.collection-guide-strip {
+  margin: 16px 0 18px;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(240, 175, 197, 0.22);
+  background: linear-gradient(180deg, rgba(255, 250, 252, 0.96), rgba(255, 246, 249, 0.92));
+}
+
+.teacher-kickoff-panel {
+  margin-top: 24px;
+}
+
+@media (max-width: 1080px) {
+  .teacher-guide-grid,
+  .teacher-kickoff-grid,
+  .collection-guide-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .teacher-guide-head,
+  .collection-guide-head {
+    flex-direction: column;
+  }
+
+  .teacher-guide-note,
+  .collection-guide-head em {
+    max-width: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .teacher-guide-panel,
+  .teacher-kickoff-panel,
+  .collection-guide-strip {
+    border-radius: 16px;
+  }
+
+  .teacher-guide-card,
+  .teacher-kickoff-card,
+  .collection-guide-card {
+    padding: 16px;
+  }
+}

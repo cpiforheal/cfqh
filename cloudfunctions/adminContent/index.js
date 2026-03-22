@@ -106,6 +106,53 @@ const COURSES_PAGE_FALLBACK = {
     footnote: '方向判断 · 课程安排 · 学情评估'
   }
 };
+const SUCCESS_PAGE_FALLBACK = {
+  header: {
+    title: '真实上岸轨迹',
+    subtitle: '不要只看结果，找到和你起点相似的通关路径'
+  },
+  directionTabs: [
+    { key: 'math', label: '高等数学' },
+    { key: 'medical', label: '医护综合' }
+  ],
+  pathTabs: [
+    { key: 'foundation', label: '基础薄弱' },
+    { key: 'cross', label: '跨专业考' },
+    { key: 'time', label: '时间紧张' },
+    { key: 'sprint', label: '冲刺逆袭' }
+  ],
+  featuredSection: {
+    title: '与你相似的首推案例'
+  },
+  listSection: {
+    title: '更多相似路径',
+    loadMoreText: '加载更多案例'
+  },
+  supportSection: {
+    title: '高分不是偶然',
+    subtitle: '每一个逆袭背后，都是科学体系的严格执行',
+    items: [
+      { icon: 'compass', title: '1V1 路径规划', desc: '根据入学测评，定制专属备考时间表' },
+      { icon: 'pulse', title: '伴学督导执行', desc: '班主任每日跟进打卡，克服拖延症' },
+      { icon: 'clipboard', title: '阶段测评反馈', desc: '每个模块学完即测，数据化呈现薄弱点' },
+      { icon: 'target', title: '弱点复盘调整', desc: '针对错题进行靶向训练，动态调整计划' }
+    ]
+  },
+  ctaByDirection: {
+    math: {
+      title: '获取 Ta 的同款备考规划',
+      desc: '如果你也是高数基础薄弱、跨专业或时间紧张，可以先拿一份同类型备考规划。',
+      buttonText: '获取高数备考规划',
+      footnote: '路径判断 · 提分节奏 · 模考安排'
+    },
+    medical: {
+      title: '获取 Ta 的同款备考规划',
+      desc: '如果你也是医护基础薄弱、记忆压力大或临考想冲刺，可以先拿一份同类型备考规划。',
+      buttonText: '获取医护备考规划',
+      footnote: '路径判断 · 记忆方法 · 冲刺安排'
+    }
+  }
+};
 const MATERIALS_PAGE_FALLBACK = {
   header: {
     title: '教材资料库',
@@ -433,6 +480,35 @@ function normalizeMaterialsPage(payload) {
   };
 }
 
+function normalizeSuccessPage(payload) {
+  if (!payload) {
+    return payload;
+  }
+
+  const isLegacyPage = !payload.header || !Array.isArray(payload.directionTabs) || !Array.isArray(payload.pathTabs);
+  if (isLegacyPage) {
+    return SUCCESS_PAGE_FALLBACK;
+  }
+
+  return {
+    ...payload,
+    header: { ...SUCCESS_PAGE_FALLBACK.header, ...(payload.header || {}) },
+    featuredSection: { ...SUCCESS_PAGE_FALLBACK.featuredSection, ...(payload.featuredSection || {}) },
+    listSection: { ...SUCCESS_PAGE_FALLBACK.listSection, ...(payload.listSection || {}) },
+    supportSection: {
+      ...SUCCESS_PAGE_FALLBACK.supportSection,
+      ...(payload.supportSection || {}),
+      items: Array.isArray(payload.supportSection?.items) && payload.supportSection.items.length
+        ? payload.supportSection.items
+        : SUCCESS_PAGE_FALLBACK.supportSection.items
+    },
+    ctaByDirection: {
+      math: { ...SUCCESS_PAGE_FALLBACK.ctaByDirection.math, ...(payload.ctaByDirection?.math || {}) },
+      medical: { ...SUCCESS_PAGE_FALLBACK.ctaByDirection.medical, ...(payload.ctaByDirection?.medical || {}) }
+    }
+  };
+}
+
 function normalizePagePayload(pageKey, payload) {
   if (!payload) {
     return payload;
@@ -452,6 +528,10 @@ function normalizePagePayload(pageKey, payload) {
 
   if (pageKey === 'courses') {
     return normalizeCoursesPage(payload);
+  }
+
+  if (pageKey === 'success') {
+    return normalizeSuccessPage(payload);
   }
 
   if (pageKey === 'materials') {

@@ -1,0 +1,9 @@
+{
+  "name": "questionBankCleaner",
+  "version": "1.0.0",
+  "description": "题库数据清洗工具",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

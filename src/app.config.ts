@@ -24,7 +24,8 @@
         'dashboard/index',
         'page-editor/index',
         'list-editor/index',
-        'item-editor/index'
+        'item-editor/index',
+        'question-bank-import/index'
       ],
       name: 'admin'
     }

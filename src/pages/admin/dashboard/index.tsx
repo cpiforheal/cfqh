@@ -61,6 +61,22 @@ export default function AdminDashboardPage() {
         ))}
       </View>
 
+      <View style={{ ...surfaceCardStyle, padding: '28rpx', borderRadius: ui.radius.lg, marginBottom: '24rpx' }}>
+        <Text style={{ display: 'block', fontSize: ui.type.section, color: ui.colors.text, fontWeight: 900, marginBottom: '12rpx' }}>
+          📚 题库数据管理
+        </Text>
+        <Text style={{ display: 'block', fontSize: ui.type.body, lineHeight: 1.8, color: ui.colors.textMuted, marginBottom: '20rpx' }}>
+          支持从Excel、CSV、纯文本等多种格式导入题库数据，系统会自动清洗和标准化数据。
+        </Text>
+        <Button
+          type="primary"
+          onClick={() => Taro.navigateTo({ url: '/pages/admin/question-bank-import/index' })}
+          style={{ marginBottom: '14rpx' }}
+        >
+          📁 导入题库数据
+        </Button>
+      </View>
+
       <View style={{ ...surfaceCardStyle, padding: '28rpx', borderRadius: ui.radius.lg }}>
         <Text style={{ display: 'block', fontSize: ui.type.section, color: ui.colors.text, fontWeight: 900, marginBottom: '12rpx' }}>
           初始化与同步

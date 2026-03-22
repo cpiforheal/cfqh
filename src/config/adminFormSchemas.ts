@@ -33,6 +33,11 @@ const materialStageOptions = [
   { label: '冲刺阶段', value: 'sprint' }
 ];
 
+const successDirectionOptions = [
+  { label: '高等数学', value: 'math' },
+  { label: '医护综合', value: 'medical' }
+];
+
 const pageHeroBasicFields = [
   { key: 'chip', label: '区块角标', type: 'text', required: true },
   { key: 'title', label: '区块主标题', type: 'text', required: true },
@@ -214,9 +219,56 @@ export function getAdminPageFormSchema(pageKey) {
 
   if (pageKey === 'success') {
     return [
-      objectField('hero', '结果首屏', pageHeroBasicFields),
-      objectArrayField('stats', '结果证明数据', statFields, { value: '', label: '', note: '' }),
-      objectField('cta', '底部咨询承接区', ctaFields)
+      objectField('header', '首屏标题区', [
+        { key: 'title', label: '页面标题', type: 'text', required: true },
+        { key: 'subtitle', label: '页面副标题', type: 'textarea', required: true }
+      ]),
+      objectArrayField(
+        'directionTabs',
+        '方向切换',
+        [
+          { key: 'key', label: '切换标识', type: 'select', options: successDirectionOptions },
+          { key: 'label', label: '切换名称', type: 'text', required: true }
+        ],
+        { key: 'math', label: '' },
+        { maxItems: 2, visibleItems: 2 }
+      ),
+      objectArrayField(
+        'pathTabs',
+        '路径筛选标签',
+        [
+          { key: 'key', label: '标签标识', type: 'text', required: true },
+          { key: 'label', label: '标签名称', type: 'text', required: true }
+        ],
+        { key: '', label: '' },
+        { maxItems: 4, visibleItems: 4 }
+      ),
+      objectField('featuredSection', '首推案例区', [
+        { key: 'title', label: '区块标题', type: 'text', required: true }
+      ]),
+      objectField('listSection', '案例列表区', [
+        { key: 'title', label: '列表标题', type: 'text', required: true },
+        { key: 'loadMoreText', label: '加载更多文案', type: 'text', required: true }
+      ]),
+      objectField('supportSection', '深色支持区', [
+        { key: 'title', label: '区块标题', type: 'text', required: true },
+        { key: 'subtitle', label: '区块说明', type: 'textarea', required: true },
+        objectArrayField(
+          'items',
+          '支持项',
+          [
+            { key: 'icon', label: '图标标识', type: 'text', required: true },
+            { key: 'title', label: '标题', type: 'text', required: true },
+            { key: 'desc', label: '说明', type: 'textarea', required: true }
+          ],
+          { icon: '', title: '', desc: '' },
+          { maxItems: 4, visibleItems: 4 }
+        )
+      ]),
+      objectField('ctaByDirection', '分方向 CTA', [
+        objectField('math', '高数 CTA', ctaFields),
+        objectField('medical', '医护 CTA', ctaFields)
+      ])
     ];
   }
 
@@ -345,8 +397,24 @@ export function getAdminCollectionFormSchema(collection) {
   if (collection === 'success_cases') {
     return [
       { key: '_id', label: '内容编号', type: 'text' },
-      { key: 'title', label: '标题', type: 'text', required: true },
-      { key: 'subtitle', label: '副标题', type: 'textarea', required: true },
+      { key: 'direction', label: '所属方向', type: 'select', options: successDirectionOptions, required: true },
+      { key: 'pathTags', label: '路径标签', type: 'stringArray', defaultItem: '' },
+      { key: 'studentName', label: '学生姓名', type: 'text', required: true },
+      { key: 'studentAvatarText', label: '头像文字', type: 'text', required: true },
+      { key: 'scoreGain', label: '提分标签', type: 'text', required: true },
+      { key: 'scoreLabel', label: '成绩标签', type: 'text', required: true },
+      { key: 'chips', label: '案例标签', type: 'stringArray', defaultItem: '' },
+      { key: 'startingLabel', label: '起点说明', type: 'text', required: true },
+      { key: 'startingScore', label: '起点成绩', type: 'text', required: true },
+      { key: 'finalLabel', label: '结果说明', type: 'text', required: true },
+      { key: 'finalScore', label: '最终成绩', type: 'text', required: true },
+      { key: 'quote', label: '案例原话', type: 'textarea', required: true },
+      { key: 'fitAudience', label: '适合参考人群', type: 'textarea', required: true },
+      { key: 'listTitle', label: '列表标题', type: 'text', required: true },
+      { key: 'listDesc', label: '列表说明', type: 'textarea', required: true },
+      { key: 'detailButtonText', label: '详情按钮文案', type: 'text', required: true },
+      { key: 'title', label: '兼容标题', type: 'text' },
+      { key: 'subtitle', label: '兼容副标题', type: 'textarea' },
       { key: 'coverUrl', label: '封面图片地址', type: 'text', validate: 'media-url' },
       { key: 'coverSeed', label: '封面备用图标识', type: 'text' },
       { key: 'year', label: '年份', type: 'number' },
@@ -404,8 +472,9 @@ export function getAdminCollectionFormSchema(collection) {
   if (collection === 'media_assets') {
     return [
       { key: '_id', label: '内容编号', type: 'text' },
-      { key: 'title', label: '资源名称', type: 'text', required: true },
-      { key: 'category', label: '资源分类', type: 'text', required: true },
+      { key: 'name', label: '资源名称', type: 'text', required: true },
+      { key: 'module', label: '使用模块', type: 'text', required: true },
+      { key: 'type', label: '资源类型', type: 'text', required: true },
       { key: 'url', label: '资源地址', type: 'text', required: true, validate: 'media-url' },
       { key: 'thumbUrl', label: '缩略图地址', type: 'text', validate: 'media-url' },
       { key: 'alt', label: '替代文本', type: 'text' },

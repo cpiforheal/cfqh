@@ -1,17 +1,39 @@
-import { Image, Text, View } from '@tarojs/components';
+import { Text, View } from '@tarojs/components';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import PageCtaCard from '../../components/PageCtaCard';
-import PageSectionTitle from '../../components/PageSectionTitle';
 import fallbackContent from '../../data/contentFallback';
 import { useCmsAutoRefresh } from '../../hooks/useCmsAutoRefresh';
 import { getPublicContent } from '../../services/content';
-import { elevatedSurfaceCardStyle, pageStyle, surfaceCardStyle, ui } from '../../styles/ui';
-import { resolveMediaUrl } from '../../utils/media';
+import { pageStyle, ui } from '../../styles/ui';
 
 const defaultSuccessPage = fallbackContent.pages.success;
 const defaultSuccessCases = fallbackContent.successCases;
 
-function getInitialSuccessState() {
+const SUCCESS_THEME = {
+  math: {
+    accent: '#2f66ff',
+    accentSoft: '#eef4ff',
+    accentLine: '#dbe6ff',
+    accentDeep: '#1f56f2',
+    scoreBg: 'rgba(78, 214, 151, 0.16)',
+    scoreText: '#0b8d5b',
+    heroSoft: '#edf3ff',
+    supportBg: 'linear-gradient(135deg, #24344f 0%, #1b2740 100%)',
+    supportIconBg: '#ffffff'
+  },
+  medical: {
+    accent: '#0ea59a',
+    accentSoft: '#eefcf8',
+    accentLine: '#d9f3ea',
+    accentDeep: '#0c968c',
+    scoreBg: 'rgba(78, 214, 151, 0.16)',
+    scoreText: '#0b8d5b',
+    heroSoft: '#eefbf8',
+    supportBg: 'linear-gradient(135deg, #1f3144 0%, #18283a 100%)',
+    supportIconBg: '#ffffff'
+  }
+};
+
+function getInitialState() {
   return {
     site: fallbackContent.site,
     page: defaultSuccessPage,
@@ -19,111 +41,116 @@ function getInitialSuccessState() {
   };
 }
 
-function ResultChip(props) {
+function normalizeSuccessPage(page) {
+  if (!page || !page.header || !Array.isArray(page.directionTabs) || !Array.isArray(page.pathTabs)) {
+    return defaultSuccessPage;
+  }
+
+  return {
+    ...defaultSuccessPage,
+    ...page,
+    header: { ...defaultSuccessPage.header, ...(page.header || {}) },
+    featuredSection: { ...defaultSuccessPage.featuredSection, ...(page.featuredSection || {}) },
+    listSection: { ...defaultSuccessPage.listSection, ...(page.listSection || {}) },
+    supportSection: {
+      ...defaultSuccessPage.supportSection,
+      ...(page.supportSection || {}),
+      items: Array.isArray(page.supportSection?.items) && page.supportSection.items.length
+        ? page.supportSection.items
+        : defaultSuccessPage.supportSection.items
+    },
+    ctaByDirection: {
+      math: { ...defaultSuccessPage.ctaByDirection.math, ...(page.ctaByDirection?.math || {}) },
+      medical: { ...defaultSuccessPage.ctaByDirection.medical, ...(page.ctaByDirection?.medical || {}) }
+    }
+  };
+}
+
+function normalizeSuccessCases(cases) {
+  if (!Array.isArray(cases) || !cases.length) {
+    return defaultSuccessCases;
+  }
+
+  const hasLegacyShape = cases.some(
+    (item) => !item?.direction || !Array.isArray(item?.pathTags) || !item?.studentName || !item?.startingScore || !item?.finalScore
+  );
+
+  return hasLegacyShape ? defaultSuccessCases : cases;
+}
+
+function SectionIcon(props) {
   return (
-    <View
-      style={{
-        marginRight: '12rpx',
-        marginBottom: '12rpx',
-        padding: '10rpx 18rpx',
-        borderRadius: ui.radius.pill,
-        background: props.background || 'rgba(255,255,255,0.78)',
-        border: '1rpx solid rgba(255,255,255,0.78)'
-      }}
-    >
-      <Text style={{ fontSize: ui.type.note, color: props.color || '#6f7f97', fontWeight: 700 }}>{props.children}</Text>
+    <View style={{ position: 'relative', width: '34rpx', height: '34rpx' }}>
+      <View
+        style={{
+          position: 'absolute',
+          left: '15rpx',
+          top: 0,
+          width: '4rpx',
+          height: '34rpx',
+          borderRadius: '999rpx',
+          backgroundColor: props.color
+        }}
+      />
+      <View
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: '15rpx',
+          width: '34rpx',
+          height: '4rpx',
+          borderRadius: '999rpx',
+          backgroundColor: props.color
+        }}
+      />
+      <View
+        style={{
+          position: 'absolute',
+          left: '5rpx',
+          top: '5rpx',
+          width: '24rpx',
+          height: '24rpx',
+          borderRadius: '10rpx',
+          border: `3rpx solid ${props.color}`,
+          transform: 'rotate(45deg)',
+          boxSizing: 'border-box'
+        }}
+      />
     </View>
   );
 }
 
-function ProofStatCard(props) {
+function SupportIcon(props) {
   return (
     <View
       style={{
-        flex: 1,
-        minWidth: 0,
-        borderRadius: ui.radius.md,
-        padding: '24rpx 18rpx',
-        background: 'rgba(255,255,255,0.82)',
-        border: '1rpx solid rgba(255,255,255,0.88)',
-        boxShadow: '0 18rpx 36rpx rgba(171,179,194,0.14)',
-        boxSizing: 'border-box'
+        width: '76rpx',
+        height: '76rpx',
+        borderRadius: '999rpx',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: props.background
       }}
     >
-      <Text style={{ display: 'block', fontSize: ui.type.note, color: '#7b8597', fontWeight: 700, marginBottom: '8rpx' }}>
-        {props.label}
-      </Text>
-      <Text style={{ display: 'block', fontSize: '38rpx', color: ui.colors.text, fontWeight: 900, marginBottom: '8rpx', lineHeight: 1.12 }}>
-        {props.value}
-      </Text>
-      <Text style={{ display: 'block', fontSize: ui.type.note, color: ui.colors.textMuted, lineHeight: 1.6 }}>
-        {props.note}
-      </Text>
+      <Text style={{ fontSize: '30rpx', color: props.color, fontWeight: 800 }}>{props.children}</Text>
     </View>
   );
 }
 
-function StoryListCard(props) {
-  return (
-    <View
-      style={{
-        ...surfaceCardStyle,
-        padding: '24rpx 22rpx',
-        borderRadius: ui.radius.md,
-        marginBottom: props.isLast ? '0' : '16rpx',
-        boxShadow: '0 18rpx 34rpx rgba(148,163,184,0.10)'
-      }}
-    >
-      <View style={{ display: 'flex', alignItems: 'flex-start' }}>
-        <View
-          style={{
-            width: '106rpx',
-            flexShrink: 0,
-            paddingTop: '4rpx'
-          }}
-        >
-          <Text style={{ display: 'block', fontSize: ui.type.meta, color: '#bc8d46', fontWeight: 800, marginBottom: '8rpx' }}>
-            {props.year || '历年'}
-          </Text>
-          <Text style={{ display: 'block', fontSize: ui.type.note, color: '#7a879a', lineHeight: 1.5 }}>
-            {props.category}
-          </Text>
-        </View>
-        <View
-          style={{
-            width: '12rpx',
-            marginRight: '16rpx',
-            display: 'flex',
-            justifyContent: 'center'
-          }}
-        >
-          <View
-            style={{
-              width: '12rpx',
-              height: '12rpx',
-              borderRadius: ui.radius.pill,
-              background: '#d9b56c',
-              marginTop: '12rpx',
-              boxShadow: '0 0 0 8rpx rgba(217,181,108,0.14)'
-            }}
-          />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={{ display: 'block', fontSize: ui.type.cardTitle, color: ui.colors.text, fontWeight: 800, marginBottom: '8rpx' }}>
-            {props.title}
-          </Text>
-          <Text style={{ display: 'block', fontSize: ui.type.body, color: ui.colors.textMuted, lineHeight: 1.76 }}>
-            {props.subtitle}
-          </Text>
-        </View>
-      </View>
-    </View>
-  );
+function getSupportSymbol(type) {
+  if (type === 'pulse') return '∿';
+  if (type === 'clipboard') return '▣';
+  if (type === 'target') return '◎';
+  return '◉';
 }
 
 export default function SuccessPage() {
-  const [content, setContent] = useState(getInitialSuccessState());
-  const [, setLoadState] = useState({ source: 'fallback', error: '', updatedAt: '', revision: '' });
+  const [content, setContent] = useState(getInitialState());
+  const [activeDirection, setActiveDirection] = useState(defaultSuccessPage.directionTabs[0]?.key || 'math');
+  const [activePath, setActivePath] = useState(defaultSuccessPage.pathTabs[0]?.key || 'foundation');
+  const [visibleCount, setVisibleCount] = useState(2);
+  const [isSwitching, setIsSwitching] = useState(false);
 
   const loadContent = useCallback(() => {
     let mounted = true;
@@ -133,24 +160,13 @@ export default function SuccessPage() {
         if (!mounted || !payload) return;
         setContent({
           site: payload.site || fallbackContent.site,
-          page: payload.page || defaultSuccessPage,
-          successCases: payload.successCases && payload.successCases.length ? payload.successCases : defaultSuccessCases
-        });
-        setLoadState({
-          source: payload.__meta?.source || 'cloud',
-          error: '',
-          updatedAt: payload.__meta?.updatedAt || '',
-          revision: payload.__meta?.revision || ''
+          page: normalizeSuccessPage(payload.page),
+          successCases: normalizeSuccessCases(payload.successCases)
         });
       })
-      .catch((error) => {
+      .catch(() => {
         if (!mounted) return;
-        setLoadState({
-          source: 'error',
-          error: error && error.message ? error.message : '云端内容读取失败',
-          updatedAt: '',
-          revision: ''
-        });
+        setContent(getInitialState());
       });
 
     return () => {
@@ -165,191 +181,395 @@ export default function SuccessPage() {
 
   useCmsAutoRefresh(loadContent);
 
-  const hero = content.page?.hero || defaultSuccessPage.hero;
-  const stats = content.page?.stats || defaultSuccessPage.stats;
-  const stories = content.successCases || defaultSuccessCases;
-  const cta = content.page?.cta || defaultSuccessPage.cta;
-  const featuredStory = stories[0];
-  const secondaryStories = stories.slice(1);
-  const storyTags = useMemo(
-    () =>
-      Array.from(new Set((stories || []).flatMap((item) => [item.category, item.year ? `${item.year} 备考季` : '']).filter(Boolean))).slice(0, 5),
-    [stories]
-  );
+  const page = content.page || defaultSuccessPage;
+
+  useEffect(() => {
+    setVisibleCount(2);
+  }, [activeDirection, activePath]);
+
+  useEffect(() => {
+    setIsSwitching(true);
+    const timer = setTimeout(() => {
+      setIsSwitching(false);
+    }, 360);
+    return () => clearTimeout(timer);
+  }, [activeDirection, activePath]);
+
+  const theme = SUCCESS_THEME[activeDirection] || SUCCESS_THEME.math;
+  const cta = page.ctaByDirection?.[activeDirection] || defaultSuccessPage.ctaByDirection.math;
+
+  const filteredCases = useMemo(() => {
+    const source = content.successCases?.length ? content.successCases : defaultSuccessCases;
+    return source
+      .filter((item) => item.direction === activeDirection && (item.pathTags || []).includes(activePath))
+      .sort((left, right) => (left.sort || 0) - (right.sort || 0));
+  }, [content.successCases, activeDirection, activePath]);
+
+  const fallbackDirectionCases = useMemo(() => {
+    const source = content.successCases?.length ? content.successCases : defaultSuccessCases;
+    return source
+      .filter((item) => item.direction === activeDirection)
+      .sort((left, right) => (left.sort || 0) - (right.sort || 0));
+  }, [content.successCases, activeDirection]);
+
+  const displayCases = filteredCases.length ? filteredCases : fallbackDirectionCases;
+  const featuredCase = displayCases[0];
+  const listCases = displayCases.slice(1, 1 + visibleCount);
+  const hasMore = displayCases.length > 1 + visibleCount;
 
   return (
     <View
       style={{
         ...pageStyle,
-        background: 'linear-gradient(180deg, #f6f7fb 0%, #eef4ff 38%, #fafafa 100%)'
+        paddingTop: '30rpx',
+        paddingBottom: '50rpx',
+        background: 'linear-gradient(180deg, #f7f8fb 0%, #f4f6fb 100%)'
       }}
     >
-      <View
-        style={{
-          position: 'relative',
-          overflow: 'hidden',
-          borderBottomLeftRadius: ui.radius.hero,
-          borderBottomRightRadius: ui.radius.hero,
-          padding: `34rpx ${ui.spacing.page} 92rpx`,
-          background: 'linear-gradient(180deg, #eff4ff 0%, #edf4ff 48%, #f8f8fb 100%)'
-        }}
-      >
-        <View
-          style={{
-            position: 'absolute',
-            right: '-60rpx',
-            top: '-30rpx',
-            width: '248rpx',
-            height: '248rpx',
-            borderRadius: ui.radius.pill,
-            background: 'rgba(255,214,126,0.24)'
-          }}
-        />
-        <View
-          style={{
-            position: 'absolute',
-            left: '-70rpx',
-            bottom: '-90rpx',
-            width: '260rpx',
-            height: '260rpx',
-            borderRadius: ui.radius.pill,
-            background: 'rgba(191,211,255,0.30)'
-          }}
-        />
+      <View style={{ padding: `0 ${ui.spacing.page} 28rpx` }}>
+        <Text style={{ display: 'block', fontSize: '52rpx', lineHeight: 1.16, color: '#14233f', fontWeight: 900, marginBottom: '14rpx', letterSpacing: '-0.8rpx' }}>
+          {page.header.title}
+        </Text>
+        <Text style={{ display: 'block', fontSize: '22rpx', lineHeight: 1.76, color: '#72839d', marginBottom: '24rpx' }}>
+          {page.header.subtitle}
+        </Text>
 
-        <View style={{ position: 'relative', zIndex: 2 }}>
-          <View
-            style={{
-              display: 'inline-flex',
-              padding: '10rpx 18rpx',
-              borderRadius: ui.radius.pill,
-              backgroundColor: 'rgba(255,255,255,0.76)',
-              border: '1rpx solid rgba(255,255,255,0.88)',
-              marginBottom: '22rpx'
-            }}
-          >
-            <Text style={{ fontSize: ui.type.note, color: '#7d89a6', fontWeight: 700 }}>{hero.chip}</Text>
-          </View>
-
-          <Text style={{ display: 'block', fontSize: ui.type.hero, lineHeight: 1.14, color: ui.colors.text, fontWeight: 900, marginBottom: '14rpx' }}>
-            {hero.title}
-          </Text>
-          <Text
-            style={{
-              display: 'block',
-              width: '560rpx',
-              maxWidth: '100%',
-              fontSize: ui.type.body,
-              lineHeight: 1.8,
-              color: '#617087',
-              marginBottom: '26rpx'
-            }}
-          >
-            {hero.desc}
-          </Text>
-
-          <View style={{ display: 'flex', flexWrap: 'wrap', marginBottom: '24rpx' }}>
-            {storyTags.map((item, index) => (
-              <ResultChip
-                key={item}
-                background={index === 0 ? 'rgba(255,245,224,0.86)' : 'rgba(255,255,255,0.74)'}
-                color={index === 0 ? '#a06a1d' : '#74829a'}
+        <View style={{ display: 'flex', marginBottom: '18rpx' }}>
+          {(page.directionTabs || []).map((item) => {
+            const active = item.key === activeDirection;
+            return (
+              <View
+                key={item.key}
+                onClick={() => setActiveDirection(item.key)}
+                style={{
+                  minWidth: '148rpx',
+                  height: '68rpx',
+                  marginRight: '14rpx',
+                  borderRadius: '999rpx',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: active ? theme.accent : '#eff3f9',
+                  boxShadow: active ? `0 12rpx 24rpx ${theme.accentSoft}` : 'none',
+                  transition: 'all 340ms ease'
+                }}
               >
-                {item}
-              </ResultChip>
-            ))}
-          </View>
-
-          <View style={{ display: 'flex', justifyContent: 'space-between' }}>
-            {stats.map((item, index) => (
-              <View key={item.label} style={{ width: '31.5%' }}>
-                <ProofStatCard label={item.label} value={item.value} note={item.note} />
+                <Text style={{ fontSize: '20rpx', color: active ? '#ffffff' : '#5b6e88', fontWeight: 800 }}>{item.label}</Text>
               </View>
-            ))}
-          </View>
+            );
+          })}
+        </View>
+
+        <View style={{ display: 'flex', flexWrap: 'wrap' }}>
+          {(page.pathTabs || []).map((item) => {
+            const active = item.key === activePath;
+            return (
+              <View
+                key={item.key}
+                onClick={() => setActivePath(item.key)}
+                style={{
+                  marginRight: '12rpx',
+                  marginBottom: '10rpx',
+                  padding: '12rpx 20rpx',
+                  borderRadius: '16rpx',
+                  border: active ? `3rpx solid ${theme.accent}` : '3rpx solid #dbe3f0',
+                  backgroundColor: active ? `${theme.accent}08` : '#ffffff',
+                  transition: 'all 340ms ease'
+                }}
+              >
+                <Text style={{ fontSize: '20rpx', color: active ? theme.accent : '#70829d', fontWeight: 700 }}>{item.label}</Text>
+              </View>
+            );
+          })}
         </View>
       </View>
 
-      <View style={{ margin: `${ui.spacing.section} ${ui.spacing.page} 0` }}>
-        <PageSectionTitle lineColor="#d8ad63">代表上岸案例</PageSectionTitle>
-        {featuredStory ? (
+      <View
+        style={{
+          padding: `24rpx ${ui.spacing.page} 0`,
+          borderTop: '1rpx solid rgba(223,229,239,0.88)',
+          background: 'linear-gradient(180deg, rgba(255,255,255,0.56) 0%, rgba(246,248,252,0.96) 100%)'
+        }}
+      >
+        <View style={{ display: 'flex', alignItems: 'center', marginBottom: '18rpx' }}>
+          <SectionIcon color={activeDirection === 'math' ? '#ff9800' : theme.accent} />
+          <Text style={{ marginLeft: '16rpx', fontSize: '40rpx', color: '#1a2842', fontWeight: 900, letterSpacing: '-0.6rpx' }}>
+            {page.featuredSection.title}
+          </Text>
+        </View>
+
+        {featuredCase ? (
           <View
             style={{
-              ...elevatedSurfaceCardStyle,
-              display: 'flex',
-              alignItems: 'stretch',
               overflow: 'hidden',
-              borderRadius: '38rpx',
-              boxShadow: '0 28rpx 44rpx rgba(168,175,191,0.16)'
+              borderRadius: '32rpx',
+              background: `linear-gradient(180deg, ${theme.heroSoft} 0%, #ffffff 100%)`,
+              border: '1rpx solid rgba(226,234,242,0.96)',
+              boxShadow: '0 14rpx 30rpx rgba(145,158,178,0.12)',
+              marginBottom: '24rpx',
+              opacity: isSwitching ? 0.9 : 1,
+              transform: isSwitching ? 'scale(0.988) translateY(6rpx)' : 'scale(1) translateY(0)',
+                transition: 'opacity 340ms ease, transform 340ms ease, box-shadow 340ms ease'
             }}
           >
-            <Image
-              src={resolveMediaUrl({
-                url: featuredStory.coverUrl,
-                seed: featuredStory.coverSeed || featuredStory._id || featuredStory.title,
-                fallbackSize: '420/520'
-              })}
-              mode="aspectFill"
-              style={{
-                width: '220rpx',
-                minHeight: '100%',
-                flexShrink: 0
-              }}
-            />
-            <View style={{ flex: 1, padding: '30rpx 26rpx' }}>
-              <View style={{ display: 'flex', flexWrap: 'wrap', marginBottom: '16rpx' }}>
-                <ResultChip background="#fff7ea" color="#a06a1d">
-                  {featuredStory.year || '最新'}
-                </ResultChip>
-                {featuredStory.category ? (
-                  <ResultChip background="#eef4ff" color="#5874a8">
-                    {featuredStory.category}
-                  </ResultChip>
-                ) : null}
+            <View style={{ padding: '26rpx 24rpx 24rpx' }}>
+              <View style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '22rpx' }}>
+                <View style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
+                  <View
+                    style={{
+                      width: '96rpx',
+                      height: '96rpx',
+                      borderRadius: '999rpx',
+                      backgroundColor: activeDirection === 'math' ? 'rgba(47,102,255,0.14)' : 'rgba(14,165,154,0.16)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: '18rpx'
+                    }}
+                  >
+                    <Text style={{ fontSize: '46rpx', color: theme.accent, fontWeight: 900 }}>{featuredCase.studentAvatarText}</Text>
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={{ display: 'block', fontSize: '42rpx', color: '#1a2842', fontWeight: 900, marginBottom: '12rpx' }}>
+                      {featuredCase.studentName}
+                    </Text>
+                    <View style={{ display: 'flex', flexWrap: 'wrap' }}>
+                      {(featuredCase.chips || []).map((item) => (
+                        <View
+                          key={item}
+                          style={{
+                            marginRight: '8rpx',
+                            marginBottom: '8rpx',
+                            padding: '8rpx 14rpx',
+                            borderRadius: '12rpx',
+                            border: '2rpx solid #d9e2ef',
+                            backgroundColor: '#ffffff'
+                          }}
+                        >
+                          <Text style={{ fontSize: '18rpx', color: '#70829d', fontWeight: 700 }}>{item}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                </View>
+                <View style={{ alignItems: 'flex-end', display: 'flex', flexDirection: 'column', marginLeft: '14rpx' }}>
+                  <Text style={{ fontSize: '18rpx', color: '#9aacbf', fontWeight: 700, marginBottom: '10rpx' }}>{featuredCase.scoreLabel}</Text>
+                  <View
+                    style={{
+                      minWidth: '104rpx',
+                      height: '60rpx',
+                      borderRadius: '16rpx',
+                      padding: '0 16rpx',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: theme.scoreBg
+                    }}
+                  >
+                    <Text style={{ fontSize: '24rpx', color: theme.scoreText, fontWeight: 900 }}>{featuredCase.scoreGain}</Text>
+                  </View>
+                </View>
               </View>
-              <Text style={{ display: 'block', fontSize: '40rpx', color: ui.colors.text, fontWeight: 900, lineHeight: 1.22, marginBottom: '12rpx' }}>
-                {featuredStory.title}
-              </Text>
-              <Text style={{ display: 'block', fontSize: ui.type.body, color: ui.colors.textMuted, lineHeight: 1.82, marginBottom: '22rpx' }}>
-                {featuredStory.subtitle}
-              </Text>
+
               <View
                 style={{
-                  padding: '18rpx 18rpx',
-                  borderRadius: ui.radius.md,
-                  background: 'linear-gradient(135deg, #fffaf0 0%, #f7f9ff 100%)',
-                  border: '1rpx solid rgba(228,233,242,0.82)'
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '24rpx 22rpx',
+                  borderRadius: '22rpx',
+                  backgroundColor: '#ffffff',
+                  boxShadow: '0 10rpx 22rpx rgba(153,167,187,0.1)',
+                  marginBottom: '20rpx'
                 }}
               >
-                <Text style={{ display: 'block', fontSize: ui.type.note, color: '#876530', fontWeight: 700, marginBottom: '8rpx' }}>
-                  为什么先看这个案例
+                <View style={{ flex: 1, textAlign: 'center' }}>
+                  <Text style={{ display: 'block', fontSize: '18rpx', color: '#9aacbf', fontWeight: 700, marginBottom: '8rpx' }}>
+                    {featuredCase.startingLabel}
+                  </Text>
+                  <Text style={{ display: 'block', fontSize: '36rpx', color: '#2a3a55', fontWeight: 900 }}>{featuredCase.startingScore}</Text>
+                </View>
+                <Text style={{ fontSize: '36rpx', color: '#ccd6e4', fontWeight: 700, margin: '0 14rpx' }}>→</Text>
+                <View style={{ flex: 1, textAlign: 'center' }}>
+                  <Text style={{ display: 'block', fontSize: '18rpx', color: '#9aacbf', fontWeight: 700, marginBottom: '8rpx' }}>
+                    {featuredCase.finalLabel}
+                  </Text>
+                  <Text style={{ display: 'block', fontSize: '40rpx', color: theme.scoreText, fontWeight: 900 }}>{featuredCase.finalScore}</Text>
+                </View>
+              </View>
+
+              <View style={{ padding: '4rpx 8rpx 20rpx' }}>
+                <Text style={{ display: 'block', fontSize: '22rpx', lineHeight: 1.84, color: '#566985' }}>
+                  “{featuredCase.quote}”
                 </Text>
-                <Text style={{ display: 'block', fontSize: ui.type.meta, color: '#6a768a', lineHeight: 1.7 }}>
-                  它更像成果页的“代表样本”，让你先看到方向、执行方式和结果之间的关系，再去决定是否继续了解。
+              </View>
+
+              <View
+                style={{
+                  padding: '22rpx 20rpx',
+                  borderRadius: '22rpx',
+                  backgroundColor: '#f7f9fc',
+                  border: '1rpx solid rgba(226,234,242,0.96)',
+                  marginBottom: '20rpx'
+                }}
+              >
+                <Text style={{ display: 'block', fontSize: '20rpx', color: theme.accent, fontWeight: 800, marginBottom: '12rpx' }}>
+                  适合谁参考此路径？
                 </Text>
+                <Text style={{ display: 'block', fontSize: '22rpx', lineHeight: 1.78, color: '#6b7d97' }}>
+                  {featuredCase.fitAudience}
+                </Text>
+              </View>
+
+              <View
+                style={{
+                  height: '88rpx',
+                  borderRadius: '22rpx',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: activeDirection === 'math' ? '#edf4ff' : '#eaf8f5'
+                }}
+              >
+                <Text style={{ fontSize: '24rpx', color: theme.accent, fontWeight: 900 }}>{cta.title} 〉</Text>
               </View>
             </View>
           </View>
         ) : null}
-      </View>
 
-      {secondaryStories.length ? (
-        <View style={{ margin: `${ui.spacing.section} ${ui.spacing.page} 0` }}>
-          <PageSectionTitle lineColor="#d8ad63">更多结果记录</PageSectionTitle>
-          {secondaryStories.map((item, index) => (
-            <StoryListCard key={item._id || item.title} {...item} isLast={index === secondaryStories.length - 1} />
+        <View style={{ marginBottom: '22rpx' }}>
+          {listCases.map((item) => (
+            <View
+              key={item._id}
+              style={{
+                padding: '22rpx 20rpx',
+                borderRadius: '26rpx',
+                backgroundColor: '#ffffff',
+                border: '1rpx solid rgba(226,234,242,0.96)',
+                boxShadow: '0 10rpx 20rpx rgba(148,160,180,0.08)',
+                marginBottom: '16rpx',
+                opacity: isSwitching ? 0.92 : 1,
+                transform: isSwitching ? 'translateY(4rpx)' : 'translateY(0)',
+                transition: 'opacity 340ms ease, transform 340ms ease'
+              }}
+            >
+              <View style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14rpx' }}>
+                <View style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
+                  <View
+                    style={{
+                      width: '66rpx',
+                      height: '66rpx',
+                      borderRadius: '999rpx',
+                      backgroundColor: activeDirection === 'math' ? 'rgba(47,102,255,0.12)' : 'rgba(14,165,154,0.14)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: '14rpx'
+                    }}
+                  >
+                    <Text style={{ fontSize: '30rpx', color: theme.accent, fontWeight: 900 }}>{item.studentAvatarText}</Text>
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <View style={{ display: 'flex', alignItems: 'center', marginBottom: '10rpx' }}>
+                      <Text style={{ fontSize: '22rpx', color: '#1d2d47', fontWeight: 900, marginRight: '12rpx' }}>{item.studentName}</Text>
+                      <Text style={{ fontSize: '18rpx', color: '#9aacbf', fontWeight: 700 }}>{item.scoreLabel}</Text>
+                    </View>
+                    <Text style={{ fontSize: '26rpx', lineHeight: 1.5, color: '#283955', fontWeight: 800, marginBottom: '12rpx' }}>{item.listTitle}</Text>
+                    <View style={{ display: 'flex', flexWrap: 'wrap' }}>
+                      {(item.chips || []).slice(0, 2).map((chip) => (
+                        <View key={chip} style={{ marginRight: '8rpx', marginBottom: '8rpx', padding: '8rpx 14rpx', borderRadius: '12rpx', backgroundColor: '#f3f6fb' }}>
+                          <Text style={{ fontSize: '18rpx', color: '#72839d', fontWeight: 700 }}>{chip}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                </View>
+                <Text style={{ fontSize: '22rpx', color: theme.scoreText, fontWeight: 900, marginLeft: '12rpx' }}>{item.finalScore}</Text>
+              </View>
+              <View style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '14rpx', borderTop: '1rpx solid rgba(230,236,243,0.96)' }}>
+                <Text style={{ flex: 1, fontSize: '20rpx', lineHeight: 1.72, color: '#90a0b6', marginRight: '16rpx' }}>
+                  适合：{item.listDesc}
+                </Text>
+                <Text style={{ fontSize: '20rpx', color: theme.accent, fontWeight: 800 }}>{item.detailButtonText} 〉</Text>
+              </View>
+            </View>
           ))}
         </View>
-      ) : null}
 
-      <PageCtaCard
-        title={cta.title}
-        desc={cta.desc}
-        buttonText={cta.buttonText}
-        footnote={cta.footnote}
-        background="linear-gradient(135deg, #273654 0%, #18253f 100%)"
-        orbColor="rgba(255,212,120,0.16)"
-      />
+        <View
+          style={{
+            height: '82rpx',
+            borderRadius: '20rpx',
+            border: '2rpx solid #dbe3f0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#ffffff',
+            marginBottom: '34rpx'
+          }}
+          onClick={() => hasMore && setVisibleCount((count) => count + 2)}
+        >
+          <Text style={{ fontSize: '22rpx', color: '#6f819b', fontWeight: 800 }}>
+            {hasMore ? page.listSection.loadMoreText : '已展示全部案例'}
+          </Text>
+        </View>
+
+        <View
+          style={{
+            padding: '28rpx 24rpx 24rpx',
+            borderRadius: '28rpx',
+            background: theme.supportBg,
+            opacity: isSwitching ? 0.94 : 1,
+            transform: isSwitching ? 'scale(0.992) translateY(6rpx)' : 'scale(1) translateY(0)',
+            transition: 'opacity 360ms ease, transform 360ms ease'
+          }}
+        >
+          <Text style={{ display: 'block', fontSize: '42rpx', color: '#ffffff', fontWeight: 900, marginBottom: '12rpx' }}>
+            {page.supportSection.title}
+          </Text>
+          <Text style={{ display: 'block', fontSize: '22rpx', lineHeight: 1.74, color: 'rgba(226,232,240,0.82)', marginBottom: '24rpx' }}>
+            {page.supportSection.subtitle}
+          </Text>
+
+          {(page.supportSection.items || []).map((item, index) => (
+            <View
+              key={item.title}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                marginBottom: index === page.supportSection.items.length - 1 ? '0' : '24rpx'
+              }}
+            >
+              <SupportIcon background={theme.supportIconBg} color={theme.accent}>
+                {getSupportSymbol(item.icon)}
+              </SupportIcon>
+              <View style={{ flex: 1, marginLeft: '18rpx' }}>
+                <Text style={{ display: 'block', fontSize: '22rpx', color: '#ffffff', fontWeight: 800, marginBottom: '8rpx' }}>
+                  {item.title}
+                </Text>
+                <Text style={{ display: 'block', fontSize: '20rpx', lineHeight: 1.72, color: 'rgba(226,232,240,0.72)' }}>
+                  {item.desc}
+                </Text>
+              </View>
+            </View>
+          ))}
+
+          <View
+            style={{
+              marginTop: '22rpx',
+              paddingTop: '20rpx',
+              borderTop: '1rpx solid rgba(255,255,255,0.12)'
+            }}
+          >
+            <Text style={{ display: 'block', fontSize: '24rpx', color: '#ffffff', fontWeight: 900, marginBottom: '8rpx' }}>
+              {cta.buttonText}
+            </Text>
+            <Text style={{ display: 'block', fontSize: '20rpx', lineHeight: 1.72, color: 'rgba(226,232,240,0.72)' }}>
+              {cta.desc}
+            </Text>
+          </View>
+        </View>
+      </View>
     </View>
   );
 }
