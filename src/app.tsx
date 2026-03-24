@@ -1,11 +1,13 @@
 import { useEffect } from 'react';
 import { initCloud } from './services/cloud';
 import { getPublicContent } from './services/content';
+import { hydrateUserSession } from './services/userIdentity';
 import './app.css';
 
 function App(props) {
   useEffect(() => {
     initCloud();
+    hydrateUserSession();
 
     // 预加载关键页面数据，提升用户体验
     preloadCriticalContent();

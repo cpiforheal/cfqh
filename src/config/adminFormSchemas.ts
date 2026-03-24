@@ -182,7 +182,31 @@ export function getAdminPageFormSchema(pageKey) {
       objectField('wrongBookCard', '错题本页', [
         { key: 'title', label: '页面标题', type: 'text', required: true },
         { key: 'desc', label: '页面说明', type: 'textarea', required: true },
-        { key: 'note', label: '补充提示', type: 'text' }
+        { key: 'note', label: '补充提示', type: 'text' },
+        objectField('stats', '顶部统计标签', [
+          { key: 'pendingLabel', label: '待复习标签', type: 'text', required: true },
+          { key: 'todayLabel', label: '今日新增标签', type: 'text', required: true },
+          { key: 'totalLabel', label: '累计错题标签', type: 'text', required: true }
+        ]),
+        objectField('taskSection', '主任务区', [
+          { key: 'eyebrow', label: '主任务标题', type: 'text', required: true },
+          { key: 'reasonLabel', label: '优先原因标题', type: 'text', required: true },
+          { key: 'estimateLabel', label: '预计耗时标题', type: 'text', required: true },
+          { key: 'sourceLabel', label: '来源标题', type: 'text', required: true },
+          { key: 'lastAnsweredLabel', label: '上次作答标题', type: 'text', required: true },
+          { key: 'answerLabel', label: '我的答案标题', type: 'text', required: true },
+          { key: 'primaryButtonText', label: '主按钮文案', type: 'text', required: true },
+          { key: 'secondaryButtonText', label: '次按钮文案', type: 'text', required: true }
+        ]),
+        objectField('queueSection', '复习队列区', [
+          { key: 'title', label: '列表标题', type: 'text', required: true },
+          { key: 'sortHint', label: '排序提示', type: 'text', required: true },
+          { key: 'pendingLabel', label: '待复习状态文案', type: 'text', required: true },
+          { key: 'todayLabel', label: '今日新增状态文案', type: 'text', required: true },
+          { key: 'masteredLabel', label: '已掌握状态文案', type: 'text', required: true },
+          { key: 'emptyTitle', label: '空状态标题', type: 'text', required: true },
+          { key: 'emptyDesc', label: '空状态说明', type: 'textarea', required: true }
+        ])
       ])
     ];
   }

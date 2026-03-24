@@ -3,7 +3,8 @@ export type CloudFunctionName =
   | 'publicContent'
   | 'adminAuth'
   | 'adminContent'
-  | 'seedInitialData';
+  | 'seedInitialData'
+  | 'appUser';
 
 // 云函数请求参数
 export interface PublicContentParams {

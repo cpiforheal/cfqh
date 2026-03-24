@@ -45,6 +45,7 @@ export interface PracticeRecord {
   isCorrect: boolean;
   answeredAt: string;
   source: PracticeSource;
+  direction?: QuestionDirection;
 }
 
 export interface SignInRecord {
@@ -57,7 +58,8 @@ export interface SignInRecord {
 export interface WrongBookItem {
   question: MedicalQuestion;
   latestRecord: PracticeRecord;
-  reviewStatus: '待复习' | '已掌握';
+  reviewStatus: '待复习' | '已掌握' | '今日新增';
+  wrongAttempts: number;
 }
 
 function formatDate(date: Date) {
@@ -68,6 +70,9 @@ function formatDate(date: Date) {
 }
 
 const today = formatDate(new Date());
+
+export const GUEST_USER_ID = 'guest-preview';
+export const DEMO_USER_ID = 'demo-medical';
 
 export const medicalQuestions: MedicalQuestion[] = [
   {
@@ -189,34 +194,55 @@ export const pastPapers: PastPaper[] = [
 
 export const practiceRecords: PracticeRecord[] = [
   {
-    userId: 'guest-medical',
+    userId: DEMO_USER_ID,
+    questionId: 'medical_q_2025_001',
+    answer: 'D',
+    isCorrect: false,
+    answeredAt: '2026-03-16T19:10:00+08:00',
+    source: 'paper',
+    direction: 'medical'
+  },
+  {
+    userId: DEMO_USER_ID,
     questionId: 'medical_q_2024_001',
     answer: 'B',
     isCorrect: false,
     answeredAt: `${today}T08:20:00+08:00`,
-    source: 'paper'
+    source: 'paper',
+    direction: 'medical'
   },
   {
-    userId: 'guest-medical',
+    userId: DEMO_USER_ID,
+    questionId: 'medical_q_2023_001',
+    answer: 'A',
+    isCorrect: false,
+    answeredAt: '2026-03-18T21:10:00+08:00',
+    source: 'paper',
+    direction: 'medical'
+  },
+  {
+    userId: DEMO_USER_ID,
     questionId: 'medical_q_2023_001',
     answer: 'C',
     isCorrect: true,
     answeredAt: `${today}T09:35:00+08:00`,
-    source: 'wrongbook'
+    source: 'wrongbook',
+    direction: 'medical'
   },
   {
-    userId: 'guest-medical',
+    userId: DEMO_USER_ID,
     questionId: 'medical_q_2025_002',
     answer: 'A',
     isCorrect: false,
     answeredAt: `${today}T11:10:00+08:00`,
-    source: 'daily'
+    source: 'daily',
+    direction: 'medical'
   }
 ];
 
 export const signInRecords: SignInRecord[] = [
   {
-    userId: 'guest-medical',
+    userId: DEMO_USER_ID,
     date: today,
     signed: true,
     streakCount: 6
@@ -225,6 +251,10 @@ export const signInRecords: SignInRecord[] = [
 
 export function getMedicalQuestionById(questionId: string) {
   return medicalQuestions.find((item) => item.id === questionId) || null;
+}
+
+export function getTodayDateText() {
+  return today;
 }
 
 function getStableDailyQuestionAssignment() {
@@ -246,16 +276,27 @@ function getStableDailyQuestionAssignment() {
   };
 }
 
-export function buildDailyQuestionMockPayload(userId = 'guest-medical') {
+export function buildDailyQuestionPayloadFromData({
+  userId = GUEST_USER_ID,
+  practiceRecordsInput = practiceRecords,
+  signInRecordsInput = signInRecords
+}: {
+  userId?: string;
+  practiceRecordsInput?: PracticeRecord[];
+  signInRecordsInput?: SignInRecord[];
+} = {}) {
   const assignment = getStableDailyQuestionAssignment();
   const question = getMedicalQuestionById(assignment.questionId);
-  const signInRecord = signInRecords.find((item) => item.userId === userId && item.date === today) || {
+  const signInRecord = signInRecordsInput.find((item) => item.userId === userId && item.date === today) || {
     userId,
     date: today,
     signed: false,
     streakCount: 0
   };
-  const latestRecord = practiceRecords.find((item) => item.userId === userId && item.questionId === assignment.questionId) || null;
+  const latestRecord =
+    [...practiceRecordsInput]
+      .filter((item) => item.userId === userId && item.questionId === assignment.questionId)
+      .sort((a, b) => new Date(b.answeredAt).getTime() - new Date(a.answeredAt).getTime())[0] || null;
 
   return {
     direction: 'medical' as QuestionDirection,
@@ -264,6 +305,10 @@ export function buildDailyQuestionMockPayload(userId = 'guest-medical') {
     signInRecord,
     latestRecord
   };
+}
+
+export function buildDailyQuestionMockPayload(userId = GUEST_USER_ID) {
+  return buildDailyQuestionPayloadFromData({ userId });
 }
 
 export function buildPastPapersMockPayload() {
@@ -279,33 +324,70 @@ export function buildPastPapersMockPayload() {
   };
 }
 
-export function buildWrongBookMockPayload(userId = 'guest-medical') {
-  const userWrongRecords = practiceRecords
-    .filter((item) => item.userId === userId && !item.isCorrect)
-    .sort((a, b) => new Date(b.answeredAt).getTime() - new Date(a.answeredAt).getTime());
+export function buildWrongBookPayloadFromData({
+  userId = GUEST_USER_ID,
+  practiceRecordsInput = practiceRecords
+}: {
+  userId?: string;
+  practiceRecordsInput?: PracticeRecord[];
+} = {}) {
+  const recordsByQuestion = practiceRecordsInput
+    .filter((item) => item.userId === userId)
+    .reduce<Record<string, PracticeRecord[]>>((result, item) => {
+      if (!result[item.questionId]) {
+        result[item.questionId] = [];
+      }
 
-  const items: WrongBookItem[] = userWrongRecords
-    .map((record) => {
-      const question = getMedicalQuestionById(record.questionId);
-      if (!question) {
+      result[item.questionId].push(item);
+      return result;
+    }, {});
+
+  const items: WrongBookItem[] = Object.values(recordsByQuestion)
+    .map((records) => {
+      const sortedRecords = [...records].sort((a, b) => new Date(b.answeredAt).getTime() - new Date(a.answeredAt).getTime());
+      const latestRecord = sortedRecords[0];
+      const question = getMedicalQuestionById(latestRecord?.questionId);
+      const wrongAttempts = sortedRecords.filter((record) => !record.isCorrect).length;
+
+      if (!question || !latestRecord || !wrongAttempts) {
         return null;
       }
 
+      const reviewStatus = latestRecord.isCorrect
+        ? '已掌握'
+        : latestRecord.answeredAt.startsWith(today)
+          ? '今日新增'
+          : '待复习';
+
       return {
         question,
-        latestRecord: record,
-        reviewStatus: record.source === 'wrongbook' ? '已掌握' : '待复习'
+        latestRecord,
+        reviewStatus,
+        wrongAttempts
       };
     })
-    .filter(Boolean) as WrongBookItem[];
+    .filter((item): item is WrongBookItem => Boolean(item))
+    .sort((a, b) => {
+      const order = { '待复习': 0, '今日新增': 1, '已掌握': 2 };
+      const statusDiff = order[a.reviewStatus] - order[b.reviewStatus];
+      if (statusDiff !== 0) {
+        return statusDiff;
+      }
+
+      return new Date(a.latestRecord.answeredAt).getTime() - new Date(b.latestRecord.answeredAt).getTime();
+    });
 
   return {
     direction: 'medical' as QuestionDirection,
     summary: {
       totalWrong: items.length,
-      pendingReview: items.filter((item) => item.reviewStatus === '待复习').length,
-      todayUpdated: items.filter((item) => item.latestRecord.answeredAt.startsWith(today)).length
+      pendingReview: items.filter((item) => item.reviewStatus !== '已掌握').length,
+      todayUpdated: items.filter((item) => item.reviewStatus === '今日新增').length
     },
     items
   };
+}
+
+export function buildWrongBookMockPayload(userId = GUEST_USER_ID) {
+  return buildWrongBookPayloadFromData({ userId });
 }

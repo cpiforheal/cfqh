@@ -1,7 +1,9 @@
 ﻿export default {
   pages: [
     'pages/home/index',
+    'pages/study/index',
     'pages/courses/index',
+    'pages/mine/index',
     'pages/teachers/index',
     'pages/success/index',
     'pages/materials/index',
@@ -50,28 +52,22 @@
         selectedIconPath: 'assets/tabbar/home-active.png'
       },
       {
+        pagePath: 'pages/study/index',
+        text: '题库',
+        iconPath: 'assets/tabbar/materials.png',
+        selectedIconPath: 'assets/tabbar/materials-active.png'
+      },
+      {
         pagePath: 'pages/courses/index',
-        text: '方向',
+        text: '课程',
         iconPath: 'assets/tabbar/courses.png',
         selectedIconPath: 'assets/tabbar/courses-active.png'
       },
       {
-        pagePath: 'pages/teachers/index',
-        text: '师资',
-        iconPath: 'assets/tabbar/teachers.png',
-        selectedIconPath: 'assets/tabbar/teachers-active.png'
-      },
-      {
-        pagePath: 'pages/success/index',
-        text: '成果',
-        iconPath: 'assets/tabbar/success.png',
-        selectedIconPath: 'assets/tabbar/success-active.png'
-      },
-      {
-        pagePath: 'pages/materials/index',
-        text: '教材',
-        iconPath: 'assets/tabbar/materials.png',
-        selectedIconPath: 'assets/tabbar/materials-active.png'
+        pagePath: 'pages/mine/index',
+        text: '我的',
+        iconPath: 'assets/tabbar/about.png',
+        selectedIconPath: 'assets/tabbar/about-active.png'
       }
     ]
   }

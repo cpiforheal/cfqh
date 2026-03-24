@@ -1,4 +1,4 @@
-import { Text, View } from '@tarojs/components';
+import { Navigator, Text, View } from '@tarojs/components';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import PageCtaCard from '../../components/PageCtaCard';
 import PageSectionTitle from '../../components/PageSectionTitle';
@@ -262,6 +262,87 @@ function DecisionHero(props) {
   );
 }
 
+function ActionStep(props) {
+  return (
+    <View
+      style={{
+        width: '31.8%',
+        borderRadius: '24rpx',
+        padding: '20rpx 18rpx',
+        background: props.active ? 'linear-gradient(180deg, #eef4ff 0%, #ffffff 100%)' : '#ffffff',
+        border: props.active ? '1rpx solid rgba(165,196,255,0.96)' : '1rpx solid rgba(226,232,240,0.92)',
+        boxSizing: 'border-box'
+      }}
+    >
+      <Text style={{ display: 'block', fontSize: ui.type.meta, color: props.active ? '#3b82f6' : ui.colors.textMuted, fontWeight: 800 }}>
+        {props.step}
+      </Text>
+      <Text style={{ display: 'block', marginTop: '12rpx', fontSize: ui.type.cardTitle, color: ui.colors.text, fontWeight: 800, lineHeight: 1.35 }}>
+        {props.title}
+      </Text>
+      <Text style={{ display: 'block', marginTop: '10rpx', fontSize: ui.type.note, color: ui.colors.textMuted, lineHeight: 1.65 }}>
+        {props.desc}
+      </Text>
+    </View>
+  );
+}
+
+function ActionPlanCard() {
+  return (
+    <View
+      style={{
+        margin: `26rpx ${ui.spacing.pageCompact} 0`,
+        ...surfaceCardStyle,
+        borderRadius: ui.radius.xl,
+        padding: '26rpx 24rpx 24rpx'
+      }}
+    >
+      <Text style={{ display: 'block', fontSize: ui.type.section, color: ui.colors.text, fontWeight: 900 }}>先按这三步判断</Text>
+      <Text style={{ display: 'block', marginTop: '10rpx', fontSize: ui.type.body, lineHeight: 1.72, color: ui.colors.textMuted }}>
+        先看自己更接近哪一条备考线，再确认课程安排，最后用一道题验证当前节奏是否合适。
+      </Text>
+
+      <View style={{ display: 'flex', justifyContent: 'space-between', marginTop: '22rpx' }}>
+        <ActionStep step="第一步" title="先判断方向" desc="看自己更适合医护还是高数。" active />
+        <ActionStep step="第二步" title="看课程安排" desc="确认课程节奏、资料和服务方式。" />
+        <ActionStep step="第三步" title="去练题验证" desc="做一题或看错题，感受当前基础。" />
+      </View>
+
+      <View style={{ display: 'flex', justifyContent: 'space-between', marginTop: '22rpx' }}>
+        <Navigator url="/pages/materials/index" hoverClass="none" style={{ display: 'block', width: '48.5%' }}>
+          <View
+            style={{
+              height: '84rpx',
+              borderRadius: '22rpx',
+              background: '#eef4ff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <Text style={{ fontSize: ui.type.body, color: '#2754c5', fontWeight: 800 }}>先看课程安排</Text>
+          </View>
+        </Navigator>
+        <Navigator url="/pages/study/index" openType="switchTab" hoverClass="none" style={{ display: 'block', width: '48.5%' }}>
+          <View
+            style={{
+              height: '84rpx',
+              borderRadius: '22rpx',
+              background: 'linear-gradient(90deg, #2c4b84 0%, #18346b 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 16rpx 28rpx rgba(24, 52, 107, 0.18)'
+            }}
+          >
+            <Text style={{ fontSize: ui.type.body, color: '#ffffff', fontWeight: 800 }}>直接去练题</Text>
+          </View>
+        </Navigator>
+      </View>
+    </View>
+  );
+}
+
 function DetailCard(props) {
   return (
     <View
@@ -393,8 +474,49 @@ function DetailCard(props) {
           justifyContent: 'space-between'
         }}
       >
-        <Text style={{ fontSize: ui.type.body, color: ui.colors.textSoft, fontWeight: 700 }}>建议下一步：先看课程安排，再确认是否要做学情评估</Text>
-        <Text style={{ fontSize: ui.type.body, color: props.accent, fontWeight: 800 }}>{props.actionLabel} 〉</Text>
+        <View style={{ flex: 1, minWidth: 0, paddingRight: '18rpx' }}>
+          <Text style={{ display: 'block', fontSize: ui.type.body, color: ui.colors.textSoft, fontWeight: 700 }}>
+            建议下一步：先看课程安排，再去做一题验证自己现在的节奏。
+          </Text>
+          <Text style={{ display: 'block', marginTop: '8rpx', fontSize: ui.type.note, color: ui.colors.textMuted }}>
+            不用一次看很多说明，先完成这两步就够了。
+          </Text>
+        </View>
+        <View style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+          <Navigator url="/pages/materials/index" hoverClass="none" style={{ display: 'block', marginRight: '12rpx' }}>
+            <View
+              style={{
+                minWidth: '154rpx',
+                height: '68rpx',
+                padding: '0 18rpx',
+                borderRadius: ui.radius.pill,
+                backgroundColor: '#eef4ff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <Text style={{ fontSize: ui.type.note, color: '#315ec9', fontWeight: 800 }}>看课程安排</Text>
+            </View>
+          </Navigator>
+          <Navigator url="/pages/study/index" openType="switchTab" hoverClass="none" style={{ display: 'block' }}>
+            <View
+              style={{
+                minWidth: '142rpx',
+                height: '68rpx',
+                padding: '0 18rpx',
+                borderRadius: ui.radius.pill,
+                background: `linear-gradient(90deg, ${props.accent} 0%, #1d4ed8 100%)`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: `0 14rpx 24rpx ${props.accent}1f`
+              }}
+            >
+              <Text style={{ fontSize: ui.type.note, color: '#ffffff', fontWeight: 800 }}>{props.actionLabel}</Text>
+            </View>
+          </Navigator>
+        </View>
       </View>
     </View>
   );
@@ -481,6 +603,8 @@ export default function CoursesPage() {
           subtitle='先看自己更接近哪一条，再决定课程安排和训练节奏。'
         />
       </View>
+
+      <ActionPlanCard />
 
       <View style={{ margin: `10rpx ${ui.spacing.pageCompact} 0` }}>
         {directionCards.map((item, index) => (

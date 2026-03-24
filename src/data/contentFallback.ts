@@ -17,7 +17,7 @@
         chip: '护理 / 助产 / 医护背景同学',
         title: '想冲江苏专转本？',
         highlightTitle: '先判断方向，再安排课程',
-        desc: '新同学先看适合方向和课程安排，在学同学再进入每日一题、模拟题和错题本。',
+        desc: '第一次来先看方向和课程安排，已经开始备考就直接去题库练习，再把错题和签到沉淀到自己的学习档案里。',
         tags: ['92.3% 上岸率', '1:8 小班跟进', '独立校区学习'],
         primaryButton: { text: '了解课程安排', url: '/pages/courses/index', openType: 'switchTab' },
         secondaryNote: '先选方向，再做训练',
@@ -30,10 +30,10 @@
         { value: '365天', label: '全年答疑', note: '全职坐班' }
       ],
       quickLinks: [
-        { label: '机构介绍', desc: '看品牌介绍', url: '/pages/about/index', openType: 'navigate', icon: 'building' },
-        { label: '每日一题', desc: '在学每日打卡', url: '/pages/question-bank/daily-question/index', openType: 'navigate', icon: 'daily' },
-        { label: '模拟题', desc: '考前整卷冲刺', url: '/pages/question-bank/past-papers/index', openType: 'navigate', icon: 'paper' },
-        { label: '错题本', desc: '回看薄弱题', url: '/pages/question-bank/wrong-book/index', openType: 'navigate', icon: 'wrongbook' }
+        { label: '方向判断', desc: '先看适合哪条线', url: '/pages/courses/index', openType: 'switchTab', icon: 'compass' },
+        { label: '题库练习', desc: '去做每日一题', url: '/pages/study/index', openType: 'switchTab', icon: 'daily' },
+        { label: '教材资料', desc: '看阶段资料安排', url: '/pages/materials/index', openType: 'navigate', icon: 'paper' },
+        { label: '我的学习', desc: '查看错题和签到', url: '/pages/mine/index', openType: 'switchTab', icon: 'team' }
       ],
       advantages: [
         { icon: 'team', title: '答疑有人盯', desc: '第一次来了解也能先把基础、目标院校和卡点问清楚，问题当天就有人跟进。' },
@@ -83,9 +83,33 @@
       },
       wrongBookCard: {
         title: '错题本',
-        desc: '沉淀做错题目和解析，方便回看与重复练习。',
+        desc: '先做现在最该回炉的一题，再顺着复习队列往下推进。',
         buttonText: '回看错题',
-        note: '错题复盘与回看'
+        note: '进入页面先看主任务卡，做完再处理下方队列。',
+        stats: {
+          pendingLabel: '待复习',
+          todayLabel: '今日新增',
+          totalLabel: '累计错题'
+        },
+        taskSection: {
+          eyebrow: '当前优先任务',
+          reasonLabel: '为什么先做',
+          estimateLabel: '预计耗时',
+          sourceLabel: '题目来源',
+          lastAnsweredLabel: '上次作答',
+          answerLabel: '我的答案',
+          primaryButtonText: '立即重练',
+          secondaryButtonText: '查看解析'
+        },
+        queueSection: {
+          title: '待复习队列',
+          sortHint: '按优先级排序',
+          pendingLabel: '待复习',
+          todayLabel: '今日新增',
+          masteredLabel: '已掌握',
+          emptyTitle: '今天的错题复习已经清空',
+          emptyDesc: '先把新的练习做完，系统会把需要回炉的题继续排进这里。'
+        }
       },
       importGuide: {
         title: '纯文本导入',

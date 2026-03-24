@@ -544,13 +544,11 @@ function renderAuthScreen(message = '') {
         <div class="auth-brand-mark">启</div>
         <div class="auth-brand-copy">
           <strong>CareerCompass</strong>
-          <span>运营后台</span>
         </div>
       </div>
       <div class="auth-hero">
         <div class="auth-hero-copy">
           <h2>乘帆启航</h2>
-          <p>先完成身份验证，再进入全屏内容工作台。</p>
         </div>
         <div class="auth-scene" aria-hidden="true" data-auth-scene>
           <div class="auth-figure auth-figure-a" data-auth-figure>
@@ -579,11 +577,6 @@ function renderAuthScreen(message = '') {
             <b></b>
           </div>
         </div>
-      </div>
-      <div class="auth-visual-footer">
-        <span>Privacy Policy</span>
-        <span>Terms of Service</span>
-        <span>Contact</span>
       </div>
     </div>
     <div class="auth-panel">
@@ -883,25 +876,125 @@ const QUESTION_BANK_CSV_HEADERS = [
   'status'
 ];
 
-function getQuestionBankImportUi() {
+const QUESTION_BANK_UPLOAD_ACCEPT = [
+  '.pdf',
+  '.doc',
+  '.docx',
+  '.xlsx',
+  '.csv',
+  '.json',
+  '.txt',
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'text/csv',
+  'text/plain',
+  'application/json'
+].join(',');
+
+const QUESTION_BANK_DIRECTIONS = [
+  { key: 'medical', label: '医护', shortLabel: '医护', heroTitle: '医护题库工作台', summary: '适合护理、医学基础与医护综合练习整理。' },
+  { key: 'math', label: '高数', shortLabel: '高数', heroTitle: '高数题库工作台', summary: '适合高等数学、公式训练与题型归档整理。' }
+];
+
+const QUESTION_BANK_IMPORT_GUIDES = {
+  excel: {
+    label: 'Excel 表格',
+    hint: '最省心的方式，题号、题目、选项、答案分列放好，系统会自动识别方向和题型。',
+    sample: '题号 | 题目内容 | 选项A | 选项B | 选项C | 选项D | 答案 | 解析'
+  },
+  word: {
+    label: 'Word 文档',
+    hint: '老师最常发来的题目清单，按“题目 + 选项 + 答案 + 解析”排版即可。',
+    sample: '1. 患者出现发热症状，首先考虑（  ）\nA. 发热\nB. 咳嗽\n答案：A\n解析：根据临床表现...'
+  },
+  pdf: {
+    label: 'PDF 讲义',
+    hint: '文字版 PDF 可直接上传，系统会尽量提取题目并整理成可编辑题库。',
+    sample: '适合已经排版好的讲义、整卷或往年真题 PDF。'
+  },
+  text: {
+    label: '纯文本',
+    hint: '复制讲义、群消息或文档内容也可以，系统会按题号、选项、答案自动整理。',
+    sample: '1. 题目内容\\nA. 选项A\\nB. 选项B\\n答案：A\\n解析：……'
+  }
+};
+
+function normalizeQuestionBankDirection(value = 'medical') {
+  const raw = String(value || '').trim().toLowerCase();
+  if (!raw) return 'medical';
+  if (['medical', '医护', '护理', '医学', '综合'].includes(raw)) return 'medical';
+  if (['math', '数学', '高数', '高等数学'].includes(raw)) return 'math';
+  return 'medical';
+}
+
+function getQuestionBankDirectionMeta(direction = 'medical') {
+  return QUESTION_BANK_DIRECTIONS.find((item) => item.key === normalizeQuestionBankDirection(direction)) || QUESTION_BANK_DIRECTIONS[0];
+}
+
+function getQuestionBankWorkspaceUi() {
   const ui = getViewUi('questionBank');
-  if (!ui.csvImport) {
-    ui.csvImport = {
+  if (!ui.questionDirection) {
+    ui.questionDirection = 'medical';
+  }
+  if (!ui.questionImportGuide || !QUESTION_BANK_IMPORT_GUIDES[ui.questionImportGuide]) {
+    ui.questionImportGuide = 'excel';
+  }
+  return ui;
+}
+
+function getQuestionBankActiveDirection() {
+  return normalizeQuestionBankDirection(getQuestionBankWorkspaceUi().questionDirection || 'medical');
+}
+
+function getQuestionBankDirectionItems(items = [], direction = getQuestionBankActiveDirection()) {
+  const normalizedDirection = normalizeQuestionBankDirection(direction);
+  return (items || []).filter((item) => normalizeQuestionBankDirection(item.direction || 'medical') === normalizedDirection);
+}
+
+function getQuestionBankWorkspaceData(collections = {}, direction = getQuestionBankActiveDirection()) {
+  return {
+    medicalQuestions: getQuestionBankDirectionItems(collections.medicalQuestions || [], direction),
+    pastPapers: getQuestionBankDirectionItems(collections.pastPapers || [], direction),
+    questionImports: getQuestionBankDirectionItems(collections.questionImports || [], direction)
+  };
+}
+
+function getQuestionBankStats(collections = {}, direction = getQuestionBankActiveDirection()) {
+  const scoped = getQuestionBankWorkspaceData(collections, direction);
+  return {
+    questionCount: scoped.medicalQuestions.length,
+    publishedQuestionCount: scoped.medicalQuestions.filter((item) => (item.status || 'draft') === 'published').length,
+    paperCount: scoped.pastPapers.length,
+    importCount: scoped.questionImports.length,
+    draftImportCount: scoped.questionImports.filter((item) => (item.status || 'draft') !== 'published').length
+  };
+}
+
+function getQuestionBankImportUi() {
+  const ui = getQuestionBankWorkspaceUi();
+  const direction = getQuestionBankActiveDirection();
+  if (!ui.fileImportByDirection) {
+    ui.fileImportByDirection = {};
+  }
+  if (!ui.fileImportByDirection[direction]) {
+    ui.fileImportByDirection[direction] = {
       fileName: '',
-      csvText: '',
+      filePayload: null,
       preview: null,
       lastSummary: null,
       isSubmitting: false
     };
   }
-  return ui.csvImport;
+  return ui.fileImportByDirection[direction];
 }
 
 function resetQuestionBankImportUi(options = {}) {
   const { keepLastSummary = true } = options;
   const ui = getQuestionBankImportUi();
   ui.fileName = '';
-  ui.csvText = '';
+  ui.filePayload = null;
   ui.preview = null;
   ui.isSubmitting = false;
   if (!keepLastSummary) {
@@ -913,75 +1006,100 @@ function readTextFile(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result || ''));
-    reader.onerror = () => reject(new Error('读取 CSV 失败，请重新选择文件。'));
+    reader.onerror = () => reject(new Error('读取题库文件失败，请重新选择。'));
     reader.readAsText(file, 'utf-8');
   });
 }
 
-async function previewQuestionBankCsvFile(file) {
+function readBinaryFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = String(reader.result || '');
+      const [, base64 = ''] = result.split(',');
+      resolve(base64);
+    };
+    reader.onerror = () => reject(new Error('读取题库文件失败，请重新选择。'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function isQuestionBankBinaryFile(file) {
+  return /\.(pdf|doc|docx|xlsx|xls)$/i.test(file?.name || '');
+}
+
+async function buildQuestionBankFilePayload(file) {
+  if (!file) return null;
+  const payload = {
+    fileName: file.name,
+    direction: getQuestionBankActiveDirection()
+  };
+
+  if (isQuestionBankBinaryFile(file)) {
+    payload.fileContentBase64 = await readBinaryFileAsBase64(file);
+    payload.textContent = '';
+    return payload;
+  }
+
+  const textContent = await readTextFile(file);
+  if (!textContent.trim()) {
+    throw new Error('题库文件内容为空，请检查后再上传。');
+  }
+  payload.textContent = textContent;
+  payload.fileContentBase64 = '';
+  return payload;
+}
+
+async function previewQuestionBankImportFile(file) {
   if (!file) return;
-  if (!/\.csv$/i.test(file.name || '')) {
-    throw new Error('当前只支持导入 .csv 文件。');
-  }
-
-  const csvText = await readTextFile(file);
-  if (!csvText.trim()) {
-    throw new Error('CSV 内容为空，请检查文件后再上传。');
-  }
-
-  setStatus('正在校验题库 CSV...', 'loading');
-  const result = await request('/api/import/question-bank-csv/preview', {
+  const payload = await buildQuestionBankFilePayload(file);
+  setStatus('正在识别并整理题库文件...', 'loading');
+  const result = await request('/api/import/question-bank-file/preview', {
     method: 'POST',
-    body: JSON.stringify({
-      fileName: file.name,
-      csvText
-    })
+    body: JSON.stringify(payload)
   });
 
-  const ui = getViewUi('questionBank');
+  const ui = getQuestionBankWorkspaceUi();
   const importUi = getQuestionBankImportUi();
   importUi.fileName = file.name;
-  importUi.csvText = csvText;
+  importUi.filePayload = payload;
   importUi.preview = result.data || null;
   ui.openEditors.questionBankCsvImport = true;
 
   renderModule(VIEW_CONFIG[state.activeView], state.currentData);
   const invalidCount = Number(result.data?.invalidCount || 0);
   if (invalidCount > 0) {
-    setStatus(`CSV 已载入，发现 ${invalidCount} 行需要修正。`, 'error');
+    setStatus(`文件已载入，发现 ${invalidCount} 行需要修正。`, 'error');
     return;
   }
 
-  setStatus(`CSV 校验通过，共 ${result.data?.validCount || 0} 行可导入。`);
+  setStatus(`题库文件已整理完成，共 ${result.data?.validCount || 0} 行可导入。`);
 }
 
-async function commitQuestionBankCsvImport() {
-  const ui = getViewUi('questionBank');
+async function commitQuestionBankImport() {
+  const ui = getQuestionBankWorkspaceUi();
   const importUi = getQuestionBankImportUi();
-  if (!importUi.csvText || !importUi.preview) {
-    throw new Error('请先选择 CSV 并完成预览校验。');
+  if (!importUi.filePayload || !importUi.preview) {
+    throw new Error('请先选择题库文件并完成预览。');
   }
   if (Number(importUi.preview.invalidCount || 0) > 0) {
-    throw new Error('当前 CSV 仍有错误，请先修正后再导入。');
+    throw new Error('当前文件仍有错误，请先修正后再导入。');
   }
 
   importUi.isSubmitting = true;
   renderModule(VIEW_CONFIG[state.activeView], state.currentData);
-  setStatus('正在导入题库 CSV...', 'loading');
+  setStatus('正在导入题库文件...', 'loading');
 
   try {
-    const result = await request('/api/import/question-bank-csv/commit', {
+    const result = await request('/api/import/question-bank-file/commit', {
       method: 'POST',
-      body: JSON.stringify({
-        fileName: importUi.fileName,
-        csvText: importUi.csvText
-      })
+      body: JSON.stringify(importUi.filePayload)
     });
     importUi.lastSummary = result.data || null;
     resetQuestionBankImportUi();
     ui.openEditors.questionBankCsvImport = false;
     await renderActiveView(true);
-    setStatus(`CSV 导入完成，新增 ${result.data?.createdCount || 0} 题，更新 ${result.data?.updatedCount || 0} 题。`);
+    setStatus(`题库导入完成，新增 ${result.data?.createdCount || 0} 题，更新 ${result.data?.updatedCount || 0} 题。`);
   } catch (error) {
     importUi.isSubmitting = false;
     renderModule(VIEW_CONFIG[state.activeView], state.currentData);
@@ -1127,6 +1245,23 @@ const FIELD_LABELS = {
   dailyQuestionCard: '每日一题页',
   pastPapersCard: '模拟题页',
   wrongBookCard: '错题本页',
+  taskSection: '主任务区',
+  queueSection: '复习队列区',
+  pendingLabel: '待复习标签',
+  todayLabel: '今日新增标签',
+  totalLabel: '累计错题标签',
+  eyebrow: '主任务标题',
+  reasonLabel: '优先原因标题',
+  estimateLabel: '预计耗时标题',
+  sourceLabel: '来源标题',
+  lastAnsweredLabel: '上次作答标题',
+  answerLabel: '我的答案标题',
+  primaryButtonText: '主按钮文案',
+  secondaryButtonText: '次按钮文案',
+  sortHint: '排序提示',
+  masteredLabel: '已掌握标签',
+  emptyTitle: '空状态标题',
+  emptyDesc: '空状态说明',
   importGuide: '导入说明',
   templateText: '模板文本',
   questionId: '题目编号',
@@ -1262,6 +1397,34 @@ const QUESTION_BANK_COLLECTION_SCOPES = new Set([
   'collection:questionImports'
 ]);
 const STRUCTURED_FIELD_DEFAULTS = {
+  'page:questionBank': {
+    wrongBookCard: {
+      stats: {
+        pendingLabel: '待复习',
+        todayLabel: '今日新增',
+        totalLabel: '累计错题'
+      },
+      taskSection: {
+        eyebrow: '当前优先任务',
+        reasonLabel: '为什么先做',
+        estimateLabel: '预计耗时',
+        sourceLabel: '题目来源',
+        lastAnsweredLabel: '上次作答',
+        answerLabel: '我的答案',
+        primaryButtonText: '立即重练',
+        secondaryButtonText: '查看解析'
+      },
+      queueSection: {
+        title: '待复习队列',
+        sortHint: '按优先级排序',
+        pendingLabel: '待复习',
+        todayLabel: '今日新增',
+        masteredLabel: '已掌握',
+        emptyTitle: '今天的错题复习已经清空',
+        emptyDesc: '先把新的练习做完，系统会把需要回炉的题继续排进这里。'
+      }
+    }
+  },
   'collection:medicalQuestions': {
     questionId: '',
     direction: 'medical',
@@ -1753,7 +1916,7 @@ const EDITOR_LAYOUTS = {
   'page:questionBank': {
     hero: {
       title: '题库页主配置',
-      desc: '这里维护的是三个题库子页面当前真实会显示的首屏文案，改完保存后会直接对应到小程序页面。'
+      desc: '这里维护的是三个题库子页面当前真实会显示的页面文案，错题本已经拆成状态概览、主任务和复习队列三层。'
     },
     sections: [
       {
@@ -1768,7 +1931,7 @@ const EDITOR_LAYOUTS = {
       },
       {
         title: '错题本页',
-        desc: '对应小程序错题本入口打开后的页面标题和说明。',
+        desc: '对应小程序错题本里的顶部状态概览、当前优先任务和下方复习队列。',
         keys: ['wrongBookCard']
       }
     ]
@@ -1841,6 +2004,39 @@ const EDITOR_LAYOUTS = {
 
 function cloneValue(value) {
   return JSON.parse(JSON.stringify(value));
+}
+
+function mergeStructuredDefaults(currentValue, defaultValue) {
+  if (currentValue === undefined && defaultValue === undefined) {
+    return undefined;
+  }
+
+  if (defaultValue === undefined) {
+    return cloneValue(currentValue);
+  }
+
+  if (currentValue === undefined) {
+    return cloneValue(defaultValue);
+  }
+
+  if (Array.isArray(defaultValue) || Array.isArray(currentValue)) {
+    return cloneValue(currentValue);
+  }
+
+  if (
+    defaultValue &&
+    typeof defaultValue === 'object' &&
+    currentValue &&
+    typeof currentValue === 'object'
+  ) {
+    const merged = { ...cloneValue(defaultValue), ...cloneValue(currentValue) };
+    Object.keys(defaultValue).forEach((childKey) => {
+      merged[childKey] = mergeStructuredDefaults(currentValue[childKey], defaultValue[childKey]);
+    });
+    return merged;
+  }
+
+  return cloneValue(currentValue);
 }
 
 function blankLike(value) {
@@ -2085,7 +2281,28 @@ const SCOPED_FIELD_LABELS = {
     wrongBookCard: '错题本页',
     'wrongBookCard.title': '页面标题',
     'wrongBookCard.desc': '页面说明',
-    'wrongBookCard.note': '补充提示'
+    'wrongBookCard.note': '补充提示',
+    'wrongBookCard.stats': '顶部统计标签',
+    'wrongBookCard.stats.pendingLabel': '待复习标签',
+    'wrongBookCard.stats.todayLabel': '今日新增标签',
+    'wrongBookCard.stats.totalLabel': '累计错题标签',
+    'wrongBookCard.taskSection': '主任务区',
+    'wrongBookCard.taskSection.eyebrow': '主任务标题',
+    'wrongBookCard.taskSection.reasonLabel': '优先原因标题',
+    'wrongBookCard.taskSection.estimateLabel': '预计耗时标题',
+    'wrongBookCard.taskSection.sourceLabel': '来源标题',
+    'wrongBookCard.taskSection.lastAnsweredLabel': '上次作答标题',
+    'wrongBookCard.taskSection.answerLabel': '我的答案标题',
+    'wrongBookCard.taskSection.primaryButtonText': '主按钮文案',
+    'wrongBookCard.taskSection.secondaryButtonText': '次按钮文案',
+    'wrongBookCard.queueSection': '复习队列区',
+    'wrongBookCard.queueSection.title': '列表标题',
+    'wrongBookCard.queueSection.sortHint': '排序提示',
+    'wrongBookCard.queueSection.pendingLabel': '待复习状态文案',
+    'wrongBookCard.queueSection.todayLabel': '今日新增状态文案',
+    'wrongBookCard.queueSection.masteredLabel': '已掌握状态文案',
+    'wrongBookCard.queueSection.emptyTitle': '空状态标题',
+    'wrongBookCard.queueSection.emptyDesc': '空状态说明'
   },
   'collection:directions': {
     name: '方向名称',
@@ -2732,12 +2949,13 @@ function renderFormNode(scope, value, path = [], fieldKey = '') {
 }
 
 function getStructuredFieldValue(scope, value, key) {
+  const defaultValue = STRUCTURED_FIELD_DEFAULTS[scope]?.[key];
   if (Object.prototype.hasOwnProperty.call(value || {}, key)) {
-    return value[key];
+    return mergeStructuredDefaults(value[key], defaultValue);
   }
 
   if (Object.prototype.hasOwnProperty.call(STRUCTURED_FIELD_DEFAULTS[scope] || {}, key)) {
-    return cloneValue(STRUCTURED_FIELD_DEFAULTS[scope][key]);
+    return cloneValue(defaultValue);
   }
 
   return undefined;
@@ -3377,7 +3595,6 @@ function renderPageEditorOverlay(pageKey, pageLabel, page) {
       <div class="panel-head editor-modal-head directions-enter-modal-item" style="--enter-delay: 0ms;">
         <div>
           <h3>${escapeHtml(pageLabel)}</h3>
-          <p>页面总配置会保持在当前工作区之上，用浮层集中修改，不打断主控区浏览。</p>
         </div>
         <div class="panel-actions">
           <button class="system-action" type="button" data-action="save-page" data-page-key="${escapeHtml(pageKey)}">保存页面</button>
@@ -3393,12 +3610,12 @@ function renderPageEditorOverlay(pageKey, pageLabel, page) {
         ${pageKey === 'courses' ? renderEditorInsightCards(getCoursesPageInsightCards(page)) : ''}
         <div class="drawer-focus-bar directions-enter-modal-item" style="--enter-delay: 40ms;">
           <strong>${escapeHtml(activeRow?.title || page.title || pageLabel)}</strong>
-          <span>${escapeHtml(activeRow?.desc || page.subtitle || `正在编辑${pageLabel}`)}</span>
+          <span>${escapeHtml(activeRow?.meta || page.subtitle || pageLabel)}</span>
         </div>
         <div class="directions-enter-modal-item" style="--enter-delay: 60ms;">
           <div class="workspace-compact-summary editor-subsection-summary">
             <strong>${escapeHtml(selectedSectionId ? `当前区块：${activeRow?.title || pageLabel}` : '页面配置总览')}</strong>
-            <span>区块名称、字段名称和前端展示位置已经统一，点区块卡片或表格 row 就会直接看到真实生效表单。</span>
+            <span>${escapeHtml(`${rows.length} 个区块`)}</span>
             <em>${escapeHtml(`当前页面 ${rows.length} 个区块`)}</em>
           </div>
           ${renderPageSectionNavCards(pageKey, rows, selectedSectionId, 'select-page-editor-section')}
@@ -3488,16 +3705,16 @@ function getPageSectionRows(pageKey, page = {}) {
         id: 'pastPapersCard',
         title: '模拟题页',
         desc: '对应小程序“模拟题”页面首屏标题和说明。',
-        meta: page.pastPapersCard?.title || page.pastPapersCard?.desc || 'CSV 热更新提示',
+        meta: page.pastPapersCard?.title || page.pastPapersCard?.desc || '批量导入提示',
         location: '页面标题 / 页面说明 / 补充提示',
         keys: ['pastPapersCard']
       },
       {
         id: 'wrongBookCard',
         title: '错题本页',
-        desc: '对应小程序“错题本”页面首屏标题和说明。',
-        meta: page.wrongBookCard?.title || page.wrongBookCard?.desc || '复盘说明',
-        location: '页面标题 / 页面说明 / 补充提示',
+        desc: '对应小程序“错题本”的顶部状态概览、当前优先任务和下方复习队列。',
+        meta: page.wrongBookCard?.taskSection?.eyebrow || page.wrongBookCard?.queueSection?.title || page.wrongBookCard?.title || '复习任务文案',
+        location: '页面标题 / 统计标签 / 主任务按钮 / 队列状态文案',
         keys: ['wrongBookCard']
       },
       {
@@ -4043,7 +4260,7 @@ function renderDirectSectionEditor(pageKey, page, section) {
     return `<div class="editor-subsection-shell directions-enter-modal-item" style="--enter-delay: 40ms;">
       <div class="workspace-compact-summary editor-subsection-summary">
         <strong>${escapeHtml(section.title)}</strong>
-        <span>当前区块没有可编辑字段。</span>
+        <span>${escapeHtml(section.meta || '暂无字段')}</span>
         <em>${escapeHtml(`区块字段 ${section.keys.length} 组`)}</em>
       </div>
       ${renderLinkedSourceCards(section.linkedSources || [])}
@@ -4056,7 +4273,7 @@ function renderDirectSectionEditor(pageKey, page, section) {
   return `<div class="editor-subsection-shell directions-enter-modal-item" style="--enter-delay: 40ms;">
     <div class="workspace-compact-summary editor-subsection-summary">
       <strong>${escapeHtml(section.title)}</strong>
-      <span>${escapeHtml(section.desc || '这里展示的就是当前真实生效的字段，改完直接保存即可。')}</span>
+      <span>${escapeHtml(section.meta || '编辑区块')}</span>
       <em>${escapeHtml(`区块字段 ${section.keys.length} 组`)}</em>
     </div>
     ${renderLinkedSourceCards(section.linkedSources || [])}
@@ -4071,14 +4288,14 @@ function renderPageSectionNavCards(pageKey, rows, selectedSectionId, actionName)
 
   return `<div class="page-section-nav-grid directions-enter-modal-item" style="--enter-delay: 50ms;">
     ${rows.map((row, index) => `<button class="page-section-nav-card${row.id === selectedSectionId ? ' active' : ''}" type="button" style="--enter-delay: ${70 + index * 16}ms;" data-action="${escapeHtml(getPageSectionAction(row, actionName))}" data-page-key="${escapeHtml(pageKey)}" data-section-id="${escapeHtml(row.id)}" ${row.linkOnly ? getLinkedWorkspaceDataset(row) : ''}>
-      <span class="page-section-nav-kicker">前端区块</span>
+      <span class="page-section-nav-kicker">区块</span>
       <strong>${escapeHtml(row.title)}</strong>
-      <p>${escapeHtml(row.desc || '点击查看对应表单')}</p>
+      <p>${escapeHtml(row.linkOnly ? '关联内容' : '直接编辑')}</p>
       <div class="page-section-nav-meta">
         <span>${escapeHtml(row.meta || '待完善')}</span>
         <em>${escapeHtml(getSectionLocationText(`page:${pageKey}`, row))}</em>
       </div>
-      ${row.linkOnly ? `<div class="page-section-nav-meta"><span>${escapeHtml(row.actionLabel || '去修改')}</span><em>${escapeHtml('该区块内容来自其它工作区')}</em></div>` : ''}
+      ${row.linkOnly ? `<div class="page-section-nav-meta"><span>${escapeHtml(row.actionLabel || '去修改')}</span><em>${escapeHtml('关联工作区')}</em></div>` : ''}
     </button>`).join('')}
   </div>`;
 }
@@ -4090,7 +4307,7 @@ function renderPageSectionRowsList(pageKey, rows, selectedSectionId, actionName)
     ${rows.map((row, index) => `<button class="record-row workspace-row-enter${row.id === selectedSectionId ? ' active' : ''}" type="button" style="--enter-delay: ${180 + index * 24}ms;" data-action="${escapeHtml(getPageSectionAction(row, actionName))}" data-page-key="${escapeHtml(pageKey)}" data-section-id="${escapeHtml(row.id)}" ${row.linkOnly ? getLinkedWorkspaceDataset(row) : ''}>
       <span class="record-row-main">
         <strong class="record-row-title">${escapeHtml(row.title)}</strong>
-        <span class="record-row-meta">${escapeHtml(row.desc || row.meta || '点击进入编辑')}</span>
+        <span class="record-row-meta">${escapeHtml(row.meta || getSectionLocationText(`page:${pageKey}`, row) || '编辑')}</span>
       </span>
       <span class="record-pill">${escapeHtml(getPageSectionActionLabel(row))}</span>
     </button>`).join('')}
@@ -4111,7 +4328,7 @@ function renderPageSectionFieldWorkbench(pageKey, page, section) {
   return `<div class="editor-subsection-shell directions-enter-modal-item" style="--enter-delay: 40ms;">
     <div class="workspace-compact-summary editor-subsection-summary">
       <strong>${escapeHtml(activeField ? `当前字段：${activeField.title}` : '字段总览')}</strong>
-      <span>${escapeHtml('先点一条字段 row，再在下面修改对应表单。')}</span>
+      <span>${escapeHtml(activeField?.meta || section.title)}</span>
       <em>${escapeHtml(`当前区块 ${rows.length} 条字段 row`)}</em>
     </div>
     <div class="table-shell editor-subsection-table">
@@ -4129,7 +4346,7 @@ function renderPageSectionFieldWorkbench(pageKey, page, section) {
             <td><strong class="data-table-title">${escapeHtml(row.title)}</strong></td>
             <td>
               <strong class="data-table-title">${escapeHtml(row.desc || '暂未配置')}</strong>
-              <span class="data-table-sub">${escapeHtml(row.meta || '点击查看明细')}</span>
+              <span class="data-table-sub">${escapeHtml(row.meta || '详情')}</span>
             </td>
             <td><span class="table-inline-summary">${escapeHtml(section.title)}</span></td>
             <td><button class="row-action" type="button" data-action="open-page-section-field" data-page-key="${escapeHtml(pageKey)}" data-section-id="${escapeHtml(section.id)}" data-field-id="${escapeHtml(row.id)}">展开</button></td>
@@ -4140,7 +4357,7 @@ function renderPageSectionFieldWorkbench(pageKey, page, section) {
     ${activeField ? `<div class="editor-subsection-form directions-enter-modal-item" style="--enter-delay: 70ms;">
       <div class="drawer-focus-bar">
         <strong>${escapeHtml(activeField.title)}</strong>
-        <span>${escapeHtml(activeField.desc || '正在编辑当前字段')}</span>
+        <span>${escapeHtml(activeField.meta || section.title)}</span>
       </div>
       <div class="friendly-editor friendly-editor-pages">
         ${renderFormNode(`page:${pageKey}`, page[activeField.id], [activeField.id], activeField.id)}
@@ -4337,9 +4554,9 @@ function getViewWorkbenchGuide(view, data = {}) {
   if (view.key === 'questionBank') {
     return {
       title: '题库管理先校验来源，再导入题目',
-      desc: '题库页最容易让新老师紧张的是 CSV 导入，这里把顺序拆开，先看规则，再决定是否正式导入。',
+      desc: '题库页最容易让新老师紧张的是批量导入，这里把顺序拆开，先上传文件，再看系统整理结果。',
       note: '页面说明和导入入口在当前页顶部，题目、试卷和导入记录在下方三块列表中分别维护。',
-      checklist: ['先确认题库页说明', '再预览 CSV 导入', '最后检查题目、试卷和导入记录'],
+      checklist: ['先确认题库页说明', '再上传题库文件', '最后检查题目、试卷和导入记录'],
       cards: [
         {
           step: '第 1 步',
@@ -4351,7 +4568,7 @@ function getViewWorkbenchGuide(view, data = {}) {
         },
         {
           step: '第 2 步',
-          title: 'CSV 模拟题导入',
+          title: '题库文件导入',
           desc: '先预览再导入，确认可导入行数和错误行后再提交。',
           meta: '预览校验 / 错误行 / 套卷归档',
           actionLabel: '打开导入工具',
@@ -4513,24 +4730,17 @@ function renderTeacherWorkbenchGuide(view, data = {}) {
   return `<article class="panel teacher-guide-panel workspace-panel-enter" style="--enter-delay: 80ms;">
     <div class="teacher-guide-head">
       <div>
-        <span class="teacher-guide-badge">新手老师友好工作台</span>
         <h3>${escapeHtml(guide.title)}</h3>
-        <p>${escapeHtml(guide.desc)}</p>
       </div>
-      <div class="teacher-guide-note">${escapeHtml(guide.note || '按顺序修改会更稳，也更不容易漏掉关键内容。')}</div>
     </div>
     <div class="teacher-guide-grid">
       ${guide.cards.map((card, index) => `<article class="teacher-guide-card workspace-enter" style="--enter-delay: ${100 + index * 22}ms;">
         <span class="teacher-guide-step">${escapeHtml(card.step || `步骤 ${index + 1}`)}</span>
         <strong>${escapeHtml(card.title)}</strong>
-        <p>${escapeHtml(card.desc)}</p>
         <div class="teacher-guide-meta">${escapeHtml(card.meta || '点击继续')}</div>
         ${renderWorkbenchCardAction(card)}
       </article>`).join('')}
     </div>
-    ${guide.checklist?.length ? `<div class="teacher-guide-checklist">
-      ${guide.checklist.map((item) => `<span class="teacher-guide-check">${escapeHtml(item)}</span>`).join('')}
-    </div>` : ''}
   </article>`;
 }
 
@@ -4653,8 +4863,6 @@ function renderCollectionWorkbenchGuide(collectionKey, items = []) {
   return `<div class="collection-guide-strip workspace-enter" style="--enter-delay: 30ms;">
     <div class="collection-guide-head">
       <strong>${escapeHtml(guide.title)}</strong>
-      <span>${escapeHtml(guide.desc)}</span>
-      <em>${escapeHtml(guide.note || '')}</em>
     </div>
     <div class="collection-guide-grid">
       ${guide.cards.map((card) => `<div class="collection-guide-card">
@@ -4668,11 +4876,14 @@ function renderCollectionWorkbenchGuide(collectionKey, items = []) {
 function renderQuestionBankPagePanel(view, page) {
   if (!view.pageKey || !page) return '';
 
-  const ui = getViewUi();
+  const ui = getQuestionBankWorkspaceUi();
   const rows = getPageSectionRows(view.pageKey, page);
   const importUi = getQuestionBankImportUi();
   const preview = importUi.preview;
   const lastSummary = importUi.lastSummary;
+  const directionMeta = getQuestionBankDirectionMeta(ui.questionDirection);
+  const stats = getQuestionBankStats(state.currentData?.collections || {}, directionMeta.key);
+  const guide = QUESTION_BANK_IMPORT_GUIDES[ui.questionImportGuide] || QUESTION_BANK_IMPORT_GUIDES.excel;
   const activeSectionId =
     Object.entries(ui.openEditors || {}).find(([key, open]) => open && key.startsWith(`page:${view.pageKey}:section:`))?.[0]?.split(':').pop() ||
     ui.selectedIds[`page-section:${view.pageKey}`] ||
@@ -4681,48 +4892,135 @@ function renderQuestionBankPagePanel(view, page) {
 
   return `<section class="collection-section workspace-motion-scope" id="cms-section-questionBankPage">
     <div class="table-layout table-layout-single">
-      <article class="panel table-panel table-panel-focus workspace-panel-enter">
+      <article class="panel table-panel table-panel-focus workspace-panel-enter question-bank-workbench-panel">
         <div class="panel-head workspace-enter" style="--enter-delay: 0ms;">
           <div>
-            <h3>${escapeHtml(`${view.pageLabel || view.title}摘要`)}</h3>
-            <p>主控区只保留简洁 row，先看入口摘要，再点开对应二级字段表单。</p>
+            <h3>${escapeHtml(directionMeta.heroTitle)}</h3>
+          </div>
+          <div class="panel-actions">
+            <button class="system-action" type="button" data-action="reload-view">刷新题库</button>
+            <button class="system-action" type="button" data-action="open-page-section-editor" data-page-key="${escapeHtml(view.pageKey)}" data-section-id="${escapeHtml(activeSectionId || rows[0]?.id || '')}">编辑入口文案</button>
           </div>
         </div>
-        <div class="workspace-compact-summary workspace-enter" style="--enter-delay: 20ms;">
-          <strong>${escapeHtml(activeSectionId ? `当前焦点：${rows.find((item) => item.id === activeSectionId)?.title || '题库配置'}` : '题库配置总览')}</strong>
-          <span>${escapeHtml(`当前整理成 ${rows.length} 条配置 row，点击任一 row 直接进入编辑。`)}</span>
-          <em>${escapeHtml(`页面字段 ${Object.keys(page || {}).length} 个`)}</em>
+        <div class="question-bank-direction-bar workspace-enter" style="--enter-delay: 20ms;">
+          <div class="question-bank-direction-switch">
+            ${QUESTION_BANK_DIRECTIONS.map((item) => `<button class="segment${directionMeta.key === item.key ? ' active' : ''}" type="button" data-action="set-question-bank-direction" data-direction-key="${escapeHtml(item.key)}">${escapeHtml(item.label)}</button>`).join('')}
+          </div>
+          <div class="question-bank-direction-copy">
+            <strong>${escapeHtml(directionMeta.summary)}</strong>
+            <span>${escapeHtml('主控区先做导入清洗，再到下方题目、套卷和导入记录复查。')}</span>
+          </div>
         </div>
-        <div class="record-list compact-list workspace-enter" style="--enter-delay: 30ms;">
-          ${rows.map((row, index) => `<button class="record-row workspace-row-enter${row.id === activeSectionId ? ' active' : ''}" style="--enter-delay: ${40 + index * 10}ms;" type="button" data-action="open-page-section-editor" data-page-key="${escapeHtml(view.pageKey)}" data-section-id="${escapeHtml(row.id)}">
-            <span class="record-row-main">
-              <strong class="record-row-title">${escapeHtml(row.title)}</strong>
-              <span class="record-row-meta">${escapeHtml(row.desc || '待完善')}</span>
-            </span>
-            <span class="record-pill">${escapeHtml(row.meta || '点击编辑')}</span>
-          </button>`).join('')}
+        <div class="question-bank-stat-grid workspace-enter" style="--enter-delay: 36ms;">
+          <article class="question-bank-stat-card">
+            <span>题目总数</span>
+            <strong>${escapeHtml(String(stats.questionCount))}</strong>
+            <em>${escapeHtml(`${stats.publishedQuestionCount} 条已发布`)}</em>
+          </article>
+          <article class="question-bank-stat-card">
+            <span>套卷数量</span>
+            <strong>${escapeHtml(String(stats.paperCount))}</strong>
+            <em>${escapeHtml(`当前方向 ${directionMeta.shortLabel}`)}</em>
+          </article>
+          <article class="question-bank-stat-card">
+            <span>导入记录</span>
+            <strong>${escapeHtml(String(stats.importCount))}</strong>
+            <em>${escapeHtml(`${stats.draftImportCount} 条待整理`)}</em>
+          </article>
+          <article class="question-bank-stat-card">
+            <span>入口文案区</span>
+            <strong>${escapeHtml(String(rows.length))}</strong>
+            <em>${escapeHtml(activeSectionId ? `当前焦点 ${rows.find((item) => item.id === activeSectionId)?.title || '题库配置'}` : '题库配置')}</em>
+          </article>
         </div>
-        <div class="workspace-compact-summary workspace-enter question-bank-toolkit-summary" style="--enter-delay: 80ms;">
-          <strong>模拟题 CSV 导入</strong>
-          <span>按约定字段上传模拟题题目，系统会同步校验并更新对应套卷，不影响每日一题固定题源。</span>
-          <em>${escapeHtml(preview
-            ? `${preview.fileName || '当前文件'} · ${preview.validCount}/${preview.totalRows} 行可导入`
-            : lastSummary
-              ? `上次导入 ${lastSummary.importedCount || 0} 题，联动 ${lastSummary.paperCount || 0} 套题卷`
-              : '支持按 questionId 覆盖更新，并按 paperId 自动归档到套卷')}</em>
+        <div class="question-bank-workbench-grid workspace-enter" style="--enter-delay: 56ms;">
+          <article class="question-bank-hub-card question-bank-hub-card-highlight">
+            <div class="question-bank-hub-head">
+              <div>
+                <strong>导入与清洗</strong>
+                <span>${escapeHtml(preview
+                  ? `${preview.fileName || '当前文件'} 已完成预览`
+                  : lastSummary
+                    ? `上次导入 ${lastSummary.importedCount || 0} 题，联动 ${lastSummary.paperCount || 0} 套题卷`
+                    : '先预览，再导入，最后再复查题目归档')}</span>
+              </div>
+              <button class="system-action" type="button" data-action="open-question-bank-import">${preview ? '查看预览' : '开始导入'}</button>
+            </div>
+            <div class="question-bank-guide-tabs">
+              ${Object.entries(QUESTION_BANK_IMPORT_GUIDES).map(([key, item]) => `<button class="question-bank-guide-tab${ui.questionImportGuide === key ? ' active' : ''}" type="button" data-action="set-question-bank-import-guide" data-guide-key="${escapeHtml(key)}">${escapeHtml(item.label)}</button>`).join('')}
+            </div>
+            <div class="question-bank-guide-panel">
+              <strong>${escapeHtml(guide.label)}</strong>
+              <span>${escapeHtml(guide.hint)}</span>
+              <pre>${escapeHtml(guide.sample)}</pre>
+            </div>
+            <div class="question-bank-action-row">
+              <button class="system-action" type="button" data-action="open-question-bank-import">上传题库文件</button>
+              <button class="system-action" type="button" data-action="new-item" data-collection-key="questionImports">新建清洗记录</button>
+            </div>
+          </article>
+          <article class="question-bank-hub-card">
+            <div class="question-bank-hub-head">
+              <div>
+                <strong>入口文案与模块承接</strong>
+                <span>每日一题、模拟题、错题本三块入口文案集中在这里收口。</span>
+              </div>
+            </div>
+            <div class="record-list compact-list question-bank-config-list">
+              ${rows.map((row, index) => `<button class="record-row workspace-row-enter${row.id === activeSectionId ? ' active' : ''}" style="--enter-delay: ${70 + index * 10}ms;" type="button" data-action="open-page-section-editor" data-page-key="${escapeHtml(view.pageKey)}" data-section-id="${escapeHtml(row.id)}">
+                <span class="record-row-main">
+                  <strong class="record-row-title">${escapeHtml(row.title)}</strong>
+                  <span class="record-row-meta">${escapeHtml(row.desc || '待完善')}</span>
+                </span>
+                <span class="record-pill">${escapeHtml(row.meta || '点击编辑')}</span>
+              </button>`).join('')}
+            </div>
+          </article>
+          <article class="question-bank-hub-card">
+            <div class="question-bank-hub-head">
+              <div>
+                <strong>当前导入状态</strong>
+                <span>${escapeHtml(preview
+                  ? `${preview.totalRows || 0} 行中 ${preview.validCount || 0} 行可导入`
+                  : '还没有待导入文件时，可以先整理题目、套卷或导入记录。')}</span>
+              </div>
+            </div>
+            <div class="question-bank-status-stack">
+              <div class="workspace-compact-summary question-bank-toolkit-summary">
+                <strong>${escapeHtml(preview ? (preview.fileName || '当前文件') : '等待上传题库文件')}</strong>
+                <span>${escapeHtml(preview ? `${preview.validCount}/${preview.totalRows} 行可导入` : '系统会自动识别题型、方向和试卷归属')}</span>
+                <em>${escapeHtml(preview
+                  ? (preview.invalidCount ? `仍有 ${preview.invalidCount} 行待修正` : '当前预览通过，可直接导入')
+                  : lastSummary
+                    ? `上次导入 ${lastSummary.importedCount || 0} 题`
+                    : '支持 Word、PDF、Excel、文本和 JSON')}</em>
+              </div>
+              <div class="question-bank-inline-metrics">
+                <span class="meta-chip">方向 ${escapeHtml(directionMeta.shortLabel)}</span>
+                <span class="meta-chip">${escapeHtml(preview?.sourceFormat || '自动识别格式')}</span>
+                <span class="meta-chip${preview?.invalidCount ? ' danger' : ' success'}">${escapeHtml(preview ? `待修正 ${preview.invalidCount || 0}` : '未预览')}</span>
+              </div>
+            </div>
+          </article>
+          <article class="question-bank-hub-card">
+            <div class="question-bank-hub-head">
+              <div>
+                <strong>复查入口</strong>
+                <span>题库完成清洗后，顺着下面三块列表往下查就行。</span>
+              </div>
+            </div>
+            <div class="question-bank-review-links">
+              <a class="teacher-guide-link" href="#cms-section-medicalQuestions">查看题目列表</a>
+              <a class="teacher-guide-link" href="#cms-section-pastPapers">查看套卷列表</a>
+              <a class="teacher-guide-link" href="#cms-section-questionImports">查看导入记录</a>
+            </div>
+            <div class="question-bank-action-row">
+              <button class="system-action" type="button" data-action="new-item" data-collection-key="medicalQuestions">新建题目</button>
+              <button class="system-action" type="button" data-action="new-item" data-collection-key="pastPapers">新建套卷</button>
+            </div>
+          </article>
         </div>
-        <div class="record-list compact-list workspace-enter question-bank-toolkit-list" style="--enter-delay: 100ms;">
-          <button class="record-row workspace-row-enter question-bank-import-row${ui.openEditors.questionBankCsvImport ? ' active' : ''}" style="--enter-delay: 110ms;" type="button" data-action="open-question-bank-import">
-            <span class="record-row-main">
-              <strong class="record-row-title">CSV 模拟题导入</strong>
-              <span class="record-row-meta">${escapeHtml(preview
-                ? `已载入 ${preview.fileName || 'CSV 文件'}，${preview.invalidCount ? `还有 ${preview.invalidCount} 行待修正` : '校验通过，可直接导入'}`
-                : '上传 questionId / paperId / paperTitle / stem... 这套字段，系统会自动识别并预览。')}</span>
-            </span>
-            <span class="record-pill">${escapeHtml(preview ? '查看预览' : '上传 CSV')}</span>
-          </button>
-        </div>
-        <input class="question-bank-file-input" type="file" accept=".csv,text/csv" data-question-bank-csv-input hidden />
+        <input class="question-bank-file-input" type="file" accept="${escapeHtml(QUESTION_BANK_UPLOAD_ACCEPT)}" data-question-bank-file-input hidden />
       </article>
       ${renderQuestionBankImportOverlay()}
       ${renderPageSectionOverlay(view.pageKey, view.pageLabel, page, rows)}
@@ -4731,60 +5029,62 @@ function renderQuestionBankPagePanel(view, page) {
 }
 
 function renderQuestionBankImportOverlay() {
-  const ui = getViewUi('questionBank');
+  const ui = getQuestionBankWorkspaceUi();
   if (!ui.openEditors.questionBankCsvImport) {
     return '';
   }
 
   const importUi = getQuestionBankImportUi();
   const preview = importUi.preview;
+  const directionMeta = getQuestionBankDirectionMeta(ui.questionDirection);
+  const guide = QUESTION_BANK_IMPORT_GUIDES[ui.questionImportGuide] || QUESTION_BANK_IMPORT_GUIDES.excel;
   const canCommit = Boolean(preview && Number(preview.validCount || 0) > 0 && Number(preview.invalidCount || 0) === 0 && !importUi.isSubmitting);
   const summaryText = preview
-    ? `${preview.fileName || '当前 CSV'} 共 ${preview.totalRows} 行，${preview.validCount} 行可导入，${preview.invalidCount} 行待修正。`
-    : '先选择 CSV 文件，系统会先校验字段、答案格式、题号重复与试卷归属，再允许导入。';
+    ? `${preview.fileName || '当前文件'} 共 ${preview.totalRows} 行，${preview.validCount} 行可导入，${preview.invalidCount} 行待修正。`
+    : `先选择 ${directionMeta.shortLabel}题库文件，系统会自动识别内容并整理成可导入题库。`;
   const latestText = importUi.lastSummary
     ? `上次导入 ${importUi.lastSummary.importedCount || 0} 题，新增 ${importUi.lastSummary.createdCount || 0} 题，更新 ${importUi.lastSummary.updatedCount || 0} 题；联动 ${importUi.lastSummary.paperCount || 0} 套题卷。`
-    : '当前支持 questionId 覆盖更新，并按 paperId 自动同步模拟题套卷。';
+    : '系统会自动覆盖同题号内容，并按试卷编号同步整理套卷。';
 
   return `<div class="editor-overlay is-visible directions-editor-overlay question-bank-import-overlay" data-editor-question-bank-import="true">
     <button class="editor-overlay-backdrop" type="button" aria-label="关闭导入弹层" data-action="close-question-bank-import"></button>
     <article class="panel editor-panel editor-modal-shell editor-modal-shell-directions directions-enter-modal">
       <div class="panel-head editor-modal-head directions-enter-modal-item" style="--enter-delay: 0ms;">
         <div>
-          <h3>CSV 模拟题导入</h3>
-          <p>先按标准表头上传模拟题题目，系统会先预览，再同步到对应套卷。</p>
+          <h3>题库文件导入</h3>
+          <p>上传老师手上的题目文件，系统会先识别、整理，再同步到题目和套卷。</p>
         </div>
         <div class="panel-actions">
-          <button class="system-action" type="button" data-action="pick-question-bank-import-file">${preview ? '重新选择 CSV' : '选择 CSV'}</button>
+          <button class="system-action" type="button" data-action="pick-question-bank-import-file">${preview ? '重新选择文件' : '选择文件'}</button>
           <button class="topbar-icon-button editor-close-button" type="button" aria-label="关闭导入弹层" data-action="close-question-bank-import">${icon('close')}</button>
         </div>
       </div>
       <div class="editor-modal-body">
         <div class="editor-meta directions-enter-modal-item" style="--enter-delay: 20ms;">
-          <span class="meta-chip">方向 medical</span>
-          <span class="meta-chip">表头 ${escapeHtml(String(QUESTION_BANK_CSV_HEADERS.length))} 列</span>
+          <span class="meta-chip">方向 ${escapeHtml(directionMeta.shortLabel)}</span>
+          <span class="meta-chip">${escapeHtml(preview?.sourceFormat || '自动识别格式')}</span>
           <span class="meta-chip">${escapeHtml(latestText)}</span>
         </div>
         <div class="drawer-focus-bar directions-enter-modal-item" style="--enter-delay: 40ms;">
-          <strong>${escapeHtml(preview ? (preview.fileName || '当前文件') : '等待上传 CSV')}</strong>
+          <strong>${escapeHtml(preview ? (preview.fileName || '当前文件') : '等待上传题库文件')}</strong>
           <span>${escapeHtml(summaryText)}</span>
         </div>
         <div class="question-bank-import-stack directions-enter-modal-item" style="--enter-delay: 60ms;">
           <article class="question-bank-import-card">
             <div class="question-bank-import-head">
               <div>
-                <strong>字段约束</strong>
-                <span>表头请严格使用下面这一行，paperTitle 和 paperDescription 可选，但建议一起维护。</span>
+                <strong>推荐整理方式</strong>
+                <span>支持 Word、PDF、Excel、纯文本和 JSON。系统会自动识别题目、选项、答案和解析。</span>
               </div>
-              <button class="system-action" type="button" data-action="pick-question-bank-import-file">上传 CSV</button>
+              <button class="system-action" type="button" data-action="pick-question-bank-import-file">上传文件</button>
             </div>
-            <pre class="question-bank-import-code">${escapeHtml(QUESTION_BANK_CSV_HEADERS.join(','))}</pre>
+            <pre class="question-bank-import-code">${escapeHtml(guide.sample)}</pre>
             <div class="question-bank-import-tips">
-              <span>单选答案示例：A</span>
-              <span>多选答案示例：A|C|D</span>
-              <span>判断答案示例：T / F</span>
-              <span>答案可留空，但 status 请用 draft</span>
-              <span>同一 paperId 会自动归并成一套题卷</span>
+              <span>题目内容、选项、答案、解析越完整，导入越稳</span>
+              <span>系统会自动识别医护 / 高数方向</span>
+              <span>同一试卷会自动整理成一套题卷</span>
+              <span>没有题号时系统会自动补编号</span>
+              <span>文字版 PDF 与 Word 文档识别效果最好</span>
             </div>
           </article>
           ${preview ? `<article class="question-bank-import-card">
@@ -4804,7 +5104,7 @@ function renderQuestionBankImportOverlay() {
                 <strong>第 ${escapeHtml(String(error.lineNumber || '-'))} 行</strong>
                 <span>${escapeHtml(error.message || '格式错误')}</span>
               </div>`).join('')}
-            </div>` : '<div class="empty-state compact">当前 CSV 没有发现格式错误，可以直接导入。</div>'}
+            </div>` : '<div class="empty-state compact">当前文件没有发现格式错误，可以直接导入。</div>'}
             ${preview.previewRows?.length ? `<div class="question-bank-preview-table">
               <table class="data-table data-table-compact">
                 <thead>
@@ -4830,11 +5130,11 @@ function renderQuestionBankImportOverlay() {
               </table>
             </div>` : ''}
           </article>` : `<article class="question-bank-import-card question-bank-import-empty">
-            <div class="empty-state">选择 CSV 后，这里会显示导入总量、错误行和题目预览。</div>
+            <div class="empty-state">选择文件后，这里会显示导入总量、错误行和题目预览。</div>
           </article>`}
         </div>
         <div class="editor-actions directions-enter-modal-item" style="--enter-delay: 80ms;">
-          <button class="system-action" type="button" data-action="pick-question-bank-import-file">${preview ? '更换文件' : '选择 CSV'}</button>
+          <button class="system-action" type="button" data-action="pick-question-bank-import-file">${preview ? '更换文件' : '选择文件'}</button>
           <button class="system-action" type="button" data-action="clear-question-bank-import">清空预览</button>
           <button class="system-action${canCommit ? '' : ' is-disabled'}" type="button" data-action="commit-question-bank-import" ${canCommit ? '' : 'disabled'}>
             ${importUi.isSubmitting ? '导入中...' : '确认导入'}
@@ -4858,7 +5158,6 @@ function renderPageWorkspace(view, data) {
       <div class="panel-head workspace-enter" style="--enter-delay: 0ms;">
         <div>
           <h3>${escapeHtml(view.title)}</h3>
-          <p>${escapeHtml('页面配置拆成 row 工作区，先看每个区块摘要，再点开对应浮层编辑。')}</p>
         </div>
         <div class="panel-actions">
           <button class="system-action" type="button" data-action="reload-view">刷新模块</button>
@@ -4874,12 +5173,11 @@ function renderPageWorkspace(view, data) {
           <div class="panel-head workspace-enter" style="--enter-delay: 60ms;">
             <div>
               <h3>${escapeHtml(`${view.pageLabel || view.title}工作区`)}</h3>
-              <p>主区先按前端区块列出摘要，你可以直接按页面从上到下定位并进入真实生效表单。</p>
             </div>
           </div>
           <div class="workspace-compact-summary workspace-enter" style="--enter-delay: 120ms;">
             <strong>${escapeHtml(selectedSectionId ? `当前焦点：${rows.find((item) => item.id === selectedSectionId)?.title || view.pageLabel || '页面配置'}` : `${view.pageLabel || '页面配置'}总览`)}</strong>
-            <span>${escapeHtml(`共 ${rows.length} 个核心区块，字段名称和前端展示位置已统一，建议按从上到下逐块维护。`)}</span>
+            <span>${escapeHtml(`${rows.length} 个核心区块`)}</span>
             <em>${escapeHtml(`当前页面字段 ${Object.keys(data.page || {}).length} 个`)}</em>
           </div>
           ${prefersRowList ? renderPageSectionRowsList(view.pageKey, rows, selectedSectionId, 'open-page-section-editor') : renderPageSectionNavCards(view.pageKey, rows, selectedSectionId, 'open-page-section-editor')}
@@ -5206,7 +5504,6 @@ function renderTableCollectionSection(collectionKey, items) {
         <div class="panel-head workspace-enter" style="--enter-delay: 0ms;">
           <div>
             <h3>${escapeHtml(collectionMeta.label)}</h3>
-            <p>主区只保留 row 和关键列，先找到记录，再去右侧改细节。</p>
           </div>
           <div class="panel-actions">
             <button class="system-action" type="button" data-action="new-item" data-collection-key="${escapeHtml(collectionKey)}">新建</button>
@@ -5240,7 +5537,7 @@ function renderTableCollectionSection(collectionKey, items) {
           </table>
           ${filteredItems.length > visibleItems.length ? `<div class="table-load-more">
             <button class="system-action" type="button" data-action="load-more-rows" data-collection-key="${escapeHtml(collectionKey)}">继续加载 ${escapeHtml(String(Math.min(TABLE_RENDER_BATCH, filteredItems.length - visibleItems.length)))} 条</button>
-            <span>剩余 ${escapeHtml(String(filteredItems.length - visibleItems.length))} 条未渲染，点击后再显示，减少首屏卡顿。</span>
+            <span>剩余 ${escapeHtml(String(filteredItems.length - visibleItems.length))} 条</span>
           </div>` : ''}` : '<div class="empty-state">当前筛选下没有数据，试试切换状态或新建一条内容。</div>'}
         </div>
       </article>
@@ -5276,7 +5573,7 @@ function setStatus(message, tone = 'ok') {
     '删除失败': '删除失败，请稍后重试',
     '登录失败': '登录失败，请检查账号密码是否正确',
     '数据同步失败': '数据同步失败，请检查网络连接',
-    'CSV 预览失败': 'CSV文件预览失败，请检查文件格式',
+    '题库文件预览失败': '题库文件预览失败，请检查文件格式',
     'JSON 更新失败': '数据格式有误，请检查输入内容',
     '操作失败': '操作失败，请稍后重试'
   };
@@ -5341,7 +5638,6 @@ function getEnvironmentBannerInfo(contextLabel = '当前工作区') {
   const modeLabel = health.modeLabel || state.auth?.modeLabel || '待检测';
   const writeTarget = health.writeTarget || 'unavailable';
   const writeTargetLabel = health.writeTargetLabel || (writeTarget === 'cloud' ? '云端 CMS' : writeTarget === 'local' ? '本地 JSON' : '暂停写入');
-  const writeNotice = health.writeNotice || state.auth?.writeNotice || '请先确认当前后台连接的数据源，再开始批量维护。';
   const conflictGuard = Boolean(health.collaboration?.pageConflictProtection);
   const previewUrl = state.meta?.previewUrls?.[0] || health.previewUrls?.[0] || '';
   const envId = health.config?.envId || health.config?.expectedEnvId || '';
@@ -5349,20 +5645,16 @@ function getEnvironmentBannerInfo(contextLabel = '当前工作区') {
 
   let tone = 'warn';
   let title = '当前后台连接状态待确认';
-  let desc = `${contextLabel}的保存路径还需要再确认后再批量操作。`;
 
   if (mode === 'cloud' && writeTarget === 'cloud') {
     tone = 'success';
     title = '当前正在维护云端正式内容';
-    desc = `${contextLabel}的保存会直接写入云端 CMS，小程序联调会读取到最新数据。`;
   } else if (mode === 'local' || writeTarget === 'local') {
     tone = 'warn';
     title = '当前只连接到本地数据文件';
-    desc = `${contextLabel}现在更适合排查和演示，修改不会同步到生产环境。`;
   } else if (mode === 'unavailable' || writeTarget === 'unavailable') {
     tone = 'danger';
     title = '当前后台未连上可写的数据源';
-    desc = `${contextLabel}暂时只能查看，请先补齐云环境配置后再进行正式维护。`;
   }
 
   const chips = [
@@ -5374,7 +5666,7 @@ function getEnvironmentBannerInfo(contextLabel = '当前工作区') {
     previewUrl ? `预览 ${previewUrl.replace(/^https?:\/\//, '')}` : ''
   ].filter(Boolean);
 
-  return { tone, title, desc, writeNotice, chips };
+  return { tone, title, chips };
 }
 
 function renderEnvironmentBanner(contextLabel = '当前工作区') {
@@ -5384,11 +5676,9 @@ function renderEnvironmentBanner(contextLabel = '当前工作区') {
       <div class="environment-banner-icon">${icon('info')}</div>
       <div class="environment-banner-copy">
         <strong>${escapeHtml(info.title)}</strong>
-        <p>${escapeHtml(info.desc)}</p>
       </div>
     </div>
     <div class="environment-banner-side">
-      <div class="environment-banner-note">${escapeHtml(info.writeNotice)}</div>
       <div class="environment-banner-chips">
         ${info.chips.map((chip) => `<span class="meta-chip">${escapeHtml(chip)}</span>`).join('')}
       </div>
@@ -5464,9 +5754,6 @@ function renderOverview(data) {
   const todayUpdates = data.recentUpdates.filter((item) => isToday(item.updatedAt)).length;
   const mediaCount = (data.collections.mediaAssets || []).length;
   const writeSourceLabel = isCloudWriteReady() ? '云端 CMS' : '未就绪';
-  const writeSourceNote = isCloudWriteReady()
-    ? '当前写入已锁定到小程序云端数据库。'
-    : '云环境未完成，当前后台已暂停生产写入。';
   const conflictGuardLabel = state.health?.collaboration?.pageConflictProtection ? '已启用' : '待补齐';
   const operatorName = state.auth?.user?.name || state.auth?.user?.loginAccount || '老师';
   const quickActions = [
@@ -5495,32 +5782,23 @@ function renderOverview(data) {
       icon: '📚'
     }
   ];
-  const onboardingSteps = [
-    '先从首页内容开始，确认欢迎文案和咨询入口',
-    '再进入教材资料，按推荐顺序维护套餐、资料和素材',
-    '最后检查题库与师资，再到小程序里预览'
-  ];
   const kickoffCards = [
     {
       label: '先改首页',
-      desc: '先把首屏文案、常用入口和咨询按钮改清楚，老师最容易先从这里建立维护节奏。',
       meta: '首页内容 / 首屏 / CTA',
       view: 'home'
     },
     {
       label: '再改教材资料',
-      desc: '教材页已经按 5 步任务流整理过，适合新老师顺着页面阅读顺序往下改。',
       meta: '教材资料 / 套系 / 素材',
       view: 'media'
     },
     {
       label: '最后检查师资与题库',
-      desc: '把老师信息、头像和题库导入规则复查一遍，基本就完成了日常维护闭环。',
       meta: '师资团队 / 题库管理',
       view: 'teachers'
     }
   ];
-  const onboardingDismissed = localStorage.getItem('admin-web-onboarding-dismissed') === 'true';
 
   refs.content.innerHTML = `<section class="dashboard-page workspace-motion-scope">
     ${renderEnvironmentBanner('总览工作台')}
@@ -5552,7 +5830,6 @@ function renderOverview(data) {
         <article class="welcome-section workspace-panel-enter" style="--enter-delay: 165ms;">
           <div class="welcome-content">
             <h2>👋 欢迎回来，${escapeHtml(operatorName)}</h2>
-            <p>这里按老师日常维护顺序整理了常用入口，不需要懂代码，也可以顺着流程更新小程序内容。</p>
           </div>
           <div class="welcome-meta">
             <span class="welcome-chip">写入源 ${escapeHtml(writeSourceLabel)}</span>
@@ -5565,7 +5842,6 @@ function renderOverview(data) {
           <div class="panel-head">
             <div>
               <h3>🚀 常用操作</h3>
-              <p>从最常见的维护任务开始，下面的 row 行总览和运行区会继续保留。</p>
             </div>
           </div>
           <div class="action-grid">
@@ -5577,37 +5853,18 @@ function renderOverview(data) {
           </div>
         </article>
       </div>
-
-      ${onboardingDismissed ? '' : `<article class="onboarding-section workspace-panel-enter" style="--enter-delay: 190ms;">
-        <div class="onboarding-content">
-          <h3>🎓 新手引导</h3>
-          <p>第一次接手后台时，可以先按这三步走：</p>
-          <div class="onboarding-steps">
-            ${onboardingSteps.map((step, index) => `<div class="onboarding-step">
-              <span class="step-number">${escapeHtml(['1️⃣', '2️⃣', '3️⃣'][index] || String(index + 1))}</span>
-              <span class="step-text">${escapeHtml(step)}</span>
-            </div>`).join('')}
-          </div>
-          <div class="onboarding-actions">
-            <button class="onboarding-btn primary" type="button" data-action="open-view" data-target-view="home">开始引导</button>
-            <button class="onboarding-btn secondary" type="button" data-action="dismiss-onboarding">跳过</button>
-          </div>
-        </div>
-      </article>`}
     </div>
 
     <article class="panel teacher-kickoff-panel workspace-panel-enter" style="--enter-delay: 210ms;">
       <div class="panel-head">
         <div>
           <h3>新手老师建议顺序</h3>
-          <p>先按页面阅读顺序维护，不用一开始就理解 CMS 字段关系。下面三步是最稳的日常改法。</p>
         </div>
       </div>
       <div class="teacher-kickoff-grid">
         ${kickoffCards.map((card, index) => `<button class="teacher-kickoff-card workspace-enter" style="--enter-delay: ${220 + index * 28}ms;" type="button" data-action="open-view" data-target-view="${escapeHtml(card.view)}">
           <span class="teacher-guide-step">步骤 ${escapeHtml(String(index + 1))}</span>
           <strong>${escapeHtml(card.label)}</strong>
-          <p>${escapeHtml(card.desc)}</p>
           <em>${escapeHtml(card.meta)}</em>
         </button>`).join('')}
       </div>
@@ -5618,7 +5875,6 @@ function renderOverview(data) {
         <div class="panel-head">
           <div>
             <h3>页面配置状态</h3>
-            <p>${escapeHtml(writeSourceNote)} 这里展示各页面最后更新时间。</p>
           </div>
         </div>
         <div class="record-list compact-list overview-list">
@@ -5797,6 +6053,32 @@ function renderTableFirstModule(view, data) {
   </section>`;
 }
 
+function renderQuestionBankModule(view, data) {
+  const direction = getQuestionBankActiveDirection();
+  const scopedCollections = getQuestionBankWorkspaceData(data.collections || {}, direction);
+
+  return `<section class="module-page workspace-motion-scope">
+    ${renderEnvironmentBanner(view.title)}
+    <article class="panel module-hero-panel module-hero-compact workspace-panel-enter">
+      <div class="panel-head workspace-enter" style="--enter-delay: 0ms;">
+        <div>
+          <h3>${escapeHtml(view.title)}</h3>
+        </div>
+        <div class="panel-actions">
+          <button class="system-action" type="button" data-action="reload-view">刷新模块</button>
+        </div>
+      </div>
+      ${renderModuleSummary(view, { ...data, collections: scopedCollections })}
+    </article>
+    ${renderQuestionBankPagePanel(view, data.page)}
+    <div class="question-bank-collection-stack">
+      ${renderCollectionSection('medicalQuestions', scopedCollections.medicalQuestions)}
+      ${renderCollectionSection('pastPapers', scopedCollections.pastPapers)}
+      ${renderCollectionSection('questionImports', scopedCollections.questionImports)}
+    </div>
+  </section>`;
+}
+
 function renderCollectionSection(collectionKey, items) {
   if (TABLE_COLLECTIONS.has(collectionKey)) {
     return renderTableCollectionSection(collectionKey, items);
@@ -5886,6 +6168,12 @@ function renderCollectionEditorOverlay(collectionKey, collectionLabel, selected)
 function renderModule(view, data) {
   if (view.key === 'directions') {
     refs.content.innerHTML = renderDirectionsWorkspace(view, data);
+    syncModalState();
+    return;
+  }
+
+  if (view.key === 'questionBank') {
+    refs.content.innerHTML = renderQuestionBankModule(view, data);
     syncModalState();
     return;
   }
@@ -6158,7 +6446,11 @@ async function deleteCollectionItem(collectionKey, itemId) {
 async function createCollectionDraft(collectionKey) {
   const result = await request(`/api/template/${collectionKey}`);
   const ui = getViewUi();
-  ui.drafts[collectionKey] = normalizeCollectionItem(collectionKey, result.data || {});
+  const nextDraft = normalizeCollectionItem(collectionKey, result.data || {});
+  if (QUESTION_BANK_COLLECTION_SCOPES.has(`collection:${collectionKey}`)) {
+    nextDraft.direction = getQuestionBankActiveDirection();
+  }
+  ui.drafts[collectionKey] = nextDraft;
   delete ui.selectedIds[collectionKey];
 }
 
@@ -6313,7 +6605,7 @@ function bindGlobalActions() {
         if (state.activeView === 'overview') {
           renderOverview(state.currentData);
         }
-        setStatus('已隐藏新手引导，可通过清理浏览器本地存储后恢复。');
+        setStatus('已更新工作台');
         return;
       }
 
@@ -6328,6 +6620,31 @@ function bindGlobalActions() {
         return;
       }
 
+      if (action === 'set-question-bank-direction') {
+        const ui = getQuestionBankWorkspaceUi();
+        const nextDirection = normalizeQuestionBankDirection(button.dataset.directionKey || 'medical');
+        if (ui.questionDirection === nextDirection) {
+          return;
+        }
+        ui.questionDirection = nextDirection;
+        ['medicalQuestions', 'pastPapers', 'questionImports'].forEach((key) => {
+          ui.openEditors[key] = false;
+          delete ui.selectedIds[key];
+          delete ui.drafts[key];
+          resetVisibleRowCount(key);
+        });
+        renderModule(VIEW_CONFIG[state.activeView], state.currentData);
+        setStatus(`已切换到${getQuestionBankDirectionMeta(nextDirection).label}题库工作台`);
+        return;
+      }
+
+      if (action === 'set-question-bank-import-guide') {
+        const ui = getQuestionBankWorkspaceUi();
+        ui.questionImportGuide = button.dataset.guideKey || 'excel';
+        renderModule(VIEW_CONFIG[state.activeView], state.currentData);
+        return;
+      }
+
       if (action === 'close-question-bank-import') {
         const ui = getViewUi('questionBank');
         ui.openEditors.questionBankCsvImport = false;
@@ -6336,9 +6653,9 @@ function bindGlobalActions() {
       }
 
       if (action === 'pick-question-bank-import-file') {
-        const input = refs.content.querySelector('[data-question-bank-csv-input]');
+        const input = refs.content.querySelector('[data-question-bank-file-input]');
         if (!input) {
-          throw new Error('未找到 CSV 上传入口，请刷新后重试。');
+          throw new Error('未找到题库文件上传入口，请刷新后重试。');
         }
         input.value = '';
         input.click();
@@ -6348,12 +6665,12 @@ function bindGlobalActions() {
       if (action === 'clear-question-bank-import') {
         resetQuestionBankImportUi();
         renderModule(VIEW_CONFIG[state.activeView], state.currentData);
-        setStatus('已清空当前 CSV 预览。');
+        setStatus('已清空当前题库文件预览。');
         return;
       }
 
       if (action === 'commit-question-bank-import') {
-        await commitQuestionBankCsvImport();
+        await commitQuestionBankImport();
         return;
       }
 
@@ -6600,12 +6917,12 @@ function bindGlobalActions() {
   });
 
   function handleFormMutation(event) {
-    const csvInput = event.target.closest('[data-question-bank-csv-input]');
-    if (csvInput) {
-      const [file] = Array.from(csvInput.files || []);
-      previewQuestionBankCsvFile(file).catch((error) => {
-        setStatus(error.message || 'CSV 预览失败', 'error');
-        window.alert(error.message || 'CSV 预览失败');
+    const fileInput = event.target.closest('[data-question-bank-file-input]');
+    if (fileInput) {
+      const [file] = Array.from(fileInput.files || []);
+      previewQuestionBankImportFile(file).catch((error) => {
+        setStatus(error.message || '题库文件预览失败', 'error');
+        window.alert(error.message || '题库文件预览失败');
       });
       return;
     }
@@ -6783,23 +7100,13 @@ function getHelpContent(viewKey) {
       title: '工作台',
       sections: [
         {
-          title: '🎯 主要功能',
+          title: '工作台',
           content: `
             <ul>
-              <li><strong>数据概览</strong>：查看页面配置、内容条目、媒体资源等统计数据</li>
-              <li><strong>快速操作</strong>：常用功能的快捷入口</li>
-              <li><strong>最近更新</strong>：查看最新的内容更新记录</li>
-              <li><strong>模块健康度</strong>：了解各模块的配置状态</li>
-            </ul>
-          `
-        },
-        {
-          title: '💡 使用建议',
-          content: `
-            <ul>
-              <li>首次使用请先完成新手引导</li>
-              <li>通过快速操作可以快速进入常用功能</li>
-              <li>定期查看最近更新，了解内容变化</li>
+              <li><strong>页面配置</strong>：查看各页面状态与更新时间</li>
+              <li><strong>常用操作</strong>：进入首页、教材、师资和题库</li>
+              <li><strong>最近更新</strong>：查看最新变更记录</li>
+              <li><strong>运行概况</strong>：查看当前系统状态</li>
             </ul>
           `
         }
@@ -6869,20 +7176,20 @@ function getHelpContent(viewKey) {
             <ul>
               <li><strong>题目管理</strong>：创建、编辑和删除题目</li>
               <li><strong>试卷管理</strong>：组织题目成套卷</li>
-              <li><strong>CSV导入</strong>：批量导入题目数据</li>
+              <li><strong>文件导入</strong>：批量导入题目数据</li>
               <li><strong>导入记录</strong>：查看导入历史</li>
             </ul>
           `
         },
         {
-          title: '📤 CSV导入说明',
+          title: '📤 文件导入说明',
           content: `
             <ul>
-              <li>支持的字段：questionId, direction, questionType, stem, optionA-F, answer, explanation, year, paperId, paperTitle, tags, status</li>
+              <li>支持 Word、PDF、Excel、纯文本、JSON 等常见资料格式</li>
               <li>单选答案示例：A</li>
               <li>多选答案示例：A|C|D</li>
               <li>判断答案示例：T / F</li>
-              <li>同一paperId的题目会自动归为一套试卷</li>
+              <li>同一套卷的题目会自动归为一套试卷</li>
             </ul>
           `
         }

@@ -14,7 +14,7 @@ const heroPresentationFallback = {
   chip: '护理 / 助产 / 医护背景同学',
   title: '想冲江苏专转本？',
   highlightTitle: '先判断方向，再安排课程',
-  desc: '新同学先看适合方向和课程安排，在学同学再进入每日一题、模拟题和错题本。',
+  desc: '第一次来先看方向和课程安排，已经开始备考就直接去题库练习，再把错题和签到沉淀到自己的学习档案里。',
   tags: ['92.3% 上岸率', '1:8 小班跟进', '独立校区学习'],
   primaryButton: {
     text: '了解课程安排',
@@ -76,6 +76,7 @@ function normalizeHomeQuickLinks(quickLinks) {
   const labels = normalizedLinks.map((item) => String(item?.label || '').trim());
   const joinedLabels = labels.join('|');
   const legacyLabelSets = [
+    '机构介绍|每日一题|模拟题|错题本',
     '热门方向|每日一题|模拟题|错题本',
     '热门方向|每日一题|历年真题|错题本',
     '机构介绍|开设方向|师资团队|办学成果'
@@ -278,10 +279,10 @@ function getQuickLinkTone(icon, index) {
 }
 
 const HOME_PORTAL_LINKS = [
-  { label: '机构介绍', desc: '看品牌介绍', url: '/pages/about/index', openType: 'navigate', icon: 'building' },
-  { label: '每日一题', desc: '在学每日打卡', url: '/pages/question-bank/daily-question/index', openType: 'navigate', icon: 'daily' },
-  { label: '模拟题', desc: '考前整卷冲刺', url: '/pages/question-bank/past-papers/index', openType: 'navigate', icon: 'paper' },
-  { label: '错题本', desc: '回看薄弱题', url: '/pages/question-bank/wrong-book/index', openType: 'navigate', icon: 'wrongbook' }
+  { label: '方向判断', desc: '先看适合哪条线', url: '/pages/courses/index', openType: 'switchTab', icon: 'compass' },
+  { label: '题库练习', desc: '去做每日一题', url: '/pages/study/index', openType: 'switchTab', icon: 'daily' },
+  { label: '教材资料', desc: '看阶段资料安排', url: '/pages/materials/index', openType: 'navigate', icon: 'paper' },
+  { label: '我的学习', desc: '查看错题和签到', url: '/pages/mine/index', openType: 'switchTab', icon: 'team' }
 ];
 
 function mapHomeDirections(page, allDirections) {
@@ -1493,49 +1494,7 @@ export default function HomePage() {
       </View>
 
       <View style={{ margin: '34rpx 24rpx 0' }}>
-        <View style={{ display: 'flex', justifyContent: 'space-between' }}>
-          {portalQuickLinks.map((item) => (
-            <Navigator
-              key={item.url}
-              url={item.url}
-              openType={item.openType || 'navigate'}
-              hoverClass="none"
-              style={{
-                width: '23.2%',
-                display: 'block'
-              }}
-            >
-              <View
-                style={{
-                  background: 'linear-gradient(180deg, #ffffff 0%, #f7fbff 100%)',
-                  borderRadius: '24rpx',
-                  padding: '20rpx 10rpx 18rpx',
-                  boxShadow: '0 10rpx 18rpx rgba(148,163,184,0.05)',
-                  border: `1rpx solid ${homeTone.accentBorder}`,
-                  minHeight: '160rpx',
-                  boxSizing: 'border-box'
-                }}
-              >
-                <QuickIcon type={item.icon} color={item.accent} background={item.background} />
-                <Text
-                  style={{
-                    display: 'block',
-                    fontSize: ui.type.note,
-                    color: '#0f172a',
-                    fontWeight: 800,
-                    textAlign: 'center'
-                  }}
-                >
-                  {item.label}
-                </Text>
-              </View>
-            </Navigator>
-          ))}
-        </View>
-      </View>
-
-      <View style={{ margin: '40rpx 20rpx 0' }}>
-        <PageSectionTitle lineColor={homeTone.accentLine}>热门方向</PageSectionTitle>
+        <PageSectionTitle lineColor={homeTone.accentLine}>先从这里开始</PageSectionTitle>
         <Text
           style={{
             display: 'block',
@@ -1545,7 +1504,74 @@ export default function HomePage() {
             lineHeight: 1.7
           }}
         >
-          第一次了解专转本，可以先从这两条主线判断自己更适合哪一种备考路径。
+          把首页最常用的四个动作先收在这里，进入后能更快知道下一步先点哪里。
+        </Text>
+        <View style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+          {portalQuickLinks.map((item, index) => (
+            <Navigator
+              key={item.url}
+              url={item.url}
+              openType={item.openType || 'navigate'}
+              hoverClass="none"
+              style={{
+                width: '48.4%',
+                display: 'block',
+                marginBottom: index > 1 ? '0' : '16rpx'
+              }}
+            >
+              <View
+                style={{
+                  background: 'linear-gradient(180deg, #ffffff 0%, #f7fbff 100%)',
+                  borderRadius: '24rpx',
+                  padding: '22rpx 18rpx 20rpx',
+                  boxShadow: '0 10rpx 18rpx rgba(148,163,184,0.05)',
+                  border: `1rpx solid ${homeTone.accentBorder}`,
+                  minHeight: '188rpx',
+                  boxSizing: 'border-box'
+                }}
+              >
+                <QuickIcon type={item.icon} color={item.accent} background={item.background} />
+                <Text
+                  style={{
+                    display: 'block',
+                    fontSize: ui.type.body,
+                    color: '#0f172a',
+                    fontWeight: 800,
+                    textAlign: 'center'
+                  }}
+                >
+                  {item.label}
+                </Text>
+                <Text
+                  style={{
+                    display: 'block',
+                    marginTop: '10rpx',
+                    fontSize: ui.type.note,
+                    color: ui.colors.textMuted,
+                    lineHeight: 1.6,
+                    textAlign: 'center'
+                  }}
+                >
+                  {item.desc}
+                </Text>
+              </View>
+            </Navigator>
+          ))}
+        </View>
+      </View>
+
+      <View style={{ margin: '40rpx 20rpx 0' }}>
+        <PageSectionTitle lineColor={homeTone.accentLine}>先判断方向</PageSectionTitle>
+        <Text
+          style={{
+            display: 'block',
+            margin: '-2rpx 4rpx 18rpx',
+            fontSize: ui.type.note,
+            color: homeTone.note,
+            lineHeight: 1.7
+          }}
+        >
+          首页先把最常见的两条备考线放在这里，先看自己更接近哪一条，再决定课程和练题节奏。
         </Text>
         {directions.map((item, index) => (
           <Navigator
@@ -1826,6 +1852,159 @@ export default function HomePage() {
 
       </View>
 
+      <View style={{ margin: '34rpx 24rpx 0' }}>
+        <View
+          style={{
+            borderRadius: '30rpx',
+            padding: '28rpx 24rpx 26rpx',
+            background: 'linear-gradient(135deg, #0f4c81 0%, #0284c7 100%)',
+            boxShadow: '0 20rpx 36rpx rgba(14,165,233,0.20)',
+            position: 'relative',
+            overflow: 'hidden'
+          }}
+        >
+          <View
+            style={{
+              position: 'absolute',
+              right: '-44rpx',
+              top: '-42rpx',
+              width: '210rpx',
+              height: '210rpx',
+              borderRadius: '999rpx',
+              backgroundColor: 'rgba(125,211,252,0.18)'
+            }}
+          />
+          <View
+            style={{
+              position: 'absolute',
+              left: '-30rpx',
+              bottom: '-68rpx',
+              width: '180rpx',
+              height: '180rpx',
+              borderRadius: '999rpx',
+              backgroundColor: 'rgba(255,255,255,0.06)'
+            }}
+          />
+          <View style={{ position: 'relative', zIndex: 2 }}>
+            <View
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                padding: '10rpx 16rpx',
+                borderRadius: '999rpx',
+                backgroundColor: 'rgba(255,255,255,0.18)',
+                marginBottom: '18rpx'
+              }}
+            >
+              <Text style={{ fontSize: ui.type.note, color: '#e0f2fe', fontWeight: 800 }}>先沟通，再决定怎么学</Text>
+            </View>
+            <Text
+              style={{
+                display: 'block',
+                fontSize: ui.type.section,
+                color: '#ffffff',
+                fontWeight: 900
+              }}
+            >
+              {cta.title}
+            </Text>
+            <Text
+              style={{
+                display: 'block',
+                marginTop: '14rpx',
+                fontSize: ui.type.note,
+                lineHeight: 1.78,
+                color: 'rgba(255,255,255,0.86)'
+              }}
+            >
+              {compactText(cta.desc || '', 72)}
+            </Text>
+            <View
+              style={{
+                marginTop: '20rpx',
+                display: 'flex',
+                flexWrap: 'wrap'
+              }}
+            >
+              {site.address ? (
+                <View
+                  style={{
+                    marginRight: '12rpx',
+                    marginBottom: '12rpx',
+                    padding: '10rpx 14rpx',
+                    borderRadius: '999rpx',
+                    backgroundColor: 'rgba(255,255,255,0.14)',
+                    border: '1rpx solid rgba(255,255,255,0.16)'
+                  }}
+                >
+                  <Text style={{ fontSize: ui.type.note, color: '#ffffff', fontWeight: 700 }}>
+                    {compactText(site.address, 16)}
+                  </Text>
+                </View>
+              ) : null}
+              {site.serviceHours ? (
+                <View
+                  style={{
+                    marginBottom: '12rpx',
+                    padding: '10rpx 14rpx',
+                    borderRadius: '999rpx',
+                    backgroundColor: 'rgba(255,255,255,0.14)',
+                    border: '1rpx solid rgba(255,255,255,0.16)'
+                  }}
+                >
+                  <Text style={{ fontSize: ui.type.note, color: '#ffffff', fontWeight: 700 }}>
+                    咨询时间 {site.serviceHours}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+            <View style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', marginTop: '6rpx' }}>
+              <Navigator
+                url="/pages/courses/index"
+                openType="switchTab"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minWidth: '220rpx',
+                  height: '78rpx',
+                  padding: '0 28rpx',
+                  borderRadius: '999rpx',
+                  background: 'linear-gradient(180deg, #ffffff 0%, #e0f2fe 100%)',
+                  boxShadow: '0 12rpx 24rpx rgba(15,23,42,0.16)',
+                  marginRight: '14rpx',
+                  marginBottom: '10rpx'
+                }}
+              >
+                <Text style={{ fontSize: ui.type.button, color: '#0f4c81', fontWeight: 800 }}>
+                  {cta.buttonText}
+                </Text>
+              </Navigator>
+              <Navigator
+                url="/pages/study/index"
+                openType="switchTab"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minWidth: '196rpx',
+                  height: '78rpx',
+                  padding: '0 28rpx',
+                  borderRadius: '999rpx',
+                  backgroundColor: 'rgba(255,255,255,0.14)',
+                  border: '1rpx solid rgba(255,255,255,0.18)',
+                  marginBottom: '10rpx'
+                }}
+              >
+                <Text style={{ fontSize: ui.type.button, color: '#ffffff', fontWeight: 800 }}>
+                  直接去练题
+                </Text>
+              </Navigator>
+            </View>
+          </View>
+        </View>
+      </View>
+
       <View style={{ margin: '36rpx 24rpx 0' }}>
         <PageSectionTitle lineColor={homeTone.accentLine}>学习支持</PageSectionTitle>
         <Text
@@ -1837,7 +2016,7 @@ export default function HomePage() {
             lineHeight: 1.7
           }}
         >
-          新同学第一次来了解时，最需要先确认的，通常不是课表，而是有没有人帮你判断方向、盯住节奏。
+          这部分保留给第一次了解的同学快速判断，不需要每项都细看，只要先知道有人能帮你判断方向、盯住节奏就够了。
         </Text>
         <View>
           {featuredAdvantages.map((item, index) => {
@@ -1987,135 +2166,6 @@ export default function HomePage() {
               </View>
             </View>
           )})}
-        </View>
-      </View>
-
-      <View style={{ margin: '34rpx 24rpx 0' }}>
-        <View
-          style={{
-            borderRadius: '30rpx',
-            padding: '28rpx 24rpx 26rpx',
-            background: 'linear-gradient(135deg, #0f4c81 0%, #0284c7 100%)',
-            boxShadow: '0 20rpx 36rpx rgba(14,165,233,0.20)',
-            position: 'relative',
-            overflow: 'hidden'
-          }}
-        >
-          <View
-            style={{
-              position: 'absolute',
-              right: '-44rpx',
-              top: '-42rpx',
-              width: '210rpx',
-              height: '210rpx',
-              borderRadius: '999rpx',
-              backgroundColor: 'rgba(125,211,252,0.18)'
-            }}
-          />
-          <View
-            style={{
-              position: 'absolute',
-              left: '-30rpx',
-              bottom: '-68rpx',
-              width: '180rpx',
-              height: '180rpx',
-              borderRadius: '999rpx',
-              backgroundColor: 'rgba(255,255,255,0.06)'
-            }}
-          />
-          <View style={{ position: 'relative', zIndex: 2 }}>
-            <View
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                padding: '10rpx 16rpx',
-                borderRadius: '999rpx',
-                backgroundColor: 'rgba(255,255,255,0.18)',
-                marginBottom: '18rpx'
-              }}
-            >
-              <Text style={{ fontSize: ui.type.note, color: '#e0f2fe', fontWeight: 800 }}>先沟通，再决定怎么学</Text>
-            </View>
-            <Text
-              style={{
-                display: 'block',
-                fontSize: ui.type.section,
-                color: '#ffffff',
-                fontWeight: 900
-              }}
-            >
-              {cta.title}
-            </Text>
-            <Text
-              style={{
-                display: 'block',
-                marginTop: '14rpx',
-                fontSize: ui.type.note,
-                lineHeight: 1.78,
-                color: 'rgba(255,255,255,0.86)'
-              }}
-            >
-              {compactText(cta.desc || '', 72)}
-            </Text>
-            <View
-              style={{
-                marginTop: '20rpx',
-                display: 'flex',
-                flexWrap: 'wrap'
-              }}
-            >
-              {site.address ? (
-                <View
-                  style={{
-                    marginRight: '12rpx',
-                    marginBottom: '12rpx',
-                    padding: '10rpx 14rpx',
-                    borderRadius: '999rpx',
-                    backgroundColor: 'rgba(255,255,255,0.14)',
-                    border: '1rpx solid rgba(255,255,255,0.16)'
-                  }}
-                >
-                  <Text style={{ fontSize: ui.type.note, color: '#ffffff', fontWeight: 700 }}>
-                    {compactText(site.address, 16)}
-                  </Text>
-                </View>
-              ) : null}
-              {site.serviceHours ? (
-                <View
-                  style={{
-                    marginBottom: '12rpx',
-                    padding: '10rpx 14rpx',
-                    borderRadius: '999rpx',
-                    backgroundColor: 'rgba(255,255,255,0.14)',
-                    border: '1rpx solid rgba(255,255,255,0.16)'
-                  }}
-                >
-                  <Text style={{ fontSize: ui.type.note, color: '#ffffff', fontWeight: 700 }}>
-                    咨询时间 {site.serviceHours}
-                  </Text>
-                </View>
-              ) : null}
-            </View>
-            <Navigator
-              url="/pages/about/index"
-              openType="navigate"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                minWidth: '220rpx',
-                height: '78rpx',
-                padding: '0 28rpx',
-                borderRadius: '999rpx',
-                background: 'linear-gradient(180deg, #ffffff 0%, #e0f2fe 100%)',
-                boxShadow: '0 12rpx 24rpx rgba(15,23,42,0.16)'
-              }}
-            >
-              <Text style={{ fontSize: ui.type.button, color: '#0f4c81', fontWeight: 800 }}>
-                {cta.buttonText}
-              </Text>
-            </Navigator>
-          </View>
         </View>
       </View>
 

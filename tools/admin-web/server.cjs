@@ -1,5 +1,6 @@
 const http = require('http');
 const crypto = require('crypto');
+const { execFileSync } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -16,6 +17,7 @@ const SESSION_COOKIE_NAME = 'cfqh_admin_session';
 const SESSION_TTL_MS = 1000 * 60 * 60 * 12;
 const DEFAULT_JSON_BODY_LIMIT_BYTES = 5 * 1024 * 1024;
 const CSV_BODY_LIMIT_BYTES = 10 * 1024 * 1024;
+const QUESTION_BANK_FILE_BODY_LIMIT_BYTES = 16 * 1024 * 1024;
 const sessionStore = new Map();
 const ROLE_LABELS = {
   viewer: '查看者',
@@ -973,6 +975,52 @@ const QUESTION_BANK_CSV_HEADERS = [
   'status'
 ];
 
+const QUESTION_BANK_FIELD_ALIASES = {
+  questionId: ['questionid', 'question_id', 'id', '题目编号', '题号', '编号', '题目id', 'id号'],
+  direction: ['direction', 'dir', '方向', '学科', '科目', '分类', '类别'],
+  questionType: ['questiontype', 'question_type', 'type', '题型', '题目类型', '类型'],
+  stem: ['stem', 'question', 'content', '题目', '题干', '内容', '问题', '题目内容'],
+  optionA: ['optiona', 'option_a', 'a', '选项a', '选项1', '第一项'],
+  optionB: ['optionb', 'option_b', 'b', '选项b', '选项2', '第二项'],
+  optionC: ['optionc', 'option_c', 'c', '选项c', '选项3', '第三项'],
+  optionD: ['optiond', 'option_d', 'd', '选项d', '选项4', '第四项'],
+  optionE: ['optione', 'option_e', 'e', '选项e', '选项5', '第五项'],
+  optionF: ['optionf', 'option_f', 'f', '选项f', '选项6', '第六项'],
+  answer: ['answer', 'ans', 'correct', '答案', '正确答案', '标准答案'],
+  explanation: ['explanation', 'explain', 'analysis', '解析', '解答', '答案解析', '题目解析'],
+  year: ['year', '年份', '年', '考试年份'],
+  paperId: ['paperid', 'paper_id', '试卷编号', '试卷id', '套卷编号', '试卷号'],
+  paperTitle: ['papertitle', 'paper_title', '试卷标题', '试卷名称', '套卷名称', '卷名'],
+  paperDescription: ['paperdescription', 'paper_description', '试卷说明', '试卷描述', '套卷说明', '卷说明'],
+  tags: ['tags', 'tag', '标签', '知识点', '考点'],
+  status: ['status', 'state', '状态', '发布状态']
+};
+
+const QUESTION_BANK_ANSWER_ALIASES = {
+  '1': 'A',
+  '2': 'B',
+  '3': 'C',
+  '4': 'D',
+  '5': 'E',
+  '6': 'F',
+  '①': 'A',
+  '②': 'B',
+  '③': 'C',
+  '④': 'D',
+  '⑤': 'E',
+  '⑥': 'F',
+  对: 'T',
+  错: 'F',
+  正确: 'T',
+  错误: 'F'
+};
+
+const QUESTION_BANK_TYPE_ALIASES = {
+  single_choice: ['single_choice', 'single', '单选', '单选题', '选择题'],
+  multiple_choice: ['multiple_choice', 'multiple', '多选', '多选题'],
+  judge: ['judge', 'boolean', '判断', '判断题', '对错题']
+};
+
 const QUESTION_BANK_REQUIRED_HEADERS = [
   'questionId',
   'direction',
@@ -1057,6 +1105,482 @@ function splitPipeValues(value) {
     .filter(Boolean);
 }
 
+function normalizeLooseToken(value = '') {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_\-（）()【】\[\]：:]/g, '');
+}
+
+function getQuestionBankFieldKey(fieldName = '') {
+  const token = normalizeLooseToken(fieldName);
+  if (!token) return '';
+  for (const [field, aliases] of Object.entries(QUESTION_BANK_FIELD_ALIASES)) {
+    if (aliases.some((alias) => normalizeLooseToken(alias) === token)) {
+      return field;
+    }
+  }
+  return '';
+}
+
+function getQuestionBankType(value = '', options = []) {
+  const normalized = normalizeLooseToken(value);
+  if (normalized) {
+    for (const [type, aliases] of Object.entries(QUESTION_BANK_TYPE_ALIASES)) {
+      if (aliases.some((alias) => normalizeLooseToken(alias) === normalized)) {
+        return type;
+      }
+    }
+  }
+  if (!options.length) {
+    return 'judge';
+  }
+  return 'single_choice';
+}
+
+function normalizeQuestionBankAnswer(value = '') {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+
+  const mappedDirect = QUESTION_BANK_ANSWER_ALIASES[raw];
+  if (mappedDirect) {
+    return mappedDirect;
+  }
+
+  const compact = raw
+    .replace(/[，、;；\/\\]/g, '|')
+    .replace(/\s+/g, '')
+    .toUpperCase();
+
+  if (/^[A-F|]+$/.test(compact)) {
+    if (compact.includes('|')) {
+      return compact;
+    }
+    if (compact.length > 1) {
+      return compact.split('').join('|');
+    }
+    return compact;
+  }
+
+  const normalized = compact
+    .split('|')
+    .map((item) => QUESTION_BANK_ANSWER_ALIASES[item] || item)
+    .filter(Boolean)
+    .join('|');
+
+  return normalized || compact;
+}
+
+function normalizeQuestionBankStatus(value = '', hasAnswer = false) {
+  const raw = String(value || '').trim().toLowerCase();
+  if (['published', 'publish', 'online', '上线', '发布'].includes(raw)) {
+    return 'published';
+  }
+  if (['draft', '草稿', '待整理', '待发布'].includes(raw)) {
+    return 'draft';
+  }
+  return hasAnswer ? 'published' : 'draft';
+}
+
+function splitQuestionBankTags(value = '') {
+  return String(value || '')
+    .split(/[\n,，|/、；;]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function escapeCsvCell(value = '') {
+  const text = String(value ?? '');
+  if (!/[",\n]/.test(text)) {
+    return text;
+  }
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function buildQuestionBankCsvText(records = []) {
+  const lines = [QUESTION_BANK_CSV_HEADERS.join(',')];
+  records.forEach((record) => {
+    const row = QUESTION_BANK_CSV_HEADERS.map((header) => {
+      const value = header === 'tags'
+        ? (Array.isArray(record.tags) ? record.tags.join('|') : record.tags || '')
+        : record[header] ?? '';
+      return escapeCsvCell(value);
+    });
+    lines.push(row.join(','));
+  });
+  return lines.join('\n');
+}
+
+function detectQuestionBankImportFormat(fileName = '') {
+  const ext = path.extname(String(fileName || '')).toLowerCase();
+  if (ext === '.csv') return 'csv';
+  if (ext === '.json') return 'json';
+  if (ext === '.txt') return 'text';
+  if (ext === '.doc' || ext === '.docx') return 'word';
+  if (ext === '.pdf') return 'pdf';
+  if (ext === '.xlsx') return 'excel';
+  if (ext === '.xls') return 'excel_legacy';
+  return 'text';
+}
+
+function getQuestionBankFormatLabel(format = '') {
+  if (format === 'csv') return 'CSV';
+  if (format === 'json') return 'JSON';
+  if (format === 'text') return '纯文本';
+  if (format === 'word') return 'Word';
+  if (format === 'pdf') return 'PDF';
+  if (format === 'excel' || format === 'excel_legacy') return 'Excel';
+  return '文本';
+}
+
+function withTempFile(fileName = 'import.tmp', buffer = Buffer.alloc(0), handler) {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cfqh-qbank-'));
+  const safeName = path.basename(fileName || 'import.tmp');
+  const filePath = path.join(tempDir, safeName);
+  fs.writeFileSync(filePath, buffer);
+  try {
+    return handler(filePath);
+  } finally {
+    try {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    } catch (error) {
+      // Ignore temp cleanup failures.
+    }
+  }
+}
+
+function extractTextWithTextutil(buffer, fileName) {
+  return withTempFile(fileName, buffer, (filePath) => execFileSync('/usr/bin/textutil', [
+    '-convert',
+    'txt',
+    '-stdout',
+    filePath
+  ], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }));
+}
+
+function extractPdfText(buffer, fileName) {
+  return withTempFile(fileName, buffer, (filePath) => {
+    let extracted = '';
+    try {
+      extracted = execFileSync('/usr/bin/mdls', [
+        '-raw',
+        '-name',
+        'kMDItemTextContent',
+        filePath
+      ], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+    } catch (error) {
+      extracted = '';
+    }
+
+    if (extracted && extracted !== '(null)' && extracted.length > 12) {
+      return extracted;
+    }
+
+    try {
+      const fallback = execFileSync('/usr/bin/strings', [
+        '-n',
+        '4',
+        filePath
+      ], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+      if (fallback.trim()) {
+        return fallback;
+      }
+    } catch (error) {
+      // Ignore and throw below.
+    }
+
+    throw new Error('当前 PDF 未提取到可识别文字，请优先上传文字版 PDF、Word 或可复制文本。');
+  });
+}
+
+function parseQuestionBankJson(text = '') {
+  const payload = JSON.parse(String(text || '').trim() || 'null');
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+  if (payload && Array.isArray(payload.questions)) {
+    return payload.questions;
+  }
+  throw new Error('JSON 里没有找到可识别的题目数组。');
+}
+
+function parseQuestionBankPlainText(text = '') {
+  const lines = String(text || '')
+    .replace(/\r/g, '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const questions = [];
+  let current = null;
+
+  const pushCurrent = () => {
+    if (current?.stem) {
+      questions.push(current);
+    }
+  };
+
+  lines.forEach((line, index) => {
+    const isQuestionStart = /^\d+[\.\、)\]]\s*/.test(line);
+    if (isQuestionStart) {
+      pushCurrent();
+      current = {
+        stem: line.replace(/^\d+[\.\、)\]]\s*/, '').trim(),
+        optionA: '',
+        optionB: '',
+        optionC: '',
+        optionD: '',
+        optionE: '',
+        optionF: '',
+        answer: '',
+        explanation: ''
+      };
+      return;
+    }
+
+    if (!current) {
+      current = {
+        stem: index === 0 ? line : '',
+        optionA: '',
+        optionB: '',
+        optionC: '',
+        optionD: '',
+        optionE: '',
+        optionF: '',
+        answer: '',
+        explanation: ''
+      };
+      if (index === 0) {
+        return;
+      }
+    }
+
+    const optionMatch = line.match(/^([A-Fa-f])[\.\、:：)\]]\s*(.+)$/);
+    if (optionMatch) {
+      const label = optionMatch[1].toUpperCase();
+      current[`option${label}`] = optionMatch[2].trim();
+      return;
+    }
+
+    if (/^答案[:：]/.test(line)) {
+      current.answer = line.replace(/^答案[:：]\s*/, '').trim();
+      return;
+    }
+
+    if (/^解析[:：]/.test(line)) {
+      current.explanation = line.replace(/^解析[:：]\s*/, '').trim();
+      return;
+    }
+
+    if (/^年份[:：]/.test(line)) {
+      current.year = line.replace(/^年份[:：]\s*/, '').trim();
+      return;
+    }
+
+    if (/^题型[:：]/.test(line)) {
+      current.questionType = line.replace(/^题型[:：]\s*/, '').trim();
+      return;
+    }
+
+    if (current.explanation) {
+      current.explanation = `${current.explanation}\n${line}`.trim();
+      return;
+    }
+
+    current.stem = `${current.stem}\n${line}`.trim();
+  });
+
+  pushCurrent();
+
+  if (questions.length) {
+    return questions;
+  }
+
+  return String(text || '')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => ({ stem: line }));
+}
+
+function parseQuestionBankXlsx(buffer, fileName) {
+  return withTempFile(fileName, buffer, (filePath) => {
+    const script = `
+import json, sys, zipfile, xml.etree.ElementTree as ET
+ns = {'main': 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
+path = sys.argv[1]
+def col_to_idx(ref):
+    letters = ''.join(ch for ch in ref if ch.isalpha())
+    num = 0
+    for ch in letters:
+        num = num * 26 + (ord(ch.upper()) - 64)
+    return max(num - 1, 0)
+with zipfile.ZipFile(path) as zf:
+    shared = []
+    if 'xl/sharedStrings.xml' in zf.namelist():
+        root = ET.fromstring(zf.read('xl/sharedStrings.xml'))
+        for si in root.findall('main:si', ns):
+            text = ''.join(node.text or '' for node in si.iterfind('.//main:t', ns))
+            shared.append(text)
+    sheet_name = next((name for name in zf.namelist() if name.startswith('xl/worksheets/sheet') and name.endswith('.xml')), None)
+    if not sheet_name:
+        print('[]')
+        sys.exit(0)
+    root = ET.fromstring(zf.read(sheet_name))
+    rows = []
+    for row in root.findall('.//main:sheetData/main:row', ns):
+        cells = []
+        for cell in row.findall('main:c', ns):
+            col_idx = col_to_idx(cell.attrib.get('r', 'A1'))
+            while len(cells) < col_idx:
+                cells.append('')
+            cell_type = cell.attrib.get('t', '')
+            value = ''
+            if cell_type == 'inlineStr':
+                value = ''.join(node.text or '' for node in cell.iterfind('.//main:t', ns))
+            else:
+                value_node = cell.find('main:v', ns)
+                if value_node is not None and value_node.text is not None:
+                    value = value_node.text
+                    if cell_type == 's':
+                        idx = int(value)
+                        value = shared[idx] if 0 <= idx < len(shared) else ''
+            cells.append(value)
+        rows.append(cells)
+    print(json.dumps(rows, ensure_ascii=False))
+`;
+    const raw = execFileSync('python3', ['-c', script, filePath], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe']
+    });
+    const rows = JSON.parse(raw || '[]');
+    if (!Array.isArray(rows) || !rows.length) {
+      throw new Error('Excel 里没有识别到可导入内容。');
+    }
+    const headers = (rows[0] || []).map((item) => String(item || '').trim());
+    return rows.slice(1)
+      .filter((cells) => Array.isArray(cells) && cells.some((value) => String(value || '').trim()))
+      .map((cells) => Object.fromEntries(headers.map((header, index) => [header || `col_${index}`, String(cells[index] || '').trim()])));
+  });
+}
+
+function normalizeQuestionBankRecords(records = [], options = {}) {
+  const preferredDirection = normalizeQuestionBankDirection(options.direction || 'medical');
+  const directionLabel = preferredDirection === 'math' ? '高数' : '医护';
+  const dateCode = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  const baseName = String(options.fileName || '').replace(/\.[^.]+$/, '').replace(/[^\w\u4e00-\u9fa5-]+/g, '_') || `${directionLabel}导入`;
+  const paperId = `${preferredDirection}-${baseName}-${dateCode}`.slice(0, 64);
+  const paperTitle = `${directionLabel}题库导入 ${new Date().toISOString().slice(0, 10)}`;
+
+  const normalized = records.map((row, index) => {
+    const draft = {};
+    Object.entries(row || {}).forEach(([key, value]) => {
+      const field = getQuestionBankFieldKey(key);
+      if (!field) return;
+      draft[field] = String(value ?? '').trim();
+    });
+
+    const optionsList = ['A', 'B', 'C', 'D', 'E', 'F']
+      .map((label) => ({ label, value: String(draft[`option${label}`] || '').trim() }))
+      .filter((item) => item.value);
+    const answer = normalizeQuestionBankAnswer(draft.answer || '');
+    const questionType = getQuestionBankType(draft.questionType || '', optionsList);
+    const direction = normalizeQuestionBankDirection(draft.direction || preferredDirection, preferredDirection);
+    const yearValue = String(draft.year || '').match(/\d{4}/)?.[0] || String(new Date().getFullYear());
+    const generatedQuestionId = `${direction === 'math' ? 'M' : 'YH'}-${dateCode}-${String(index + 1).padStart(3, '0')}`;
+
+    return {
+      questionId: String(draft.questionId || generatedQuestionId).trim(),
+      direction,
+      questionType,
+      stem: String(draft.stem || '').trim(),
+      optionA: draft.optionA || '',
+      optionB: draft.optionB || '',
+      optionC: draft.optionC || '',
+      optionD: draft.optionD || '',
+      optionE: draft.optionE || '',
+      optionF: draft.optionF || '',
+      answer,
+      explanation: String(draft.explanation || '').trim(),
+      year: yearValue,
+      paperId: String(draft.paperId || paperId).trim(),
+      paperTitle: String(draft.paperTitle || paperTitle).trim(),
+      paperDescription: String(draft.paperDescription || `${directionLabel}题库导入自动整理结果`).trim(),
+      tags: splitQuestionBankTags(draft.tags || '').join('|'),
+      status: normalizeQuestionBankStatus(draft.status || '', Boolean(answer))
+    };
+  }).filter((item) => item.stem);
+
+  if (!normalized.length) {
+    throw new Error('上传内容里没有识别到题目，请检查文件是否包含题干、选项或答案。');
+  }
+
+  return normalized;
+}
+
+function convertQuestionBankImportToCsv(payload = {}) {
+  const fileName = String(payload.fileName || '');
+  const format = detectQuestionBankImportFormat(fileName);
+  const preferredDirection = normalizeQuestionBankDirection(payload.direction || 'medical');
+  const textContent = String(payload.textContent || '');
+  const base64 = String(payload.fileContentBase64 || '');
+  let records = [];
+
+  if (format === 'csv') {
+    if (!textContent.trim()) {
+      throw new Error('题库文件内容为空，请重新选择后再试。');
+    }
+    return {
+      format,
+      formatLabel: getQuestionBankFormatLabel(format),
+      csvText: textContent
+    };
+  }
+
+  if (format === 'json') {
+    records = parseQuestionBankJson(textContent);
+  } else if (format === 'text') {
+    records = parseQuestionBankPlainText(textContent);
+  } else if (format === 'word') {
+    const extractedText = extractTextWithTextutil(Buffer.from(base64, 'base64'), fileName);
+    records = parseQuestionBankPlainText(extractedText);
+  } else if (format === 'pdf') {
+    const extractedText = extractPdfText(Buffer.from(base64, 'base64'), fileName);
+    records = parseQuestionBankPlainText(extractedText);
+  } else if (format === 'excel') {
+    records = parseQuestionBankXlsx(Buffer.from(base64, 'base64'), fileName);
+  } else if (format === 'excel_legacy') {
+    throw new Error('旧版 Excel (.xls) 暂未直接支持，请先另存为 .xlsx、Word 或 PDF 后再上传。');
+  } else {
+    records = parseQuestionBankPlainText(textContent);
+  }
+
+  const normalizedRecords = normalizeQuestionBankRecords(records, {
+    direction: preferredDirection,
+    fileName
+  });
+
+  return {
+    format,
+    formatLabel: getQuestionBankFormatLabel(format),
+    csvText: buildQuestionBankCsvText(normalizedRecords)
+  };
+}
+
+function normalizeQuestionBankDirection(value = '', fallback = 'medical') {
+  const raw = String(value || '').trim().toLowerCase();
+  if (!raw) {
+    return fallback;
+  }
+  if (['medical', '医护', '护理', '医学', '综合'].includes(raw)) {
+    return 'medical';
+  }
+  if (['math', '数学', '高数', '高等数学'].includes(raw)) {
+    return 'math';
+  }
+  return fallback;
+}
+
 function buildPaperSummaryFromQuestions(questionRows = []) {
   const paperMap = new Map();
 
@@ -1066,40 +1590,48 @@ function buildPaperSummaryFromQuestions(questionRows = []) {
       return;
     }
 
-    const existing = paperMap.get(paperId) || {
+    const direction = normalizeQuestionBankDirection(question.direction || 'medical');
+    const paperKey = `${direction}:${paperId}`;
+
+    const existing = paperMap.get(paperKey) || {
       paperId,
+      direction,
       title: '',
       description: '',
       year: Number(question.year) || new Date().getFullYear(),
       questionIds: []
     };
 
+    existing.direction = direction;
     existing.title = normalizeCsvCell(question.paperTitle || existing.title);
     existing.description = normalizeCsvCell(question.paperDescription || existing.description);
     existing.year = Math.max(existing.year || 0, Number(question.year) || 0) || new Date().getFullYear();
     existing.questionIds.push(question.questionId);
-    paperMap.set(paperId, existing);
+    paperMap.set(paperKey, existing);
   });
 
   return Array.from(paperMap.values()).map((paper, index) => ({
     ...paper,
-    title: paper.title || `${paper.year} 医护模拟冲刺卷 ${String.fromCharCode(65 + index)}`,
-    description: paper.description || '由 CSV 自动整理，适合按套热身与冲刺练习。',
+    title: paper.title || `${paper.year} ${paper.direction === 'math' ? '高数训练卷' : '医护模拟冲刺卷'} ${String.fromCharCode(65 + index)}`,
+    description: paper.description || (paper.direction === 'math'
+      ? '由系统自动整理，适合按章节、题型与难度快速复查。'
+      : '由系统自动整理，适合按套热身与冲刺练习。'),
     questionIds: Array.from(new Set(paper.questionIds))
   }));
 }
 
-function parseQuestionBankCsv(csvText = '') {
+function parseQuestionBankCsv(csvText = '', options = {}) {
+  const preferredDirection = normalizeQuestionBankDirection(options.direction || 'medical');
   const rows = parseCsv(csvText);
   const headerRow = (rows[0] || []).map((value) => normalizeCsvCell(value));
   const missingHeaders = QUESTION_BANK_REQUIRED_HEADERS.filter((header) => !headerRow.includes(header));
 
   if (!headerRow.length) {
-    throw new Error('CSV 为空，请先填写表头和题目内容');
+    throw new Error('题库内容为空，请先准备题目后再上传');
   }
 
   if (missingHeaders.length) {
-    throw new Error(`CSV 缺少必要字段：${missingHeaders.join('、')}`);
+    throw new Error(`系统整理后的题库字段仍不完整：${missingHeaders.join('、')}`);
   }
 
   const normalizedRows = rows
@@ -1117,7 +1649,7 @@ function parseQuestionBankCsv(csvText = '') {
   for (const { lineNumber, record } of normalizedRows) {
     const rowErrors = [];
     const questionId = normalizeCsvCell(record.questionId);
-    const direction = normalizeCsvCell(record.direction || 'medical') || 'medical';
+    const direction = normalizeQuestionBankDirection(record.direction || preferredDirection, preferredDirection);
     const questionType = normalizeCsvCell(record.questionType);
     const stem = normalizeCsvCell(record.stem);
     const answer = normalizeCsvCell(record.answer).toUpperCase();
@@ -1135,12 +1667,8 @@ function parseQuestionBankCsv(csvText = '') {
       rowErrors.push('questionId 不能为空');
     }
 
-    if (questionId && seenQuestionIds.has(questionId)) {
+    if (questionId && seenQuestionIds.has(`${direction}:${questionId}`)) {
       rowErrors.push('questionId 重复');
-    }
-
-    if (direction !== 'medical') {
-      rowErrors.push('direction 当前只支持 medical');
     }
 
     if (!['single_choice', 'multiple_choice', 'judge'].includes(questionType)) {
@@ -1213,12 +1741,12 @@ function parseQuestionBankCsv(csvText = '') {
       continue;
     }
 
-    seenQuestionIds.add(questionId);
+    seenQuestionIds.add(`${direction}:${questionId}`);
     validRows.push({
       lineNumber,
       question: {
         questionId,
-        direction: 'medical',
+        direction,
         questionType,
         stem,
         options,
@@ -1236,16 +1764,19 @@ function parseQuestionBankCsv(csvText = '') {
 
   return {
     headers: headerRow,
+    direction: preferredDirection,
     totalRows: normalizedRows.length,
     validRows,
     errors
   };
 }
 
-function buildQuestionBankCsvPreview(csvText = '', fileName = '') {
-  const parsed = parseQuestionBankCsv(csvText);
+function buildQuestionBankCsvPreview(csvText = '', fileName = '', direction = 'medical', formatLabel = 'CSV') {
+  const parsed = parseQuestionBankCsv(csvText, { direction });
   return {
     fileName,
+    direction: parsed.direction,
+    sourceFormat: formatLabel,
     expectedHeaders: QUESTION_BANK_CSV_HEADERS,
     totalRows: parsed.totalRows,
     validCount: parsed.validRows.length,
@@ -1264,17 +1795,17 @@ function buildQuestionBankCsvPreview(csvText = '', fileName = '') {
   };
 }
 
-async function importQuestionBankCsv(csvText = '', fileName = '') {
-  const parsed = parseQuestionBankCsv(csvText);
+async function importQuestionBankCsv(csvText = '', fileName = '', direction = 'medical', formatLabel = 'CSV') {
+  const parsed = parseQuestionBankCsv(csvText, { direction });
   if (parsed.errors.length) {
     const firstError = parsed.errors[0];
-    throw new Error(`CSV 校验失败，共 ${parsed.errors.length} 行有问题。第 ${firstError.lineNumber} 行：${firstError.message}`);
+    throw new Error(`${formatLabel} 校验失败，共 ${parsed.errors.length} 行有问题。第 ${firstError.lineNumber} 行：${firstError.message}`);
   }
 
   const existingQuestions = await store.listCollection('medicalQuestions');
   const existingPapers = await store.listCollection('pastPapers');
-  const existingMap = new Map(existingQuestions.map((item) => [item.questionId, item]));
-  const existingPaperMap = new Map(existingPapers.map((item) => [item.paperId, item]));
+  const existingMap = new Map(existingQuestions.map((item) => [`${normalizeQuestionBankDirection(item.direction || 'medical')}:${item.questionId}`, item]));
+  const existingPaperMap = new Map(existingPapers.map((item) => [`${normalizeQuestionBankDirection(item.direction || 'medical')}:${item.paperId}`, item]));
   const maxSort = existingQuestions.reduce((max, item) => Math.max(max, Number(item.sort || 0)), 0);
   const maxPaperSort = existingPapers.reduce((max, item) => Math.max(max, Number(item.sort || 0)), 0);
   let createdCount = 0;
@@ -1285,7 +1816,7 @@ async function importQuestionBankCsv(csvText = '', fileName = '') {
   let nextPaperSort = maxPaperSort + 10;
 
   for (const { question } of parsed.validRows) {
-    const existing = existingMap.get(question.questionId);
+    const existing = existingMap.get(`${normalizeQuestionBankDirection(question.direction || parsed.direction)}:${question.questionId}`);
     const payload = {
       ...question,
       sort: existing?.sort || nextSort
@@ -1304,12 +1835,12 @@ async function importQuestionBankCsv(csvText = '', fileName = '') {
 
   const paperSummaries = buildPaperSummaryFromQuestions(parsed.validRows);
   for (const paper of paperSummaries) {
-    const existing = existingPaperMap.get(paper.paperId);
+    const existing = existingPaperMap.get(`${normalizeQuestionBankDirection(paper.direction || parsed.direction)}:${paper.paperId}`);
     const payload = {
       paperId: paper.paperId,
       title: paper.title,
       year: paper.year,
-      direction: 'medical',
+      direction: normalizeQuestionBankDirection(paper.direction || parsed.direction),
       description: paper.description,
       questionIds: paper.questionIds,
       sort: existing?.sort || nextPaperSort,
@@ -1329,17 +1860,18 @@ async function importQuestionBankCsv(csvText = '', fileName = '') {
 
   const excerpt = csvText.length > 2400 ? `${csvText.slice(0, 2400)}\n...` : csvText;
   await store.createItem('questionImports', {
-    title: fileName || `csv_import_${new Date().toISOString().slice(0, 10)}`,
-    direction: 'medical',
+    title: fileName || `question_import_${new Date().toISOString().slice(0, 10)}`,
+    direction: parsed.direction,
     sourceType: 'file',
     rawText: excerpt,
-    note: `CSV 导入完成：共 ${parsed.totalRows} 行，新增 ${createdCount} 题，更新 ${updatedCount} 题；同步 ${paperSummaries.length} 套模拟卷，新增 ${paperCreatedCount} 套，更新 ${paperUpdatedCount} 套。`,
+    note: `${formatLabel} 导入完成：共 ${parsed.totalRows} 行，新增 ${createdCount} 题，更新 ${updatedCount} 题；同步 ${paperSummaries.length} 套模拟卷，新增 ${paperCreatedCount} 套，更新 ${paperUpdatedCount} 套。`,
     sort: Date.now(),
     status: 'published'
   });
 
   return {
     fileName,
+    direction: parsed.direction,
     totalRows: parsed.totalRows,
     createdCount,
     updatedCount,
@@ -1929,7 +2461,8 @@ async function handleApi(req, res, pathname) {
       config: store.getConfigSummary(),
       limits: {
         defaultJsonMb: DEFAULT_JSON_BODY_LIMIT_BYTES / 1024 / 1024,
-        csvImportMb: CSV_BODY_LIMIT_BYTES / 1024 / 1024
+        csvImportMb: CSV_BODY_LIMIT_BYTES / 1024 / 1024,
+        questionBankFileMb: QUESTION_BANK_FILE_BODY_LIMIT_BYTES / 1024 / 1024
       }
     });
     return;
@@ -2095,27 +2628,43 @@ async function handleApi(req, res, pathname) {
     return;
   }
 
-  if (parts[1] === 'import' && parts[2] === 'question-bank-csv' && req.method === 'POST') {
-    const body = await readBody(req, { limitBytes: CSV_BODY_LIMIT_BYTES });
+  if (parts[1] === 'import' && (parts[2] === 'question-bank-csv' || parts[2] === 'question-bank-file') && req.method === 'POST') {
+    const isGenericFileImport = parts[2] === 'question-bank-file';
+    const body = await readBody(req, {
+      limitBytes: isGenericFileImport ? QUESTION_BANK_FILE_BODY_LIMIT_BYTES : CSV_BODY_LIMIT_BYTES
+    });
     const action = parts[3] || 'preview';
-    const csvText = String(body.csvText || '');
     const fileName = String(body.fileName || '');
+    const direction = normalizeQuestionBankDirection(body.direction || 'medical');
+    let csvText = String(body.csvText || '');
+    let formatLabel = 'CSV';
+
+    if (isGenericFileImport) {
+      const converted = convertQuestionBankImportToCsv({
+        fileName,
+        direction,
+        textContent: body.textContent || '',
+        fileContentBase64: body.fileContentBase64 || ''
+      });
+      csvText = converted.csvText || '';
+      formatLabel = converted.formatLabel || '题库文件';
+    }
 
     if (!csvText.trim()) {
-      sendJson(res, 400, { ok: false, message: '请先上传 CSV 内容' });
+      sendJson(res, 400, { ok: false, message: isGenericFileImport ? '请先上传题库文件' : '请先上传 CSV 内容' });
       return;
     }
 
     if (action === 'preview') {
       await requirePermission(req, 'cms.write');
-      const preview = buildQuestionBankCsvPreview(csvText, fileName);
+      const preview = buildQuestionBankCsvPreview(csvText, fileName, direction, formatLabel);
       sendJson(res, 200, { ok: true, data: preview });
       return;
     }
 
     if (action === 'commit') {
       await requirePermission(req, 'cms.publish');
-      const summary = await importQuestionBankCsv(csvText, fileName);
+      const summary = await importQuestionBankCsv(csvText, fileName, direction, formatLabel);
       sendJson(res, 200, { ok: true, data: summary });
       return;
     }

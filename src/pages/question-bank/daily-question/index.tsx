@@ -1,11 +1,19 @@
 import Taro from '@tarojs/taro';
-import { ScrollView, Swiper, SwiperItem, Text, View } from '@tarojs/components';
+import { Button, ScrollView, Swiper, SwiperItem, Text, View } from '@tarojs/components';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import fallbackContent from '../../../data/contentFallback';
 import { dailyPracticeCsvQuestions } from '../../../data/dailyPracticeCsvQuestions';
 import { buildDailyQuestionMockPayload } from '../../../data/questionBankMock';
 import { useCmsAutoRefresh } from '../../../hooks/useCmsAutoRefresh';
-import { getQuestionBankPageConfig } from '../../../services/questionBank';
+import { getDailyQuestionPageData, getQuestionBankPageConfig } from '../../../services/questionBank';
+import {
+  appendLearningEvent,
+  ensureAuthenticatedUser,
+  getUserSession,
+  recordPracticeAction,
+  recordSignInAction,
+  subscribeUserSession
+} from '../../../services/userIdentity';
 import { pageStyle, ui } from '../../../styles/ui';
 
 function goBackHome() {
@@ -16,82 +24,12 @@ function goBackHome() {
   });
 }
 
-function FooterAction(props) {
-  return (
-    <View
-      onClick={props.onClick}
-      style={{
-        width: '124rpx',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'flex-end',
-        gap: '10rpx',
-        minHeight: '108rpx'
-      }}
-    >
-      <Text
-        style={{
-          fontSize: '36rpx',
-          lineHeight: 1,
-          color: props.active ? '#ef4444' : ui.colors.textSubtle,
-          fontWeight: 700
-        }}
-      >
-        {props.icon}
-      </Text>
-      <Text
-        style={{
-          fontSize: ui.type.note,
-          color: props.active ? '#ef4444' : ui.colors.textMuted,
-          fontWeight: 700
-        }}
-      >
-        {props.label}
-      </Text>
-      {props.meta ? (
-        <Text style={{ fontSize: '20rpx', color: ui.colors.textSubtle, fontWeight: 600 }}>
-          {props.meta}
-        </Text>
-      ) : null}
-    </View>
-  );
-}
-
-function CenterSignButton(props) {
-  return (
-    <View
-      onClick={props.onClick}
-      style={{
-        position: 'absolute',
-        left: '50%',
-        top: '-44rpx',
-        transform: 'translateX(-50%)',
-        width: '164rpx',
-        height: '164rpx',
-        borderRadius: '82rpx',
-        background: props.signed ? 'linear-gradient(180deg, #14b8a6 0%, #0f766e 100%)' : 'linear-gradient(180deg, #22c55e 0%, #16a34a 100%)',
-        boxShadow: props.signed ? '0 18rpx 38rpx rgba(15,118,110,0.22)' : '0 18rpx 38rpx rgba(34,197,94,0.24)',
-        border: '10rpx solid #ffffff',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 3,
-        boxSizing: 'border-box'
-      }}
-      >
-      <View style={{ display: 'grid', justifyItems: 'center', gap: '6rpx' }}>
-        <Text style={{ fontSize: '30rpx', color: '#ffffff', fontWeight: 900 }}>{props.signed ? '已' : '签'}</Text>
-        <Text style={{ fontSize: '22rpx', color: '#ffffff', fontWeight: 800 }}>{props.signed ? '已打卡' : '打卡'}</Text>
-      </View>
-    </View>
-  );
-}
-
 function OptionRow(props) {
   return (
     <View
       onClick={props.onClick}
+      onTap={props.onClick}
+      onTouchEnd={props.onClick}
       style={{
         display: 'flex',
         alignItems: 'flex-start',
@@ -131,13 +69,64 @@ function OptionRow(props) {
   );
 }
 
+function BottomBarAction(props) {
+  return (
+    <Button
+      onClick={props.onClick}
+      hoverClass="none"
+      style={{
+        width: props.wide ? '138rpx' : '118rpx',
+        minHeight: '104rpx',
+        padding: '0',
+        margin: '0',
+        background: 'transparent',
+        border: 'none',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '8rpx',
+        lineHeight: 1.2
+      }}
+    >
+      <Text
+        style={{
+          fontSize: '34rpx',
+          lineHeight: 1,
+          color: props.active ? '#4f46e5' : ui.colors.textSubtle,
+          fontWeight: 800
+        }}
+      >
+        {props.icon}
+      </Text>
+      <Text
+        style={{
+          fontSize: ui.type.note,
+          color: props.active ? '#4338ca' : ui.colors.textMuted,
+          fontWeight: 800
+        }}
+      >
+        {props.label}
+      </Text>
+      {props.meta ? (
+        <Text style={{ fontSize: '20rpx', color: ui.colors.textSubtle, fontWeight: 700 }}>
+          {props.meta}
+        </Text>
+      ) : null}
+    </Button>
+  );
+}
+
 export default function DailyQuestionPage() {
-  const [signInRecord, setSignInRecord] = useState(() => buildDailyQuestionMockPayload().signInRecord);
+  const [session, setSession] = useState(() => getUserSession());
+  const [signInRecord, setSignInRecord] = useState(() => buildDailyQuestionMockPayload(session.userId).signInRecord);
   const [pageConfig, setPageConfig] = useState(fallbackContent.pages.questionBank.dailyQuestionCard);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
   const [submittedMap, setSubmittedMap] = useState<Record<string, boolean>>({});
   const [signed, setSigned] = useState(signInRecord.signed);
+  const [submitting, setSubmitting] = useState(false);
+  const [signing, setSigning] = useState(false);
 
   const questions = dailyPracticeCsvQuestions;
   const currentQuestion = questions[currentIndex];
@@ -153,28 +142,45 @@ export default function DailyQuestionPage() {
       : 'pending'
     : 'idle';
 
-  const statusText = useMemo(() => {
-    if (!submitted) {
-      return selectedOption ? '待提交' : '未作答';
-    }
-    if (!hasOfficialAnswer) {
-      return '已记录';
-    }
-    return isCorrect ? '答对' : '答错';
-  }, [submitted, selectedOption, hasOfficialAnswer, isCorrect]);
   const answeredCount = useMemo(
     () => Object.values(submittedMap).filter(Boolean).length,
     [submittedMap]
   );
 
   const loadPageConfig = useCallback(async () => {
-    const nextPageConfig = await getQuestionBankPageConfig();
+    const currentSession = getUserSession();
+    setSession(currentSession);
+    const [nextPageConfig, nextDailyPayload] = await Promise.all([
+      getQuestionBankPageConfig(),
+      getDailyQuestionPageData(currentSession.userId)
+    ]);
     setPageConfig(nextPageConfig.dailyQuestionCard || fallbackContent.pages.questionBank.dailyQuestionCard);
+    setSignInRecord(nextDailyPayload.signInRecord);
+    setSigned(Boolean(nextDailyPayload.signInRecord?.signed));
   }, []);
 
   useEffect(() => {
     loadPageConfig();
   }, [loadPageConfig]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeUserSession((nextSession) => {
+      setSession(nextSession);
+      loadPageConfig();
+    });
+    return unsubscribe;
+  }, [loadPageConfig]);
+
+  useEffect(() => {
+    if (session.mode === 'user') {
+      appendLearningEvent({
+        eventType: 'view_daily_question',
+        pageKey: 'dailyQuestion',
+        direction: 'medical',
+        detail: { questionCount: questions.length }
+      });
+    }
+  }, [session.mode, session.userId, questions.length]);
 
   useCmsAutoRefresh(loadPageConfig);
 
@@ -186,30 +192,90 @@ export default function DailyQuestionPage() {
     }));
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!currentQuestion) return;
+    if (submitting) return;
     if (!selectedOption) {
       Taro.showToast({ title: '先选一个答案', icon: 'none' });
       return;
     }
-    setSubmittedMap((prev) => ({
-      ...prev,
-      [currentQuestion.id]: true
-    }));
+
+    setSubmitting(true);
+    try {
+      const activeSession = await ensureAuthenticatedUser({
+        content: '提交后会为你保存做题记录，并自动沉淀到错题与学习进度里。'
+      });
+      if (!activeSession) {
+        return;
+      }
+
+      setSubmittedMap((prev) => ({
+        ...prev,
+        [currentQuestion.id]: true
+      }));
+
+      setSession(activeSession);
+      await recordPracticeAction({
+        questionId: currentQuestion.id,
+        answer: selectedOption,
+        isCorrect: hasOfficialAnswer ? selectedOption === currentQuestion.answer : true,
+        source: 'daily',
+        direction: 'medical'
+      });
+      await appendLearningEvent({
+        eventType: 'submit_daily_question',
+        pageKey: 'dailyQuestion',
+        direction: 'medical',
+        questionId: currentQuestion.id,
+        detail: {
+          selectedOption,
+          hasOfficialAnswer,
+          result: hasOfficialAnswer ? (selectedOption === currentQuestion.answer ? 'correct' : 'wrong') : 'saved'
+        }
+      });
+    } finally {
+      setSubmitting(false);
+    }
   }
 
-  function handleSign() {
+  async function handleSign() {
+    if (signing) return;
     if (signed) {
       Taro.showToast({ title: '今天已打卡', icon: 'none' });
       return;
     }
-    setSigned(true);
-    setSignInRecord((prev) => ({
-      ...prev,
-      signed: true,
-      streakCount: (prev?.streakCount || 0) + 1
-    }));
-    Taro.showToast({ title: '今日已打卡', icon: 'success' });
+
+    setSigning(true);
+    try {
+      const activeSession = await ensureAuthenticatedUser({
+        content: '签到会和你的学习档案绑定，用于连续学习统计和任务提醒。'
+      });
+      if (!activeSession) {
+        return;
+      }
+
+      const nextSignInRecord = await recordSignInAction();
+      setSession(activeSession);
+      setSigned(true);
+      setSignInRecord(nextSignInRecord);
+      await appendLearningEvent({
+        eventType: 'sign_in',
+        pageKey: 'dailyQuestion',
+        direction: 'medical',
+        detail: { streakCount: nextSignInRecord.streakCount }
+      });
+      Taro.showToast({ title: '今日已打卡', icon: 'success' });
+    } finally {
+      setSigning(false);
+    }
+  }
+
+  function handleOpenAnalysis() {
+    if (!submitted) {
+      Taro.showToast({ title: '先提交答案', icon: 'none' });
+      return;
+    }
+    Taro.pageScrollTo({ scrollTop: 1200, duration: 220 });
   }
 
   function handlePrev() {
@@ -296,7 +362,7 @@ export default function DailyQuestionPage() {
         ...pageStyle,
         backgroundColor: '#ffffff',
         minHeight: '100vh',
-        paddingBottom: '350rpx'
+        paddingBottom: '252rpx'
       }}
     >
       <View style={{ padding: '24rpx 24rpx 0' }}>
@@ -355,7 +421,7 @@ export default function DailyQuestionPage() {
           current={currentIndex}
           duration={280}
           onChange={handleSwiperChange}
-          style={{ height: 'calc(100vh - 510rpx)' }}
+          style={{ height: 'calc(100vh - 560rpx)' }}
         >
           {questions.map((question) => {
             const slideSelected = selectedAnswers[question.id] || '';
@@ -364,7 +430,7 @@ export default function DailyQuestionPage() {
             return (
               <SwiperItem key={question.id}>
                 <ScrollView scrollY style={{ height: '100%' }} showScrollbar={false}>
-                  <View style={{ paddingRight: '2rpx', paddingBottom: '36rpx' }}>
+                    <View style={{ paddingRight: '2rpx', paddingBottom: '36rpx' }}>
                     <Text style={{ display: 'block', fontSize: ui.type.meta, color: '#0f766e', fontWeight: 800, marginBottom: '10rpx' }}>
                       单选题 · 第 {questions.findIndex((item) => item.id === question.id) + 1} 题
                     </Text>
@@ -372,7 +438,7 @@ export default function DailyQuestionPage() {
                       {question.stem}
                     </Text>
 
-                    {question.options.map((option) => {
+	                    {question.options.map((option) => {
                       const active = slideSelected === option.id;
                       const correct = slideSubmitted && slideHasOfficialAnswer && question.answer === option.id;
                       const wrong = slideSubmitted && slideHasOfficialAnswer && active && question.answer !== option.id;
@@ -386,9 +452,10 @@ export default function DailyQuestionPage() {
                           correct={correct}
                           wrong={wrong}
                           onClick={() => handleSelect(option.id)}
-                        />
-                      );
-                    })}
+	                        />
+	                      );
+	                    })}
+                    {question.id === currentQuestion?.id ? analysisBlock : null}
                   </View>
                 </ScrollView>
               </SwiperItem>
@@ -396,78 +463,83 @@ export default function DailyQuestionPage() {
           })}
         </Swiper>
       </View>
-
       <View
         style={{
           position: 'fixed',
           left: '0',
           right: '0',
           bottom: '0',
-          padding: '12rpx 0 calc(env(safe-area-inset-bottom) + 10rpx)',
+          padding: '12rpx 24rpx calc(env(safe-area-inset-bottom) + 10rpx)',
           backgroundColor: '#ffffff',
+          borderTop: '1rpx solid rgba(226,232,240,0.86)',
           boxShadow: '0 -10rpx 28rpx rgba(15,23,42,0.06)',
-          borderTop: '1rpx solid rgba(241,245,249,0.96)'
+          zIndex: 20
         }}
       >
-        {analysisBlock}
-
         <View
           style={{
             position: 'relative',
             minHeight: '166rpx',
-            paddingTop: '18rpx',
-            backgroundColor: '#ffffff'
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'space-between',
+            padding: '0 8rpx'
           }}
         >
-          <CenterSignButton signed={signed} onClick={handleSign} />
-          <View
+          <View style={{ width: '270rpx', display: 'flex', justifyContent: 'space-between' }}>
+            <BottomBarAction
+              icon="▦"
+              label="题目"
+              meta={`${currentIndex + 1}/${questions.length}`}
+              active
+              onClick={() => Taro.showToast({ title: `第 ${currentIndex + 1} 题`, icon: 'none' })}
+            />
+            <BottomBarAction icon="‹" label="上一题" onClick={handlePrev} />
+          </View>
+
+          <Button
+            onClick={handleSign}
+            hoverClass="none"
             style={{
+              position: 'absolute',
+              left: '50%',
+              top: '-34rpx',
+              transform: 'translateX(-50%)',
+              width: '170rpx',
+              height: '170rpx',
+              margin: '0',
+              padding: '0',
+              borderRadius: '85rpx',
+              border: '10rpx solid #ffffff',
+              background: signed ? 'linear-gradient(180deg, #14b8a6 0%, #0f766e 100%)' : 'linear-gradient(180deg, #22c55e 0%, #16a34a 100%)',
+              boxShadow: signed ? '0 18rpx 36rpx rgba(15,118,110,0.24)' : '0 18rpx 36rpx rgba(34,197,94,0.26)',
               display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'flex-end',
-              padding: '0 32rpx'
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxSizing: 'border-box',
+              zIndex: 3
             }}
           >
-            <View style={{ display: 'flex', justifyContent: 'space-between', width: '250rpx' }}>
-              <FooterAction
-                icon="▦"
-                label="题卡"
-                meta={`${currentIndex + 1}/${questions.length}`}
-                active
-                onClick={() => Taro.showToast({ title: `第 ${currentIndex + 1} 题`, icon: 'none' })}
-              />
-              <FooterAction
-                icon="◔"
-                label="进度"
-                meta={`${answeredCount} 已答`}
-                onClick={() => Taro.showToast({ title: `已答 ${answeredCount} 题`, icon: 'none' })}
-              />
+            <View style={{ display: 'grid', justifyItems: 'center', gap: '8rpx' }}>
+              <Text style={{ fontSize: '34rpx', color: '#ffffff', fontWeight: 900 }}>
+                {signing ? '...' : signed ? '已' : '签'}
+              </Text>
+              <Text style={{ fontSize: '22rpx', color: '#ffffff', fontWeight: 800 }}>
+                {signing ? '处理中' : signed ? '今日打卡' : '立即打卡'}
+              </Text>
             </View>
+          </Button>
 
-            <View style={{ width: '164rpx', flexShrink: 0 }} />
-
-            <View style={{ display: 'flex', justifyContent: 'space-between', width: '250rpx' }}>
-              <FooterAction
-                icon="✓"
-                label="提交"
-                meta={selectedOption ? '可提交' : '先选项'}
-                active={submitted || Boolean(selectedOption)}
-                onClick={handleSubmit}
-              />
-              <FooterAction
-                icon="✦"
-                label="解析"
-                meta={statusText}
-                active={submitted}
-                onClick={() => {
-                  if (!submitted) {
-                    Taro.showToast({ title: '先提交答案', icon: 'none' });
-                    return;
-                  }
-                  Taro.pageScrollTo({ scrollTop: 1200, duration: 220 });
-                }}
-              />
-            </View>
+          <View style={{ width: '290rpx', display: 'flex', justifyContent: 'space-between' }}>
+            <BottomBarAction icon="›" label="下一题" onClick={handleNext} />
+            <BottomBarAction
+              icon="✓"
+              label={submitted ? '解析' : '提交'}
+              meta={submitted ? '查看本题解析' : submitting ? '正在提交...' : selectedOption ? '可提交' : '先选项'}
+              active={submitted || Boolean(selectedOption)}
+              wide
+              onClick={submitted ? handleOpenAnalysis : handleSubmit}
+            />
           </View>
         </View>
       </View>

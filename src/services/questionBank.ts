@@ -1,13 +1,15 @@
 import Taro from '@tarojs/taro';
 import {
-  buildDailyQuestionMockPayload,
+  GUEST_USER_ID,
+  buildDailyQuestionPayloadFromData,
   buildPastPapersMockPayload,
-  buildWrongBookMockPayload
+  getMedicalQuestionById
 } from '../data/questionBankMock';
 import fallbackContent from '../data/contentFallback';
 import { CMS_PREVIEW_BASE_URL, CMS_PREVIEW_ENABLED } from '../config/cms';
 import { callCloudFunction } from './cloud';
 import { getPublicContent } from './content';
+import { getDailyLearningState, getWrongBookLearningState } from './userIdentity';
 
 function withMeta(payload, source, extras = {}) {
   return {
@@ -22,7 +24,8 @@ function withMeta(payload, source, extras = {}) {
 }
 
 async function requestQuestionPayload(action, params, fallbackFactory) {
-  return withMeta(fallbackFactory(), 'fixed-question-bank', {
+  const payload = await fallbackFactory();
+  return withMeta(payload, 'fixed-question-bank', {
     action,
     params,
     transport: 'fixed-local'
@@ -150,6 +153,50 @@ function normalizeQuestionBankCard(card = {}, fallbackCard = {}) {
   };
 }
 
+function normalizeWrongBookStats(stats = {}, fallbackStats = {}) {
+  return {
+    pendingLabel: String(stats?.pendingLabel || fallbackStats?.pendingLabel || '').trim(),
+    todayLabel: String(stats?.todayLabel || fallbackStats?.todayLabel || '').trim(),
+    totalLabel: String(stats?.totalLabel || fallbackStats?.totalLabel || '').trim()
+  };
+}
+
+function normalizeWrongBookTaskSection(section = {}, fallbackSection = {}) {
+  return {
+    eyebrow: String(section?.eyebrow || fallbackSection?.eyebrow || '').trim(),
+    reasonLabel: String(section?.reasonLabel || fallbackSection?.reasonLabel || '').trim(),
+    estimateLabel: String(section?.estimateLabel || fallbackSection?.estimateLabel || '').trim(),
+    sourceLabel: String(section?.sourceLabel || fallbackSection?.sourceLabel || '').trim(),
+    lastAnsweredLabel: String(section?.lastAnsweredLabel || fallbackSection?.lastAnsweredLabel || '').trim(),
+    answerLabel: String(section?.answerLabel || fallbackSection?.answerLabel || '').trim(),
+    primaryButtonText: String(section?.primaryButtonText || fallbackSection?.primaryButtonText || '').trim(),
+    secondaryButtonText: String(section?.secondaryButtonText || fallbackSection?.secondaryButtonText || '').trim()
+  };
+}
+
+function normalizeWrongBookQueueSection(section = {}, fallbackSection = {}) {
+  return {
+    title: String(section?.title || fallbackSection?.title || '').trim(),
+    sortHint: String(section?.sortHint || fallbackSection?.sortHint || '').trim(),
+    pendingLabel: String(section?.pendingLabel || fallbackSection?.pendingLabel || '').trim(),
+    todayLabel: String(section?.todayLabel || fallbackSection?.todayLabel || '').trim(),
+    masteredLabel: String(section?.masteredLabel || fallbackSection?.masteredLabel || '').trim(),
+    emptyTitle: String(section?.emptyTitle || fallbackSection?.emptyTitle || '').trim(),
+    emptyDesc: String(section?.emptyDesc || fallbackSection?.emptyDesc || '').trim()
+  };
+}
+
+function normalizeWrongBookCard(card = {}, fallbackCard = {}) {
+  const baseCard = normalizeQuestionBankCard(card, fallbackCard);
+
+  return {
+    ...baseCard,
+    stats: normalizeWrongBookStats(card?.stats, fallbackCard?.stats),
+    taskSection: normalizeWrongBookTaskSection(card?.taskSection, fallbackCard?.taskSection),
+    queueSection: normalizeWrongBookQueueSection(card?.queueSection, fallbackCard?.queueSection)
+  };
+}
+
 function normalizeQuestionBankPage(page = {}) {
   const fallbackPage = fallbackContent.pages.questionBank || {};
 
@@ -158,7 +205,7 @@ function normalizeQuestionBankPage(page = {}) {
     ...page,
     dailyQuestionCard: normalizeQuestionBankCard(page?.dailyQuestionCard, fallbackPage.dailyQuestionCard),
     pastPapersCard: normalizeQuestionBankCard(page?.pastPapersCard, fallbackPage.pastPapersCard),
-    wrongBookCard: normalizeQuestionBankCard(page?.wrongBookCard, fallbackPage.wrongBookCard)
+    wrongBookCard: normalizeWrongBookCard(page?.wrongBookCard, fallbackPage.wrongBookCard)
   };
 }
 
@@ -207,11 +254,17 @@ export async function getQuestionBankPageConfig() {
   }
 }
 
-export function getDailyQuestionPageData(userId = 'guest-medical') {
+export async function getDailyQuestionPageData(userId = GUEST_USER_ID) {
+  const learningState = await getDailyLearningState('medical', userId);
   return requestQuestionPayload(
     'dailyQuestion',
     { direction: 'medical', userId },
-    () => buildDailyQuestionMockPayload(userId)
+    () =>
+      buildDailyQuestionPayloadFromData({
+        userId,
+        practiceRecordsInput: learningState.latestDailyPractice ? [learningState.latestDailyPractice] : [],
+        signInRecordsInput: [learningState.signInRecord]
+      })
   );
 }
 
@@ -235,10 +288,29 @@ export async function getPastPapersPageData() {
   return requestQuestionPayload('pastPapers', { direction: 'medical' }, () => buildPastPapersMockPayload());
 }
 
-export function getWrongBookPageData(userId = 'guest-medical') {
+export async function getWrongBookPageData(userId = GUEST_USER_ID) {
+  const learningState = await getWrongBookLearningState('medical', userId);
   return requestQuestionPayload(
     'wrongBook',
     { direction: 'medical', userId },
-    () => buildWrongBookMockPayload(userId)
+    () => ({
+      direction: 'medical' as const,
+      summary: learningState.summary,
+      items: learningState.items
+        .map((item) => {
+          const question = getMedicalQuestionById(item.questionId);
+          if (!question || !item.latestRecord) {
+            return null;
+          }
+
+          return {
+            question,
+            latestRecord: item.latestRecord,
+            reviewStatus: item.reviewStatus,
+            wrongAttempts: item.wrongAttempts
+          };
+        })
+        .filter(Boolean)
+    })
   );
 }

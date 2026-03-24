@@ -116,12 +116,45 @@ export interface QuestionBankCard {
   note: string;
 }
 
+export interface WrongBookStatsConfig {
+  pendingLabel: string;
+  todayLabel: string;
+  totalLabel: string;
+}
+
+export interface WrongBookTaskSectionConfig {
+  eyebrow: string;
+  reasonLabel: string;
+  estimateLabel: string;
+  sourceLabel: string;
+  lastAnsweredLabel: string;
+  answerLabel: string;
+  primaryButtonText: string;
+  secondaryButtonText: string;
+}
+
+export interface WrongBookQueueSectionConfig {
+  title: string;
+  sortHint: string;
+  pendingLabel: string;
+  todayLabel: string;
+  masteredLabel: string;
+  emptyTitle: string;
+  emptyDesc: string;
+}
+
+export interface WrongBookCard extends QuestionBankCard {
+  stats: WrongBookStatsConfig;
+  taskSection: WrongBookTaskSectionConfig;
+  queueSection: WrongBookQueueSectionConfig;
+}
+
 // 题库页配置
 export interface QuestionBankPage {
   hero: HeroSection;
   dailyQuestionCard: QuestionBankCard;
   pastPapersCard: QuestionBankCard;
-  wrongBookCard: QuestionBankCard;
+  wrongBookCard: WrongBookCard;
   importGuide: {
     title: string;
     desc: string;
