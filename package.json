@@ -5,7 +5,12 @@
   "scripts": {
     "dev:weapp": "taro build --type weapp --watch",
     "build:weapp": "taro build --type weapp",
-    "admin:web": "node tools/admin-web/server.cjs"
+    "admin:web": "node tools/admin-web/server.cjs",
+    "admin:web:api": "node tools/admin-web/server.cjs",
+    "admin:web:ui": "npm --prefix admin-web-react run dev",
+    "admin:web:build": "npm --prefix admin-web-react run build",
+    "admin:web:install": "npm --prefix admin-web-react install",
+    "admin:web:dev": "npm run admin:web:api"
   },
   "dependencies": {
     "@babel/runtime": "^7.27.6",

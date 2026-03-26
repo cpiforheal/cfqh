@@ -8,6 +8,7 @@ const { URL } = require('url');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const PUBLIC_DIR = path.join(ROOT, 'admin-web');
+const REACT_PUBLIC_DIR = path.join(ROOT, 'admin-web-react', 'dist');
 const DATA_FILE = path.join(ROOT, 'database', 'local-admin-data.json');
 const SEED_FILE = path.join(ROOT, 'database', 'seed-data.js');
 const CLOUD_CONFIG_FILE = path.join(ROOT, 'src', 'config', 'cloud.ts');
@@ -450,6 +451,10 @@ const listOptions = [
   { key: 'materialPackages', label: '主推套系包' },
   { key: 'materialItems', label: '货架资料卡' },
   { key: 'mediaAssets', label: '媒体资源' },
+  { key: 'appUsers', label: '学习用户' },
+  { key: 'studyProfiles', label: '学习概况' },
+  { key: 'questionProgress', label: '做题状态' },
+  { key: 'wrongBookItems', label: '错题队列' },
   { key: 'adminUsers', label: '角色成员' }
 ];
 
@@ -485,8 +490,14 @@ const LIST_COLLECTIONS = {
   materialPackages: 'material_packages',
   materialItems: 'material_items',
   mediaAssets: 'media_assets',
+  appUsers: 'app_users',
+  studyProfiles: 'study_profiles',
+  questionProgress: 'question_progress',
+  wrongBookItems: 'wrong_book_items',
   adminUsers: 'admin_users'
 };
+
+const LEARNER_LIST_COLLECTIONS = new Set(['appUsers', 'studyProfiles', 'questionProgress', 'wrongBookItems']);
 
 function normalizeAdminRole(role) {
   const normalized = String(role || '').trim().toLowerCase();
@@ -524,6 +535,38 @@ function sanitizeAdminUser(admin) {
     updatedAt: admin.updatedAt || '',
     createdAt: admin.createdAt || ''
   };
+}
+
+function maskOpenId(value = '') {
+  const text = String(value || '').trim();
+  if (!text) return '';
+  if (text.length <= 8) return `${text.slice(0, 2)}***${text.slice(-2)}`;
+  return `${text.slice(0, 4)}***${text.slice(-4)}`;
+}
+
+function isMissingCollectionError(error) {
+  const message = String(error?.message || error || '').toLowerCase();
+  return (
+    message.includes('db or table not exist') ||
+    message.includes('table not exist') ||
+    message.includes('collection not exists') ||
+    message.includes('collection does not exist') ||
+    message.includes('集合不存在') ||
+    message.includes('resource not found')
+  );
+}
+
+function getCollectionOrder(collectionKey) {
+  if (collectionKey === 'appUsers') {
+    return { field: 'lastSeenAt', direction: 'desc' };
+  }
+  if (collectionKey === 'studyProfiles') {
+    return { field: 'updatedAt', direction: 'desc' };
+  }
+  if (collectionKey === 'questionProgress' || collectionKey === 'wrongBookItems') {
+    return { field: 'lastAnsweredAt', direction: 'desc' };
+  }
+  return { field: 'sort', direction: 'asc' };
 }
 
 function getRolePermissions(role) {
@@ -727,12 +770,23 @@ function sanitizeCollectionOutput(collectionKey, value) {
     return sanitizeAdminUser(value);
   }
 
+  if (collectionKey === 'appUsers') {
+    const sanitizeOne = (item) => ({
+      ...item,
+      openId: maskOpenId(item?.openId || '')
+    });
+    if (Array.isArray(value)) {
+      return value.map((item) => sanitizeOne(item));
+    }
+    return sanitizeOne(value || {});
+  }
+
   return value;
 }
 
 function getCollectionPermission(collectionKey, method) {
-  if (collectionKey === 'adminUsers') {
-    return method === 'GET' ? 'cms.manageUsers' : 'cms.manageUsers';
+  if (collectionKey === 'adminUsers' || LEARNER_LIST_COLLECTIONS.has(collectionKey)) {
+    return 'cms.manageUsers';
   }
 
   if (method === 'GET') {
@@ -781,7 +835,15 @@ function sendFile(res, filePath) {
     '.html': 'text/html; charset=utf-8',
     '.js': 'application/javascript; charset=utf-8',
     '.css': 'text/css; charset=utf-8',
-    '.json': 'application/json; charset=utf-8'
+    '.json': 'application/json; charset=utf-8',
+    '.ico': 'image/x-icon',
+    '.svg': 'image/svg+xml; charset=utf-8',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.webp': 'image/webp',
+    '.woff': 'font/woff',
+    '.woff2': 'font/woff2'
   };
 
   if (!fs.existsSync(filePath)) {
@@ -791,6 +853,49 @@ function sendFile(res, filePath) {
 
   res.writeHead(200, { 'Content-Type': mimeMap[ext] || 'text/plain; charset=utf-8' });
   fs.createReadStream(filePath).pipe(res);
+}
+
+function resolveStaticPath(baseDir, requestedPath = '/') {
+  const normalizedPath = requestedPath === '/' ? '/index.html' : requestedPath;
+  const relativePath = normalizedPath.replace(/^\/+/, '');
+  const targetPath = path.normalize(path.join(baseDir, relativePath));
+
+  const relativeToBase = path.relative(baseDir, targetPath);
+  if (relativeToBase.startsWith('..') || path.isAbsolute(relativeToBase)) {
+    return null;
+  }
+
+  return targetPath;
+}
+
+function serveReactApp(res, pathname) {
+  if (!fs.existsSync(REACT_PUBLIC_DIR)) {
+    sendJson(res, 404, { ok: false, message: 'React 后台尚未构建，请先执行 npm run admin:web:build' });
+    return;
+  }
+
+  const relativePath = pathname.replace(/^\/react-admin/, '') || '/';
+  const targetPath = resolveStaticPath(REACT_PUBLIC_DIR, relativePath);
+  if (!targetPath) {
+    sendJson(res, 404, { ok: false, message: 'Not found' });
+    return;
+  }
+
+  const hasExtension = path.extname(targetPath);
+  const indexPath = path.join(REACT_PUBLIC_DIR, 'index.html');
+  const shouldFallbackToIndex = !hasExtension && fs.existsSync(indexPath);
+
+  if (fs.existsSync(targetPath) && fs.statSync(targetPath).isFile()) {
+    sendFile(res, targetPath);
+    return;
+  }
+
+  if (shouldFallbackToIndex) {
+    sendFile(res, indexPath);
+    return;
+  }
+
+  sendJson(res, 404, { ok: false, message: 'Not found' });
 }
 
 function createPayloadTooLargeError(limitBytes) {
@@ -2183,7 +2288,16 @@ class LocalStore {
 
   async listCollection(collectionKey) {
     const data = readData();
-    return data[collectionKey] || [];
+    const items = data[collectionKey] || [];
+    const { field, direction } = getCollectionOrder(collectionKey);
+    return [...items].sort((left, right) => {
+      const leftValue = left?.[field] || '';
+      const rightValue = right?.[field] || '';
+      if (direction === 'desc') {
+        return String(rightValue).localeCompare(String(leftValue));
+      }
+      return String(leftValue).localeCompare(String(rightValue));
+    });
   }
 
   async getItem(collectionKey, itemId) {
@@ -2311,16 +2425,27 @@ class CloudStore {
   async listCollection(collectionKey) {
     const collection = LIST_COLLECTIONS[collectionKey];
     if (!collection) throw new Error('未知集合');
+    const { field, direction } = getCollectionOrder(collectionKey);
     const batchSize = 100;
     const allItems = [];
 
-    for (let offset = 0; offset < 5000; offset += batchSize) {
-      const result = await this.db.collection(collection).orderBy('sort', 'asc').skip(offset).limit(batchSize).get();
-      const batch = result.data || [];
-      allItems.push(...batch);
-      if (batch.length < batchSize) {
-        break;
+    try {
+      for (let offset = 0; offset < 5000; offset += batchSize) {
+        const result = await this.db.collection(collection).orderBy(field, direction).skip(offset).limit(batchSize).get();
+        const batch = result.data || [];
+        allItems.push(...batch);
+        if (batch.length < batchSize) {
+          break;
+        }
       }
+    } catch (error) {
+      if (isMissingCollectionError(error)) {
+        if (LEARNER_LIST_COLLECTIONS.has(collectionKey)) {
+          await this.ensureCollection(collectionKey).catch(() => false);
+          return [];
+        }
+      }
+      throw error;
     }
 
     return allItems;
@@ -2329,8 +2454,16 @@ class CloudStore {
   async getItem(collectionKey, itemId) {
     const collection = LIST_COLLECTIONS[collectionKey];
     if (!collection) throw new Error('未知集合');
-    const result = await this.db.collection(collection).doc(itemId).get();
-    return normalizeDocResult(result);
+    try {
+      const result = await this.db.collection(collection).doc(itemId).get();
+      return normalizeDocResult(result);
+    } catch (error) {
+      if (isMissingCollectionError(error) && LEARNER_LIST_COLLECTIONS.has(collectionKey)) {
+        await this.ensureCollection(collectionKey).catch(() => false);
+        return null;
+      }
+      throw error;
+    }
   }
 
   async createItem(collectionKey, payload) {
@@ -2338,7 +2471,16 @@ class CloudStore {
     if (!collection) throw new Error('未知集合');
     const itemId = payload._id || makeId(collectionKey);
     const nextItem = stampCollectionItem(payload, itemId);
-    await this.db.collection(collection).doc(itemId).set(stripId(nextItem));
+    try {
+      await this.db.collection(collection).doc(itemId).set(stripId(nextItem));
+    } catch (error) {
+      if (isMissingCollectionError(error)) {
+        await this.ensureCollection(collectionKey);
+        await this.db.collection(collection).doc(itemId).set(stripId(nextItem));
+      } else {
+        throw error;
+      }
+    }
     return nextItem;
   }
 
@@ -2354,7 +2496,14 @@ class CloudStore {
   async deleteItem(collectionKey, itemId) {
     const collection = LIST_COLLECTIONS[collectionKey];
     if (!collection) throw new Error('未知集合');
-    await this.db.collection(collection).doc(itemId).remove();
+    try {
+      await this.db.collection(collection).doc(itemId).remove();
+    } catch (error) {
+      if (isMissingCollectionError(error) && LEARNER_LIST_COLLECTIONS.has(collectionKey)) {
+        return;
+      }
+      throw error;
+    }
   }
 
   async ensureCollection(collectionKey) {
@@ -2593,7 +2742,12 @@ async function handleApi(req, res, pathname) {
     sendJson(res, 200, {
       ok: true,
       pageOptions,
-      listOptions: listOptions.filter((item) => item.key !== 'adminUsers' || permissions.canManageUsers),
+      listOptions: listOptions.filter((item) => {
+        if (item.key === 'adminUsers' || LEARNER_LIST_COLLECTIONS.has(item.key)) {
+          return permissions.canManageUsers;
+        }
+        return true;
+      }),
       mode: store.getMode(),
       previewUrls: getServiceUrls().map((url) => `${url}/api/public/home`),
       currentUser: sanitizeAdminUser(admin),
@@ -2844,6 +2998,11 @@ const server = http.createServer(async (req, res) => {
   try {
     if (pathname.startsWith('/api/')) {
       await handleApi(req, res, pathname);
+      return;
+    }
+
+    if (pathname === '/react-admin' || pathname.startsWith('/react-admin/')) {
+      serveReactApp(res, pathname);
       return;
     }
 
