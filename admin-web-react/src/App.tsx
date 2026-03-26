@@ -105,8 +105,8 @@ export default function App() {
         colorPrimary: '#5275b5',
         colorInfo: '#5275b5',
         colorSuccess: '#4f8a72',
-        colorBgBase: '#f4f7fb',
-        colorBgContainer: 'rgba(255, 255, 255, 0.88)',
+        colorBgBase: '#eef3fa',
+        colorBgContainer: 'rgba(240, 246, 252, 0.9)',
         colorText: '#20304d',
         colorTextSecondary: '#667a9b',
         colorBorderSecondary: 'rgba(111, 132, 171, 0.16)',
@@ -120,7 +120,7 @@ export default function App() {
           siderBg: 'transparent'
         },
         Card: {
-          colorBgContainer: 'rgba(255, 255, 255, 0.84)'
+          colorBgContainer: 'rgba(238, 244, 251, 0.88)'
         },
         Button: {
           defaultBg: 'rgba(255, 255, 255, 0.74)',

@@ -44,6 +44,13 @@ a {
   background: transparent;
 }
 
+.app-shell-main.ant-layout {
+  position: relative;
+  background:
+    radial-gradient(circle at top right, rgba(116, 138, 176, 0.12), transparent 24%),
+    linear-gradient(180deg, rgba(227, 234, 245, 0.42) 0%, rgba(218, 228, 242, 0.6) 100%);
+}
+
 .app-shell-sider.ant-layout-sider {
   background:
     linear-gradient(180deg, rgba(241, 245, 252, 0.96) 0%, rgba(230, 237, 248, 0.98) 100%),
@@ -271,7 +278,7 @@ a {
   margin: 18px 24px 0;
   border: 1px solid rgba(116, 138, 176, 0.16);
   border-radius: 24px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.74) 0%, rgba(241, 246, 252, 0.92) 100%);
+  background: linear-gradient(180deg, rgba(244, 248, 253, 0.82) 0%, rgba(231, 238, 248, 0.92) 100%);
   backdrop-filter: blur(14px);
   box-shadow: 0 16px 42px rgba(54, 80, 126, 0.08);
   display: flex;
@@ -307,7 +314,35 @@ a {
 }
 
 .app-shell-content {
+  position: relative;
   padding: 18px 32px 32px;
+}
+
+.app-shell-content-inner {
+  position: relative;
+  padding: 22px;
+  border-radius: 30px;
+  background:
+    linear-gradient(180deg, rgba(229, 236, 246, 0.78) 0%, rgba(222, 231, 243, 0.9) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.36),
+    0 18px 46px rgba(54, 80, 126, 0.06);
+}
+
+.app-shell-content-inner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.2), transparent 26%),
+    radial-gradient(circle at right 18%, rgba(132, 155, 197, 0.12), transparent 24%);
+  pointer-events: none;
+}
+
+.app-shell-content-inner > * {
+  position: relative;
+  z-index: 1;
 }
 
 .app-shell-footer {
@@ -337,13 +372,55 @@ a {
 }
 
 .app-shell-content .ant-card:not(.hero-card) {
-  border: 1px solid rgba(116, 138, 176, 0.14);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.84) 0%, rgba(247, 250, 253, 0.92) 100%);
-  box-shadow: 0 16px 34px rgba(62, 87, 126, 0.06);
+  border: 1px solid rgba(111, 132, 171, 0.12);
+  background: linear-gradient(180deg, rgba(241, 246, 252, 0.82) 0%, rgba(234, 240, 248, 0.9) 100%);
+  box-shadow: 0 16px 34px rgba(62, 87, 126, 0.05);
 }
 
 .app-shell-content .ant-card .ant-card-head {
   border-bottom-color: rgba(116, 138, 176, 0.12);
+}
+
+.app-shell-content .ant-pro-table,
+.app-shell-content .ant-pro-card,
+.app-shell-content .ant-table-wrapper,
+.app-shell-content .ant-table-container,
+.app-shell-content .ant-pro-table-search {
+  border-radius: 22px;
+}
+
+.app-shell-content .ant-pro-card.ant-pro-table-search,
+.app-shell-content .ant-pro-card.ant-pro-table-search-query-filter {
+  background: rgba(236, 243, 251, 0.9);
+  box-shadow: inset 0 0 0 1px rgba(111, 132, 171, 0.08);
+}
+
+.app-shell-content .ant-pro-table .ant-pro-card,
+.app-shell-content .ant-pro-table .ant-card {
+  background: linear-gradient(180deg, rgba(240, 246, 252, 0.86) 0%, rgba(233, 240, 248, 0.94) 100%);
+}
+
+.app-shell-content .ant-table-wrapper .ant-table {
+  background: rgba(245, 249, 253, 0.88);
+}
+
+.app-shell-content .ant-table-wrapper .ant-table-thead > tr > th {
+  background: rgba(228, 236, 246, 0.92);
+  color: #36527f;
+  border-bottom-color: rgba(111, 132, 171, 0.14);
+}
+
+.app-shell-content .ant-table-wrapper .ant-table-tbody > tr > td {
+  border-bottom-color: rgba(111, 132, 171, 0.12);
+}
+
+.app-shell-content .ant-table-wrapper .ant-table-tbody > tr.ant-table-row:hover > td,
+.app-shell-content .ant-table-wrapper .ant-table-tbody > tr > td.ant-table-cell-row-hover {
+  background: rgba(223, 232, 244, 0.54);
+}
+
+.app-shell-content .ant-pro-table-list-toolbar {
+  padding-inline: 6px;
 }
 
 .app-shell-content .ant-statistic,
@@ -402,5 +479,10 @@ a {
   .app-shell-footer {
     padding-left: 20px;
     padding-right: 20px;
+  }
+
+  .app-shell-content-inner {
+    padding: 16px;
+    border-radius: 24px;
   }
 }

@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Card, Drawer, Result, Segmented, Space, Tag, Typography } from 'antd';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { Button, Card, Drawer, Result, Segmented, Space, Spin, Tag, Typography } from 'antd';
 import ProTable from '@ant-design/pro-table';
 import type { ActionType, ProColumns } from '@ant-design/pro-table';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -14,15 +14,22 @@ import {
   normalizeKeyword,
   paginate,
   scheduleIdleTask,
-  stableRowKey,
-  stringifyRecord
+  stableRowKey
 } from '../utils';
+
+const RecordPreviewDrawer = lazy(() =>
+  import('../components/RecordPreviewDrawer').then((module) => ({ default: module.RecordPreviewDrawer }))
+);
 
 type LearnersPageProps = {
   auth: AuthState;
 };
 
 type LearnerRecord = Record<string, unknown>;
+
+function preloadRecordPreviewDrawer() {
+  return import('../components/RecordPreviewDrawer');
+}
 
 function getColumns(collectionKey: string): ProColumns<LearnerRecord>[] {
   const sharedAction: ProColumns<LearnerRecord> = {
@@ -223,7 +230,19 @@ export function LearnersPage({ auth }: LearnersPageProps) {
         ? {
             ...column,
             render: (_: unknown, record: LearnerRecord) => [
-              <a key="view" onClick={() => setDetailRecord(record)}>
+              <a
+                key="view"
+                onMouseEnter={() => {
+                  void preloadRecordPreviewDrawer();
+                }}
+                onFocus={() => {
+                  void preloadRecordPreviewDrawer();
+                }}
+                onClick={() => {
+                  void preloadRecordPreviewDrawer();
+                  setDetailRecord(record);
+                }}
+              >
                 查看
               </a>
             ]
@@ -383,14 +402,25 @@ export function LearnersPage({ auth }: LearnersPageProps) {
         }}
       />
 
-      <Drawer
-        open={Boolean(detailRecord)}
-        width={560}
-        title="记录详情"
-        onClose={() => setDetailRecord(null)}
-      >
-        <pre className="json-preview">{stringifyRecord(detailRecord)}</pre>
-      </Drawer>
+      {detailRecord ? (
+        <Suspense
+          fallback={
+            <Drawer open width={560} title="记录详情" onClose={() => setDetailRecord(null)}>
+              <div className="center-screen" style={{ minHeight: 220 }}>
+                <Spin size="large" />
+              </div>
+            </Drawer>
+          }
+        >
+          <RecordPreviewDrawer
+            open
+            width={560}
+            title="记录详情"
+            record={detailRecord}
+            onClose={() => setDetailRecord(null)}
+          />
+        </Suspense>
+      ) : null}
     </Space>
   );
 }

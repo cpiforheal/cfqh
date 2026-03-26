@@ -16,12 +16,14 @@ import {
   paginate,
   scheduleIdleTask,
   stableRowKey,
-  stringifyRecord,
   toStringArray
 } from '../utils';
 
 const DirectionsEditorDrawer = lazy(() =>
   import('./directions/DirectionsEditorDrawer').then((module) => ({ default: module.DirectionsEditorDrawer }))
+);
+const RecordPreviewDrawer = lazy(() =>
+  import('../components/RecordPreviewDrawer').then((module) => ({ default: module.RecordPreviewDrawer }))
 );
 
 type DirectionsPageProps = {
@@ -36,6 +38,10 @@ const featuredOptions = [
 
 function preloadDirectionsEditorDrawer() {
   return import('./directions/DirectionsEditorDrawer');
+}
+
+function preloadRecordPreviewDrawer() {
+  return import('../components/RecordPreviewDrawer');
 }
 
 export function DirectionsPage({ auth }: DirectionsPageProps) {
@@ -191,7 +197,19 @@ export function DirectionsPage({ auth }: DirectionsPageProps) {
       fixed: 'right',
       valueType: 'option',
       render: (_, record) => [
-        <a key="view" onClick={() => setDetailRecord(record)}>
+        <a
+          key="view"
+          onMouseEnter={() => {
+            void preloadRecordPreviewDrawer();
+          }}
+          onFocus={() => {
+            void preloadRecordPreviewDrawer();
+          }}
+          onClick={() => {
+            void preloadRecordPreviewDrawer();
+            setDetailRecord(record);
+          }}
+        >
           查看
         </a>,
         auth.permissions.canWrite ? (
@@ -424,15 +442,26 @@ export function DirectionsPage({ auth }: DirectionsPageProps) {
         }}
       />
 
-      <Drawer
-        open={Boolean(detailRecord)}
-        onClose={() => setDetailRecord(null)}
-        title={String(detailRecord?.name || '帖子详情')}
-        width={520}
-      >
-        <Typography.Paragraph type="secondary">用于核对完整字段，复杂样式配置仍建议回旧后台精修。</Typography.Paragraph>
-        <pre className="json-preview">{stringifyRecord(detailRecord)}</pre>
-      </Drawer>
+      {detailRecord ? (
+        <Suspense
+          fallback={
+            <Drawer open title={String(detailRecord?.name || '帖子详情')} width={520} onClose={() => setDetailRecord(null)}>
+              <div className="center-screen" style={{ minHeight: 220 }}>
+                <Spin size="large" />
+              </div>
+            </Drawer>
+          }
+        >
+          <RecordPreviewDrawer
+            open
+            width={520}
+            title={String(detailRecord?.name || '帖子详情')}
+            description="用于核对完整字段，复杂样式配置仍建议回旧后台精修。"
+            record={detailRecord}
+            onClose={() => setDetailRecord(null)}
+          />
+        </Suspense>
+      ) : null}
 
       {drawerOpen ? (
         <Suspense

@@ -137,7 +137,7 @@ export function AppShell({ auth, meta, health, onLogout, children }: AppShellPro
           <Typography.Text className="sider-footer-text">{health.writeTargetLabel}</Typography.Text>
         </div>
       </Sider>
-      <Layout>
+      <Layout className="app-shell-main">
         <Header className="app-shell-header">
           <div className="app-shell-header-copy">
             <Typography.Text className="eyebrow">3200 后台 React 重写中</Typography.Text>
@@ -156,7 +156,9 @@ export function AppShell({ auth, meta, health, onLogout, children }: AppShellPro
             </Button>
           </Space>
         </Header>
-        <Content className="app-shell-content">{children}</Content>
+        <Content className="app-shell-content">
+          <div className="app-shell-content-inner">{children}</div>
+        </Content>
         <div className="app-shell-footer">
           <Space size="middle" wrap>
             <Link to="/overview">工作台</Link>
