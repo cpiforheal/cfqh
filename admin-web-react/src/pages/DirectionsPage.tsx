@@ -1,30 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  App,
-  Button,
-  Card,
-  Drawer,
-  Form,
-  Modal,
-  Result,
-  Space,
-  Tag,
-  Typography
-} from 'antd';
-import {
-  DrawerForm,
-  ProFormDigit,
-  ProFormSelect,
-  ProFormSwitch,
-  ProFormText,
-  ProFormTextArea,
-  ProTable
-} from '@ant-design/pro-components';
-import type { ActionType, ProColumns, ProFormInstance } from '@ant-design/pro-components';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { App, Button, Card, Drawer, Modal, Result, Space, Spin, Tag, Typography } from 'antd';
+import type { ProFormInstance } from '@ant-design/pro-form';
+import ProTable from '@ant-design/pro-table';
+import type { ActionType, ProColumns } from '@ant-design/pro-table';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import type { AuthState } from '../api';
 import { api } from '../api';
+import type { DirectionFormValues, DirectionRecord } from './directions/types';
 import {
   compactSearchParams,
   formatDateTime,
@@ -34,30 +17,15 @@ import {
   scheduleIdleTask,
   stableRowKey,
   stringifyRecord,
-  toMultilineText,
   toStringArray
 } from '../utils';
 
+const DirectionsEditorDrawer = lazy(() =>
+  import('./directions/DirectionsEditorDrawer').then((module) => ({ default: module.DirectionsEditorDrawer }))
+);
+
 type DirectionsPageProps = {
   auth: AuthState;
-};
-
-type DirectionRecord = Record<string, unknown>;
-
-type DirectionFormValues = {
-  name: string;
-  slug: string;
-  category: string;
-  status: string;
-  sort: number;
-  isFeatured: boolean;
-  featuredTag: string;
-  homeTag: string;
-  summary: string;
-  audience: string;
-  iconType: string;
-  featuresText: string;
-  chipsText: string;
 };
 
 const featuredOptions = [
@@ -65,6 +33,10 @@ const featuredOptions = [
   { label: '精选', value: 'true' },
   { label: '普通', value: 'false' }
 ];
+
+function preloadDirectionsEditorDrawer() {
+  return import('./directions/DirectionsEditorDrawer');
+}
 
 export function DirectionsPage({ auth }: DirectionsPageProps) {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -74,9 +46,8 @@ export function DirectionsPage({ auth }: DirectionsPageProps) {
   const [drawerMode, setDrawerMode] = useState<'create' | 'edit'>('create');
   const [editingRecord, setEditingRecord] = useState<DirectionRecord | null>(null);
   const [detailRecord, setDetailRecord] = useState<DirectionRecord | null>(null);
-  const [form] = Form.useForm<DirectionFormValues>();
   const actionRef = useRef<ActionType>();
-  const formRef = useRef<ProFormInstance>();
+  const tableFormRef = useRef<ProFormInstance>();
 
   const keyword = searchParams.get('keyword') || '';
   const status = searchParams.get('status') || '';
@@ -114,36 +85,13 @@ export function DirectionsPage({ auth }: DirectionsPageProps) {
   }, [directionsQuery.data]);
 
   useEffect(() => {
-    formRef.current?.setFieldsValue({
+    tableFormRef.current?.setFieldsValue({
       keyword,
       status,
       category,
       featured
     });
   }, [category, featured, keyword, status]);
-
-  useEffect(() => {
-    if (!drawerOpen) {
-      return;
-    }
-
-    const base = editingRecord || {};
-    form.setFieldsValue({
-      name: String(base.name || ''),
-      slug: String(base.slug || ''),
-      category: String(base.category || ''),
-      status: String(base.status || 'draft'),
-      sort: Number(base.sort || 100),
-      isFeatured: Boolean(base.isFeatured),
-      featuredTag: String(base.featuredTag || ''),
-      homeTag: String(base.homeTag || ''),
-      summary: String(base.summary || ''),
-      audience: String(base.audience || ''),
-      iconType: String(base.iconType || 'grid'),
-      featuresText: toMultilineText(base.features),
-      chipsText: toMultilineText(base.chips)
-    });
-  }, [drawerOpen, editingRecord, form]);
 
   useEffect(() => {
     return scheduleIdleTask(() => {
@@ -249,7 +197,14 @@ export function DirectionsPage({ auth }: DirectionsPageProps) {
         auth.permissions.canWrite ? (
           <a
             key="edit"
+            onMouseEnter={() => {
+              void preloadDirectionsEditorDrawer();
+            }}
+            onFocus={() => {
+              void preloadDirectionsEditorDrawer();
+            }}
             onClick={() => {
+              void preloadDirectionsEditorDrawer();
               setDrawerMode('edit');
               setEditingRecord(record);
               setDrawerOpen(true);
@@ -290,6 +245,7 @@ export function DirectionsPage({ auth }: DirectionsPageProps) {
   ];
 
   async function openCreateDrawer() {
+    void preloadDirectionsEditorDrawer();
     const template = await queryClient.fetchQuery({
       queryKey: ['template', 'directions'],
       queryFn: () => api.getCollectionTemplate('directions'),
@@ -346,7 +302,6 @@ export function DirectionsPage({ auth }: DirectionsPageProps) {
 
     setDrawerOpen(false);
     setEditingRecord(null);
-    form.resetFields();
     await refreshDirectionsTable();
     return true;
   }
@@ -375,7 +330,7 @@ export function DirectionsPage({ auth }: DirectionsPageProps) {
       <ProTable<DirectionRecord>
         rowKey={(record) => stableRowKey(record, ['_id', 'slug', 'name'])}
         actionRef={actionRef}
-        formRef={formRef}
+        formRef={tableFormRef}
         cardBordered
         columns={columns}
         params={{ keyword, status, category, featured, current, pageSize }}
@@ -407,7 +362,17 @@ export function DirectionsPage({ auth }: DirectionsPageProps) {
           title: '帖子主控区',
           actions: auth.permissions.canWrite
             ? [
-                <Button key="create" type="primary" onClick={openCreateDrawer}>
+                <Button
+                  key="create"
+                  type="primary"
+                  onMouseEnter={() => {
+                    void preloadDirectionsEditorDrawer();
+                  }}
+                  onFocus={() => {
+                    void preloadDirectionsEditorDrawer();
+                  }}
+                  onClick={openCreateDrawer}
+                >
                   新建帖子
                 </Button>
               ]
@@ -469,56 +434,30 @@ export function DirectionsPage({ auth }: DirectionsPageProps) {
         <pre className="json-preview">{stringifyRecord(detailRecord)}</pre>
       </Drawer>
 
-      <DrawerForm<DirectionFormValues>
-        title={drawerMode === 'create' ? '新建帖子' : '编辑帖子'}
-        open={drawerOpen}
-        onOpenChange={(open) => {
-          setDrawerOpen(open);
-          if (!open) {
-            setEditingRecord(null);
-            form.resetFields();
+      {drawerOpen ? (
+        <Suspense
+          fallback={
+            <Drawer open title={drawerMode === 'create' ? '新建帖子' : '编辑帖子'} width={560}>
+              <div className="center-screen" style={{ minHeight: 320 }}>
+                <Spin size="large" />
+              </div>
+            </Drawer>
           }
-        }}
-        width={560}
-        form={form}
-        onFinish={handleSubmit}
-        submitter={{
-          searchConfig: {
-            submitText: drawerMode === 'create' ? '创建帖子' : '保存修改'
-          }
-        }}
-      >
-        <ProFormText name="name" label="帖子名称" rules={[{ required: true, message: '请填写帖子名称' }]} />
-        <ProFormText name="slug" label="唯一标识" rules={[{ required: true, message: '请填写 slug' }]} />
-        <ProFormText name="category" label="分类" />
-        <ProFormSelect
-          name="status"
-          label="状态"
-          options={[
-            { label: '草稿', value: 'draft' },
-            { label: '已发布', value: 'published' }
-          ]}
-        />
-        <ProFormDigit name="sort" label="排序" min={0} />
-        <ProFormSwitch name="isFeatured" label="精选推荐" />
-        <ProFormText name="featuredTag" label="精选标签" />
-        <ProFormText name="homeTag" label="首页标签" />
-        <ProFormText name="iconType" label="图标类型" />
-        <ProFormTextArea name="summary" label="摘要" fieldProps={{ rows: 3 }} />
-        <ProFormTextArea name="audience" label="适合人群" fieldProps={{ rows: 3 }} />
-        <ProFormTextArea
-          name="featuresText"
-          label="卖点列表"
-          extra="一行一个，保存时会自动转成数组。"
-          fieldProps={{ rows: 5 }}
-        />
-        <ProFormTextArea
-          name="chipsText"
-          label="标签 Chips"
-          extra="可用换行、逗号或中文逗号分隔。"
-          fieldProps={{ rows: 4 }}
-        />
-      </DrawerForm>
+        >
+          <DirectionsEditorDrawer
+            mode={drawerMode}
+            open={drawerOpen}
+            record={editingRecord}
+            onOpenChange={(open) => {
+              setDrawerOpen(open);
+              if (!open) {
+                setEditingRecord(null);
+              }
+            }}
+            onSubmit={handleSubmit}
+          />
+        </Suspense>
+      ) : null}
     </Space>
   );
 }
