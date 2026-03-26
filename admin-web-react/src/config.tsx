@@ -46,7 +46,7 @@ export const moduleConfigs: ModuleConfig[] = [
     key: 'home',
     label: '首页内容',
     title: '首页内容',
-    subtitle: '首页配置暂保留在旧后台，本页提供摘要与跳转入口。',
+    subtitle: '按小程序真实展示顺序维护首页内容，支持 1:1 可视化映射与分区编辑。',
     pageKey: 'home',
     collections: [],
     iconKey: 'home',

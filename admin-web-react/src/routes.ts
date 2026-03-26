@@ -6,6 +6,8 @@ const loadAuthenticatedApp = () =>
   import('./authenticated/AuthenticatedApp').then((module) => ({ default: module.AuthenticatedApp }));
 const loadDirectionsPage = () =>
   import('./pages/DirectionsPage').then((module) => ({ default: module.DirectionsPage }));
+const loadHomeContentPage = () =>
+  import('./pages/HomeContentPage').then((module) => ({ default: module.HomeContentPage }));
 const loadLearnersPage = () =>
   import('./pages/LearnersPage').then((module) => ({ default: module.LearnersPage }));
 const loadOverviewPage = () =>
@@ -16,6 +18,7 @@ const loadPageWorkbench = () =>
 export const LoginPageRoute = lazy(loadLoginPage);
 export const AuthenticatedAppRoute = lazy(loadAuthenticatedApp);
 export const DirectionsPageRoute = lazy(loadDirectionsPage);
+export const HomeContentPageRoute = lazy(loadHomeContentPage);
 export const LearnersPageRoute = lazy(loadLearnersPage);
 export const OverviewPageRoute = lazy(loadOverviewPage);
 export const PageWorkbenchRoute = lazy(loadPageWorkbench);
@@ -32,6 +35,8 @@ export function preloadModuleRoute(moduleKey: ModuleKey) {
   switch (moduleKey) {
     case 'directions':
       return loadDirectionsPage();
+    case 'home':
+      return loadHomeContentPage();
     case 'learners':
       return loadLearnersPage();
     case 'overview':

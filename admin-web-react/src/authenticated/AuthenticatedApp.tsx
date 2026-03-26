@@ -6,7 +6,7 @@ import type { AuthState, HealthPayload } from '../api';
 import { api } from '../api';
 import { AppShell } from '../components/AppShell';
 import { moduleConfigMap, moduleConfigs, type ModuleKey } from '../config';
-import { DirectionsPageRoute, LearnersPageRoute, OverviewPageRoute, PageWorkbenchRoute } from '../routes';
+import { DirectionsPageRoute, HomeContentPageRoute, LearnersPageRoute, OverviewPageRoute, PageWorkbenchRoute } from '../routes';
 import type { ThemeMode } from '../App';
 
 type AuthenticatedAppProps = {
@@ -65,6 +65,14 @@ export function AuthenticatedApp({ auth, health, onLogout, themeMode, onToggleTh
           }
         />
         <Route
+          path="/home"
+          element={
+            <SuspendedRoute>
+              <HomeContentPageRoute auth={auth} />
+            </SuspendedRoute>
+          }
+        />
+        <Route
           path="/directions"
           element={
             <SuspendedRoute>
@@ -81,7 +89,7 @@ export function AuthenticatedApp({ auth, health, onLogout, themeMode, onToggleTh
           }
         />
         {moduleConfigs
-          .filter((item) => !['overview', 'directions', 'learners'].includes(item.key))
+          .filter((item) => !['overview', 'home', 'directions', 'learners'].includes(item.key))
           .map((item) => (
             <Route
               key={item.key}
