@@ -984,6 +984,109 @@ function createCloudRequiredError() {
   return error;
 }
 
+const MATERIAL_STAGE_ALIASES = {
+  foundation: 'foundation',
+  reinforcement: 'reinforcement',
+  sprint: 'sprint',
+  '基础阶段': 'foundation',
+  基础: 'foundation',
+  '强化阶段': 'reinforcement',
+  强化: 'reinforcement',
+  '冲刺阶段': 'sprint',
+  冲刺: 'sprint',
+  '考前阶段': 'sprint',
+  考前: 'sprint'
+};
+
+const MATERIAL_ITEM_THEME = {
+  math: {
+    accentStart: '#2f66ff',
+    accentEnd: '#4f8dff'
+  },
+  medical: {
+    accentStart: '#14b8a6',
+    accentEnd: '#0f9f8f'
+  }
+};
+
+function readMaterialDirectionFromRecord(item = {}) {
+  if (item.direction === 'medical') return 'medical';
+  if (item.direction === 'math') return 'math';
+  const token = String(item.seriesId || item.slug || item.title || item.subtitle || '').toLowerCase();
+  return token.includes('medical') || token.includes('医护') ? 'medical' : 'math';
+}
+
+function readMaterialStageFromRecord(item = {}) {
+  const raw = String(item.stage || '').trim();
+  return MATERIAL_STAGE_ALIASES[raw] || 'foundation';
+}
+
+function toStringList(value) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.map((item) => String(item || '').trim()).filter(Boolean);
+}
+
+function normalizeMaterialPackageRecord(item = {}, index = 0) {
+  const direction = readMaterialDirectionFromRecord(item);
+  const stage = readMaterialStageFromRecord(item);
+  return {
+    _id: item._id || `material_package_${direction}_${stage}_${index + 1}`,
+    direction,
+    stage,
+    badge: String(item.badge || item.tag || ''),
+    title: String(item.title || item.name || ''),
+    target: String(item.target || item.audience || item.subtitle || ''),
+    solves: String(item.solves || item.desc || item.description || ''),
+    features: toStringList(item.features || item.contents),
+    contentItemIds: toStringList(item.contentItemIds),
+    sort: Number(item.sort || (index + 1) * 10),
+    status: item.status === 'published' ? 'published' : 'draft',
+    createdAt: item.createdAt || '',
+    updatedAt: item.updatedAt || ''
+  };
+}
+
+function normalizeMaterialItemRecord(item = {}, index = 0) {
+  const direction = readMaterialDirectionFromRecord(item);
+  const stage = readMaterialStageFromRecord(item);
+  const theme = MATERIAL_ITEM_THEME[direction] || MATERIAL_ITEM_THEME.math;
+  const detailsFromContents = toStringList(item.contents).join(' / ');
+  return {
+    _id: item._id || `material_item_${direction}_${stage}_${index + 1}`,
+    direction,
+    stage,
+    type: String(item.type || '资料'),
+    title: String(item.title || item.name || ''),
+    subtitle: String(item.subtitle || item.stage || ''),
+    desc: String(item.desc || item.description || ''),
+    details: String(item.details || detailsFromContents || item.desc || item.description || ''),
+    accentStart: String(item.accentStart || theme.accentStart),
+    accentEnd: String(item.accentEnd || theme.accentEnd),
+    sort: Number(item.sort || (index + 1) * 10),
+    status: item.status === 'published' ? 'published' : 'draft',
+    createdAt: item.createdAt || '',
+    updatedAt: item.updatedAt || ''
+  };
+}
+
+function normalizeCollectionRecord(collectionKey, item, index = 0) {
+  if (!item || typeof item !== 'object' || Array.isArray(item)) {
+    return item;
+  }
+
+  if (collectionKey === 'materialPackages') {
+    return normalizeMaterialPackageRecord(item, index);
+  }
+
+  if (collectionKey === 'materialItems') {
+    return normalizeMaterialItemRecord(item, index);
+  }
+
+  return item;
+}
+
 function stampCollectionItem(payload, itemId, existing = null, timestamp = nowIso()) {
   const nextItem = { ...(payload || {}), _id: itemId || payload?._id || existing?._id };
   return {
@@ -2252,17 +2355,21 @@ class LocalStore {
         return String(rightValue).localeCompare(String(leftValue));
       }
       return String(leftValue).localeCompare(String(rightValue));
-    });
+    }).map((item, index) => normalizeCollectionRecord(collectionKey, item, index));
   }
 
   async getItem(collectionKey, itemId) {
     const data = readData();
-    return (data[collectionKey] || []).find((entry) => entry._id === itemId) || null;
+    const item = (data[collectionKey] || []).find((entry) => entry._id === itemId) || null;
+    return item ? normalizeCollectionRecord(collectionKey, item) : null;
   }
 
   async createItem(collectionKey, payload) {
     const data = readData();
-    const nextItem = stampCollectionItem(payload, payload._id || makeId(collectionKey));
+    const nextItem = normalizeCollectionRecord(
+      collectionKey,
+      stampCollectionItem(payload, payload._id || makeId(collectionKey))
+    );
     data[collectionKey] = [...(data[collectionKey] || []), nextItem];
     writeData(data);
     return nextItem;
@@ -2271,7 +2378,7 @@ class LocalStore {
   async updateItem(collectionKey, itemId, payload) {
     const data = readData();
     const existing = (data[collectionKey] || []).find((entry) => entry._id === itemId) || null;
-    const nextItem = stampCollectionItem(payload, itemId, existing);
+    const nextItem = normalizeCollectionRecord(collectionKey, stampCollectionItem(payload, itemId, existing));
     data[collectionKey] = (data[collectionKey] || []).map((entry) =>
       entry._id === itemId ? nextItem : entry
     );
@@ -2403,7 +2510,7 @@ class CloudStore {
       throw error;
     }
 
-    return allItems;
+    return allItems.map((item, index) => normalizeCollectionRecord(collectionKey, item, index));
   }
 
   async getItem(collectionKey, itemId) {
@@ -2411,7 +2518,7 @@ class CloudStore {
     if (!collection) throw new Error('未知集合');
     try {
       const result = await this.db.collection(collection).doc(itemId).get();
-      return normalizeDocResult(result);
+      return normalizeCollectionRecord(collectionKey, normalizeDocResult(result));
     } catch (error) {
       if (isMissingCollectionError(error) && LEARNER_LIST_COLLECTIONS.has(collectionKey)) {
         await this.ensureCollection(collectionKey).catch(() => false);
@@ -2425,7 +2532,7 @@ class CloudStore {
     const collection = LIST_COLLECTIONS[collectionKey];
     if (!collection) throw new Error('未知集合');
     const itemId = payload._id || makeId(collectionKey);
-    const nextItem = stampCollectionItem(payload, itemId);
+    const nextItem = normalizeCollectionRecord(collectionKey, stampCollectionItem(payload, itemId));
     try {
       await this.db.collection(collection).doc(itemId).set(stripId(nextItem));
     } catch (error) {
@@ -2443,7 +2550,7 @@ class CloudStore {
     const collection = LIST_COLLECTIONS[collectionKey];
     if (!collection) throw new Error('未知集合');
     const existing = await this.getItem(collectionKey, itemId).catch(() => null);
-    const nextItem = stampCollectionItem(payload, itemId, existing);
+    const nextItem = normalizeCollectionRecord(collectionKey, stampCollectionItem(payload, itemId, existing));
     await this.db.collection(collection).doc(itemId).set(stripId(nextItem));
     return nextItem;
   }

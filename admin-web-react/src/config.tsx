@@ -80,7 +80,7 @@ export const moduleConfigs: ModuleConfig[] = [
     key: 'media',
     label: '商城',
     title: '商城',
-    subtitle: '商城页骨架已接入，批量内容维护暂保留旧后台。',
+    subtitle: '按小程序商城真实顺序维护资料内容，老师可直接编辑顶部切换、主推套系和资料卡片。',
     pageKey: 'materials',
     collections: [
       { key: 'mediaAssets', label: '素材库' },

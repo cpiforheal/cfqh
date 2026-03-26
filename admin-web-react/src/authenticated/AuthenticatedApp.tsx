@@ -6,7 +6,14 @@ import type { AuthState, HealthPayload } from '../api';
 import { api } from '../api';
 import { AppShell } from '../components/AppShell';
 import { moduleConfigMap, moduleConfigs, type ModuleKey } from '../config';
-import { DirectionsPageRoute, HomeContentPageRoute, LearnersPageRoute, OverviewPageRoute, PageWorkbenchRoute } from '../routes';
+import {
+  DirectionsPageRoute,
+  HomeContentPageRoute,
+  LearnersPageRoute,
+  MediaContentPageRoute,
+  OverviewPageRoute,
+  PageWorkbenchRoute
+} from '../routes';
 import type { ThemeMode } from '../App';
 
 type AuthenticatedAppProps = {
@@ -88,8 +95,16 @@ export function AuthenticatedApp({ auth, health, onLogout, themeMode, onToggleTh
             </SuspendedRoute>
           }
         />
+        <Route
+          path="/media"
+          element={
+            <SuspendedRoute>
+              <MediaContentPageRoute auth={auth} />
+            </SuspendedRoute>
+          }
+        />
         {moduleConfigs
-          .filter((item) => !['overview', 'home', 'directions', 'learners'].includes(item.key))
+          .filter((item) => !['overview', 'home', 'directions', 'learners', 'media'].includes(item.key))
           .map((item) => (
             <Route
               key={item.key}
