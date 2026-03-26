@@ -95,7 +95,7 @@ export function MediaItemEditorDrawer({
     >
       <ProFormText
         name="type"
-        label="资料类型"
+        label="资料左侧标签"
         extra={`当前会出现在 ${materialDirectionLabels[direction]} · ${materialStageLabels[stage]} 的资料列表里`}
         rules={[{ required: true, message: '请填写资料类型' }]}
       />
@@ -103,18 +103,18 @@ export function MediaItemEditorDrawer({
       <ProFormText name="subtitle" label="资料副标题" rules={[{ required: true, message: '请填写资料副标题' }]} />
       <ProFormTextArea
         name="desc"
-        label="短简介"
+        label="卡片简介"
         fieldProps={{ rows: 3 }}
         rules={[{ required: true, message: '请填写短简介' }]}
       />
       <ProFormTextArea
         name="details"
-        label="展开说明"
+        label="按钮右侧说明"
         fieldProps={{ rows: 4 }}
         rules={[{ required: true, message: '请填写展开说明' }]}
       />
-      <ProFormText name="accentStart" label="卡片渐变起始色" rules={[{ required: true, message: '请填写起始色' }]} />
-      <ProFormText name="accentEnd" label="卡片渐变结束色" rules={[{ required: true, message: '请填写结束色' }]} />
+      <ProFormText name="accentStart" label="卡片主色" rules={[{ required: true, message: '请填写起始色' }]} />
+      <ProFormText name="accentEnd" label="卡片辅色" rules={[{ required: true, message: '请填写结束色' }]} />
       <ProFormDigit name="sort" label="排序" min={0} />
       <ProFormSelect
         name="status"

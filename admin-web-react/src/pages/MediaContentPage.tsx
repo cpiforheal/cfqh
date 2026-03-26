@@ -44,11 +44,9 @@ type MediaSectionRow = {
   step: string;
   title: string;
   desc: string;
-  location: string;
   summary: string;
   statusLabel: string;
   statusTone: 'success' | 'warning';
-  teacherTip: string;
 };
 
 function buildSectionRows(
@@ -61,21 +59,9 @@ function buildSectionRows(
       const ready = Boolean(page.header.title && page.header.searchLabel);
       return {
         ...section,
-        summary: `${page.header.title || '未填写标题'} / ${page.header.searchLabel || '未填写搜索提示'}`,
+        summary: `${page.header.title || '未填写标题'} / 搜索提示：${page.header.searchLabel || '未填写'}`,
         statusLabel: ready ? '顶部已完整' : '建议补齐顶部文案',
-        statusTone: ready ? 'success' : 'warning',
-        teacherTip: '这就是学生进入商城第一眼看到的内容。老师只需要把标题和搜索提示写直白。'
-      };
-    }
-
-    if (section.id === 'directionTabs') {
-      const ready = page.directionTabs.length >= 2 && page.directionTabs.every((item) => item.label);
-      return {
-        ...section,
-        summary: page.directionTabs.map((item) => item.label).join(' / ') || '还没有配置学科切换',
-        statusLabel: ready ? '学科切换已完整' : `已配置 ${page.directionTabs.length}/2`,
-        statusTone: ready ? 'success' : 'warning',
-        teacherTip: '这里只维护显示名称，不需要老师理解技术字段。顺序会直接映射到前台。'
+        statusTone: ready ? 'success' : 'warning'
       };
     }
 
@@ -85,52 +71,31 @@ function buildSectionRows(
         ...section,
         summary: page.stageTabs.map((item) => item.label).join(' / ') || '还没有配置阶段按钮',
         statusLabel: ready ? '阶段按钮已完整' : `已配置 ${page.stageTabs.length}/3`,
-        statusTone: ready ? 'success' : 'warning',
-        teacherTip: '阶段按钮建议保持短句，老师只要顺着前台显示顺序从左往右维护即可。'
-      };
-    }
-
-    if (section.id === 'mainSection') {
-      const ready = Boolean(page.mainSection.title && page.mainSection.sideNote);
-      return {
-        ...section,
-        summary: `${page.mainSection.title || '未填写标题'} / ${page.mainSection.sideNote || '未填写提示'}`,
-        statusLabel: ready ? '主推区标题已完整' : '建议补齐主推区标题',
-        statusTone: ready ? 'success' : 'warning',
-        teacherTip: '这一行像路标一样，直接告诉老师和学生“下面这块是什么”。'
+        statusTone: ready ? 'success' : 'warning'
       };
     }
 
     if (section.id === 'package') {
-      const ready = Boolean(currentPackage?.title && currentPackage?.target && currentPackage?.solves);
+      const ready = Boolean(page.mainSection.title && page.mainSection.sideNote && currentPackage?.title && currentPackage?.target && currentPackage?.solves);
       return {
         ...section,
-        summary: currentPackage ? `${currentPackage.title} / ${currentPackage.badge}` : '当前学科阶段还没有主推套系',
+        summary: currentPackage
+          ? `${page.mainSection.title || '未填写区块标题'} / ${currentPackage.title}`
+          : `${page.mainSection.title || '未填写区块标题'} / 当前学科阶段还没有主推套系`,
         statusLabel: ready ? '主推套系已完整' : currentPackage ? '建议补齐主卡信息' : '建议先创建当前主卡',
-        statusTone: ready ? 'success' : 'warning',
-        teacherTip: '先回答两个问题就够了: 适合谁，解决什么问题。老师和学生都会更容易判断是否点进去。'
-      };
-    }
-
-    if (section.id === 'shelfSection') {
-      const ready = Boolean(page.shelfSection.title && page.shelfSection.hint);
-      return {
-        ...section,
-        summary: `${page.shelfSection.title || '未填写标题'} / ${page.shelfSection.hint || '未填写提示'}`,
-        statusLabel: ready ? '资料区标题已完整' : '建议补齐资料区文案',
-        statusTone: ready ? 'success' : 'warning',
-        teacherTip: '这一行只是说明“下面的资料列表是什么”，老师不需要在这里塞过多信息。'
+        statusTone: ready ? 'success' : 'warning'
       };
     }
 
     if (section.id === 'items') {
-      const ready = currentItems.length > 0 && currentItems.every((item) => item.title && item.subtitle);
+      const ready = Boolean(page.shelfSection.title && page.shelfSection.hint) && currentItems.length > 0 && currentItems.every((item) => item.title && item.subtitle);
       return {
         ...section,
-        summary: currentItems.length ? currentItems.slice(0, 3).map((item) => item.title).join(' / ') : '当前阶段还没有资料卡片',
+        summary: currentItems.length
+          ? `${page.shelfSection.title || '未填写资料区标题'} / ${currentItems.length} 张资料卡`
+          : `${page.shelfSection.title || '未填写资料区标题'} / 当前阶段还没有资料卡片`,
         statusLabel: ready ? `资料卡片 ${currentItems.length} 张` : '建议先补一张资料卡片',
-        statusTone: ready ? 'success' : 'warning',
-        teacherTip: '老师想改哪一张资料卡，就在下面资料表里直接改对应顺序，不需要去找别的集合。'
+        statusTone: ready ? 'success' : 'warning'
       };
     }
 
@@ -139,8 +104,7 @@ function buildSectionRows(
       ...section,
       summary: `${page.consultBar.title || '未填写标题'} / ${page.consultBar.buttonText || '未填写按钮'}`,
       statusLabel: ready ? '咨询条已完整' : '建议补齐咨询文案',
-      statusTone: ready ? 'success' : 'warning',
-      teacherTip: '这里适合放最后承接动作，比如咨询、领资料或联系顾问。'
+      statusTone: ready ? 'success' : 'warning'
     };
   });
 }
@@ -296,7 +260,7 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
     {
       title: '区块',
       dataIndex: 'title',
-      width: 280,
+      width: 340,
       search: false,
       render: (_, record) => (
         <Space direction="vertical" size={2}>
@@ -304,12 +268,6 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
           <Typography.Text type="secondary">{record.desc}</Typography.Text>
         </Space>
       )
-    },
-    {
-      title: '前台位置',
-      dataIndex: 'location',
-      width: 220,
-      search: false
     },
     {
       title: '当前内容摘要',
@@ -325,22 +283,20 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
       render: (_, record) => <Tag color={record.statusTone === 'success' ? 'success' : 'warning'}>{record.statusLabel}</Tag>
     },
     {
-      title: '老师提示',
-      dataIndex: 'teacherTip',
-      width: 300,
-      ellipsis: true,
-      search: false
-    },
-    {
       title: '操作',
       key: 'option',
-      width: 150,
+      width: 210,
       fixed: 'right',
       valueType: 'option',
       render: (_, record) => [
         record.id === 'package' ? (
+          <a key="package-section" onClick={() => setEditingSection('package')}>
+            编辑区块
+          </a>
+        ) : null,
+        record.id === 'package' ? (
           <a
-            key="package"
+            key="package-card"
             onClick={() => {
               setEditingPackage(currentPackage);
               setPackageDrawerOpen(true);
@@ -350,8 +306,13 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
           </a>
         ) : null,
         record.id === 'items' ? (
+          <a key="items-section" onClick={() => setEditingSection('items')}>
+            编辑区块
+          </a>
+        ) : null,
+        record.id === 'items' ? (
           <a
-            key="items"
+            key="items-card"
             onClick={() => {
               setEditingItem({
                 ...defaultMaterialItem,
@@ -375,21 +336,16 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
 
   const packageColumns: ProColumns<MaterialPackageRecord>[] = [
     {
-      title: '角标',
-      dataIndex: 'badge',
-      width: 120,
-      search: false,
-      render: (_, record) => <Tag color="processing">{record.badge || '未填写'}</Tag>
-    },
-    {
       title: '主推套系',
       dataIndex: 'title',
-      width: 260,
+      width: 320,
       search: false,
       render: (_, record) => (
         <Space direction="vertical" size={2}>
           <Typography.Text strong>{record.title || '未填写套系标题'}</Typography.Text>
-          <Typography.Text type="secondary">{record.target || '未填写适合对象'}</Typography.Text>
+          <Typography.Text type="secondary">
+            {record.badge || '未填写角标'} / {record.target || '未填写适合对象'}
+          </Typography.Text>
         </Space>
       )
     },
@@ -447,57 +403,22 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
     {
       title: '资料卡片',
       dataIndex: 'title',
-      width: 260,
+      width: 320,
       search: false,
       render: (_, record) => (
         <Space direction="vertical" size={2}>
           <Typography.Text strong>{record.title || '未填写资料标题'}</Typography.Text>
-          <Typography.Text type="secondary">{record.subtitle || '未填写资料副标题'}</Typography.Text>
+          <Typography.Text type="secondary">
+            {record.type || '未填写类型'} / {record.subtitle || '未填写资料副标题'}
+          </Typography.Text>
         </Space>
       )
-    },
-    {
-      title: '类型',
-      dataIndex: 'type',
-      width: 120,
-      search: false,
-      render: (_, record) => <Tag>{record.type || '未填写'}</Tag>
     },
     {
       title: '简介',
       dataIndex: 'desc',
       ellipsis: true,
       search: false
-    },
-    {
-      title: '颜色',
-      key: 'color',
-      width: 140,
-      search: false,
-      render: (_, record) => (
-        <Space size={8}>
-          <span
-            style={{
-              width: 18,
-              height: 18,
-              borderRadius: 999,
-              display: 'inline-block',
-              background: record.accentStart || '#dbe4f0',
-              border: '1px solid rgba(0, 0, 0, 0.08)'
-            }}
-          />
-          <span
-            style={{
-              width: 18,
-              height: 18,
-              borderRadius: 999,
-              display: 'inline-block',
-              background: record.accentEnd || '#dbe4f0',
-              border: '1px solid rgba(0, 0, 0, 0.08)'
-            }}
-          />
-        </Space>
-      )
     },
     {
       title: '状态',
@@ -542,10 +463,10 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
           <div>
             <Typography.Text className="eyebrow">商城内容主控区</Typography.Text>
             <Typography.Title level={3} style={{ marginTop: 0, marginBottom: 8 }}>
-              全部改成表格行视图，老师顺着页面往下维护
+              顺着商城页面从上到下改，先看重点再进抽屉
             </Typography.Title>
             <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
-              先选学科和阶段，再从页面区块表一路往下看。主推套系和资料卡片也都收在下面的行表格里，不再夹杂预览面板。
+              这里只保留老师最常改的 5 个区块。主表只看重点摘要，具体文案都收进弹出的表单里，不需要来回找。
             </Typography.Paragraph>
           </div>
 
@@ -608,7 +529,7 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
             <div className="home-workspace-tip">
               <Typography.Text strong>老师操作建议</Typography.Text>
               <Typography.Paragraph style={{ marginBottom: 0 }}>
-                先补“主推套系卡”，再补下面的资料卡片表。这样老师最容易从学生端看到当前学科阶段是否已经成型。
+                先改“顶部信息”和“阶段按钮”，再补“主推套系”和“资料列表”。这样老师最容易按学生看到的顺序完成维护。
               </Typography.Paragraph>
             </div>
           </Space>
@@ -642,8 +563,8 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
         pagination={false}
         options={false}
         cardBordered={false}
-        scroll={{ x: 1360 }}
-        headerTitle="商城页面区块清单"
+        scroll={{ x: 1080 }}
+        headerTitle="商城关键区块"
         toolBarRender={() => [
           <Button
             key="edit-top"
@@ -666,7 +587,7 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
         pagination={false}
         options={false}
         cardBordered={false}
-        scroll={{ x: 1080 }}
+        scroll={{ x: 980 }}
         headerTitle="当前主推套系"
         locale={{ emptyText: '当前学科和阶段还没有主推套系' }}
         toolBarRender={() => [
@@ -694,7 +615,7 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
         pagination={false}
         options={false}
         cardBordered={false}
-        scroll={{ x: 1260 }}
+        scroll={{ x: 980 }}
         headerTitle="当前资料卡片"
         locale={{ emptyText: '当前学科和阶段还没有资料卡片' }}
         toolBarRender={() => [
@@ -727,7 +648,7 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
         }
       >
         <MediaSectionEditorDrawer
-          open={Boolean(editingSection) && editingSection !== 'package' && editingSection !== 'items'}
+          open={Boolean(editingSection)}
           sectionId={editingSection}
           page={page}
           saving={updatePageMutation.isPending}

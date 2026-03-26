@@ -1,13 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { Button, Drawer, Form, Input, Select, Space, Typography } from 'antd';
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
-import {
-  defaultMaterialsPage,
-  materialDirectionLabels,
-  materialStageLabels,
-  type MaterialSectionId,
-  type MaterialsPageContent
-} from './types';
+import { defaultMaterialsPage, materialStageLabels, type MaterialSectionId, type MaterialsPageContent } from './types';
 
 type MediaSectionEditorDrawerProps = {
   open: boolean;
@@ -21,21 +15,19 @@ type MediaSectionEditorDrawerProps = {
 
 type SectionValues = MaterialsPageContent;
 
-const sectionTitleMap: Record<Exclude<MaterialSectionId, 'package' | 'items'>, string> = {
-  header: '顶部标题区',
-  directionTabs: '学科切换',
-  stageTabs: '阶段筛选',
-  mainSection: '主推区标题',
-  shelfSection: '资料区标题',
+const sectionTitleMap: Record<MaterialSectionId, string> = {
+  header: '顶部信息',
+  stageTabs: '阶段按钮',
+  package: '主推套系卡',
+  items: '资料列表',
   consultBar: '底部咨询条'
 };
 
-const sectionNoteMap: Record<Exclude<MaterialSectionId, 'package' | 'items'>, string> = {
-  header: '这里对应商城页最上方。主标题建议尽量直白，老师一看就知道学生看到的是什么。',
-  directionTabs: '这里只维护展示名称，不需要老师去碰技术字段。高数和医护的顺序会直接映射到前台。',
-  stageTabs: '前台阶段按钮就是这里的顺序。建议名称保持短，避免移动端换行。',
-  mainSection: '这里是主推套系上方的过渡说明。建议直接告诉学生“下面推荐的是什么”，老师改起来也最不容易迷路。',
-  shelfSection: '这一行只是资料列表的标题和提示，不承载资料内容本身。',
+const sectionNoteMap: Record<MaterialSectionId, string> = {
+  header: '这里对应商城页最上方。主标题和搜索提示尽量写得直白，让老师一看就知道学生会看到什么。',
+  stageTabs: '前台阶段按钮就是这里的顺序。建议名称保持短，避免在手机端换行。',
+  package: '这里先改主推区标题，再到下面的主推套系列表里改具体卡片内容。老师会更容易按“标题在上，主卡在下”的方式维护。',
+  items: '这里先改资料列表的标题和右侧提示，再到下面资料表里逐张修改卡片内容。',
   consultBar: '这是商城最底部的引导区，适合放咨询老师的承接话术。'
 };
 
@@ -83,7 +75,7 @@ export function MediaSectionEditorDrawer({
   }, [form, initialValues, open, sectionId]);
 
   async function handleSubmit() {
-    if (!sectionId || sectionId === 'package' || sectionId === 'items') return;
+    if (!sectionId) return;
     const values = await form.validateFields();
     const nextPage: MaterialsPageContent = {
       ...page,
@@ -99,19 +91,15 @@ export function MediaSectionEditorDrawer({
       nextPage.header = values.header;
     }
 
-    if (sectionId === 'directionTabs') {
-      nextPage.directionTabs = values.directionTabs.slice(0, 2);
-    }
-
     if (sectionId === 'stageTabs') {
       nextPage.stageTabs = values.stageTabs.slice(0, 3);
     }
 
-    if (sectionId === 'mainSection') {
+    if (sectionId === 'package') {
       nextPage.mainSection = values.mainSection;
     }
 
-    if (sectionId === 'shelfSection') {
+    if (sectionId === 'items') {
       nextPage.shelfSection = values.shelfSection;
     }
 
@@ -136,58 +124,6 @@ export function MediaSectionEditorDrawer({
           <Input placeholder="例如 搜索资料" disabled={!canWrite} />
         </Form.Item>
       </Space>
-    );
-  }
-
-  function renderDirectionTabsEditor() {
-    return (
-      <Form.List name="directionTabs">
-        {(fields, { add, remove }) => (
-          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-            <SectionListHeader
-              title="学科切换"
-              count={fields.length}
-              max={2}
-              onAdd={() =>
-                add({
-                  key: fields.length === 0 ? 'math' : 'medical',
-                  label: fields.length === 0 ? materialDirectionLabels.math : materialDirectionLabels.medical,
-                  icon: fields.length === 0 ? 'grid' : 'medical'
-                })
-              }
-              disabled={!canWrite}
-            />
-            {fields.map((field) => (
-              <div className="home-editor-item" key={field.key}>
-                <Form.Item name={[field.name, 'key']} label="学科标识" rules={[{ required: true, message: '请选择学科' }]}>
-                  <Select
-                    disabled={!canWrite}
-                    options={[
-                      { label: '高数', value: 'math' },
-                      { label: '医护', value: 'medical' }
-                    ]}
-                  />
-                </Form.Item>
-                <Form.Item name={[field.name, 'label']} label="显示名称" rules={[{ required: true, message: '请填写显示名称' }]}>
-                  <Input placeholder="例如 高数资料" disabled={!canWrite} />
-                </Form.Item>
-                <Form.Item name={[field.name, 'icon']} label="图标标识">
-                  <Select
-                    disabled={!canWrite}
-                    options={[
-                      { label: '九宫格', value: 'grid' },
-                      { label: '医护', value: 'medical' }
-                    ]}
-                  />
-                </Form.Item>
-                <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} disabled={!canWrite}>
-                  删除这个学科
-                </Button>
-              </div>
-            ))}
-          </Space>
-        )}
-      </Form.List>
     );
   }
 
@@ -236,7 +172,7 @@ export function MediaSectionEditorDrawer({
     );
   }
 
-  function renderMainSectionEditor() {
+  function renderPackageSectionEditor() {
     return (
       <Space direction="vertical" size="middle" style={{ width: '100%' }}>
         <Form.Item
@@ -244,20 +180,20 @@ export function MediaSectionEditorDrawer({
           label="主推区标题"
           rules={[{ required: true, message: '请填写主推区标题' }]}
         >
-          <Input placeholder="例如 本阶段主推资料包" disabled={!canWrite} />
+          <Input placeholder="例如 本阶段主推资料" disabled={!canWrite} />
         </Form.Item>
         <Form.Item
           name={['mainSection', 'sideNote']}
           label="右侧提示"
           rules={[{ required: true, message: '请填写右侧提示' }]}
         >
-          <Input placeholder="例如 先看这一套" disabled={!canWrite} />
+          <Input placeholder="例如 老师优先推荐这一套" disabled={!canWrite} />
         </Form.Item>
       </Space>
     );
   }
 
-  function renderShelfSectionEditor() {
+  function renderItemsSectionEditor() {
     return (
       <Space direction="vertical" size="middle" style={{ width: '100%' }}>
         <Form.Item
@@ -265,10 +201,10 @@ export function MediaSectionEditorDrawer({
           label="资料区标题"
           rules={[{ required: true, message: '请填写资料区标题' }]}
         >
-          <Input placeholder="例如 本阶段资料一览" disabled={!canWrite} />
+          <Input placeholder="例如 免费精选资料" disabled={!canWrite} />
         </Form.Item>
         <Form.Item name={['shelfSection', 'hint']} label="右侧提示" rules={[{ required: true, message: '请填写右侧提示' }]}>
-          <Input placeholder="例如 从上到下查看" disabled={!canWrite} />
+          <Input placeholder="例如 更多" disabled={!canWrite} />
         </Form.Item>
       </Space>
     );
@@ -300,7 +236,7 @@ export function MediaSectionEditorDrawer({
 
   return (
     <Drawer
-      title={sectionId && sectionId !== 'package' && sectionId !== 'items' ? sectionTitleMap[sectionId] : '编辑区块'}
+      title={sectionId ? sectionTitleMap[sectionId] : '编辑区块'}
       open={open}
       onClose={onClose}
       width={560}
@@ -314,17 +250,16 @@ export function MediaSectionEditorDrawer({
         </Space>
       }
     >
-      {sectionId && sectionId !== 'package' && sectionId !== 'items' ? (
+      {sectionId ? (
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
           <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
             {sectionNoteMap[sectionId]}
           </Typography.Paragraph>
           <Form form={form} layout="vertical" initialValues={initialValues}>
             {sectionId === 'header' ? renderHeaderEditor() : null}
-            {sectionId === 'directionTabs' ? renderDirectionTabsEditor() : null}
             {sectionId === 'stageTabs' ? renderStageTabsEditor() : null}
-            {sectionId === 'mainSection' ? renderMainSectionEditor() : null}
-            {sectionId === 'shelfSection' ? renderShelfSectionEditor() : null}
+            {sectionId === 'package' ? renderPackageSectionEditor() : null}
+            {sectionId === 'items' ? renderItemsSectionEditor() : null}
             {sectionId === 'consultBar' ? renderConsultBarEditor() : null}
           </Form>
         </Space>

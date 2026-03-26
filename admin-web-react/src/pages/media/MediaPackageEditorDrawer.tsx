@@ -84,14 +84,14 @@ export function MediaPackageEditorDrawer({
     >
       <ProFormText
         name="badge"
-        label="左上角角标"
+        label="主卡角标"
         extra={`当前会出现在 ${materialDirectionLabels[direction]} · ${materialStageLabels[stage]} 这张主卡上`}
         rules={[{ required: true, message: '请填写角标' }]}
       />
-      <ProFormText name="title" label="套系标题" rules={[{ required: true, message: '请填写套系标题' }]} />
+      <ProFormText name="title" label="主卡标题" rules={[{ required: true, message: '请填写套系标题' }]} />
       <ProFormTextArea
         name="target"
-        label="适合哪些老师/学生"
+        label="适合对象"
         rules={[{ required: true, message: '请填写适合对象' }]}
         fieldProps={{ rows: 3 }}
       />
@@ -103,8 +103,8 @@ export function MediaPackageEditorDrawer({
       />
       <ProFormTextArea
         name="featuresText"
-        label="卖点列表"
-        extra="一行一个，前台会按列表顺序展示。"
+        label="主卡亮点"
+        extra="一行一个，前台会按填写顺序展示。"
         fieldProps={{ rows: 5 }}
       />
       <ProFormDigit name="sort" label="排序" min={0} />

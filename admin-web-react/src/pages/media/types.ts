@@ -1,14 +1,6 @@
 export type MaterialDirectionKey = 'math' | 'medical';
 export type MaterialStageKey = 'foundation' | 'reinforcement' | 'sprint';
-export type MaterialSectionId =
-  | 'header'
-  | 'directionTabs'
-  | 'stageTabs'
-  | 'mainSection'
-  | 'package'
-  | 'shelfSection'
-  | 'items'
-  | 'consultBar';
+export type MaterialSectionId = 'header' | 'stageTabs' | 'package' | 'items' | 'consultBar';
 
 export type MaterialsPageContent = {
   header: {
@@ -127,55 +119,34 @@ export const mediaSectionModels: MediaSectionModel[] = [
   {
     id: 'header',
     step: '第 1 行',
-    title: '顶部标题区',
-    desc: '对应商城页最上方的主标题和右侧搜索提示。',
+    title: '顶部信息',
+    desc: '对应商城页最上方的标题和搜索提示。',
     location: '标题 / 搜索提示'
   },
   {
-    id: 'directionTabs',
-    step: '第 2 行',
-    title: '学科切换',
-    desc: '对应商城页顶部的高数 / 医护切换，老师只需维护显示名称。',
-    location: '学科名称'
-  },
-  {
     id: 'stageTabs',
-    step: '第 3 行',
-    title: '阶段筛选',
-    desc: '对应商城页的阶段按钮，从左到右就是前台展示顺序。',
+    step: '第 2 行',
+    title: '阶段按钮',
+    desc: '对应商城页的阶段切换按钮，从左到右就是前台顺序。',
     location: '阶段名称'
   },
   {
-    id: 'mainSection',
-    step: '第 4 行',
-    title: '主推区标题',
-    desc: '对应主推套系大卡片上方的标题和提示语，老师可以直接告诉学生“下面这块是什么”。',
-    location: '区块标题 / 辅助提示'
-  },
-  {
     id: 'package',
-    step: '第 5 块',
+    step: '第 3 块',
     title: '主推套系卡',
-    desc: '对应当前学科和阶段下方的大卡片，老师优先在这里说明“适合谁、解决什么问题”。',
-    location: '角标 / 标题 / 适合人群 / 解决问题 / 卖点'
-  },
-  {
-    id: 'shelfSection',
-    step: '第 6 行',
-    title: '资料区标题',
-    desc: '对应资料列表上方的小标题和右侧提示语。',
-    location: '列表标题 / 提示语'
+    desc: '对应主推大卡片和它上方的引导标题，老师重点改这里。',
+    location: '区块标题 / 主卡内容'
   },
   {
     id: 'items',
-    step: '第 7 块',
-    title: '资料卡片',
-    desc: '对应下方资料卡片列表，从上到下就是前台展示顺序。',
-    location: '类型 / 标题 / 副标题 / 简介 / 颜色'
+    step: '第 4 块',
+    title: '资料列表',
+    desc: '对应资料区标题和下面的资料卡片，从上到下就是前台顺序。',
+    location: '列表标题 / 资料卡片'
   },
   {
     id: 'consultBar',
-    step: '第 8 块',
+    step: '第 5 块',
     title: '底部咨询条',
     desc: '对应最底部的咨询提示，适合放老师想引导咨询的话术。',
     location: '标题 / 说明 / 按钮文案'
