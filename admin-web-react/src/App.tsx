@@ -102,11 +102,36 @@ export default function App() {
     () => ({
       algorithm: theme.defaultAlgorithm,
       token: {
-        colorPrimary: '#1951d1',
-        colorInfo: '#1951d1',
-        colorSuccess: '#2e8b57',
+        colorPrimary: '#5275b5',
+        colorInfo: '#5275b5',
+        colorSuccess: '#4f8a72',
+        colorBgBase: '#f4f7fb',
+        colorBgContainer: 'rgba(255, 255, 255, 0.88)',
+        colorText: '#20304d',
+        colorTextSecondary: '#667a9b',
+        colorBorderSecondary: 'rgba(111, 132, 171, 0.16)',
         borderRadius: 18,
         fontFamily: '"IBM Plex Sans", "PingFang SC", "Microsoft YaHei", sans-serif'
+      },
+      components: {
+        Layout: {
+          headerBg: 'transparent',
+          bodyBg: 'transparent',
+          siderBg: 'transparent'
+        },
+        Card: {
+          colorBgContainer: 'rgba(255, 255, 255, 0.84)'
+        },
+        Button: {
+          defaultBg: 'rgba(255, 255, 255, 0.74)',
+          defaultBorderColor: 'rgba(111, 132, 171, 0.22)',
+          defaultColor: '#36527f',
+          primaryShadow: '0 12px 24px rgba(82, 117, 181, 0.18)'
+        },
+        Tag: {
+          defaultBg: 'rgba(108, 138, 187, 0.1)',
+          defaultColor: '#486389'
+        }
       }
     }),
     []
