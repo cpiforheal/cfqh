@@ -7,11 +7,14 @@ import { api } from '../api';
 import { AppShell } from '../components/AppShell';
 import { moduleConfigMap, moduleConfigs, type ModuleKey } from '../config';
 import { DirectionsPageRoute, LearnersPageRoute, OverviewPageRoute, PageWorkbenchRoute } from '../routes';
+import type { ThemeMode } from '../App';
 
 type AuthenticatedAppProps = {
   auth: AuthState;
   health: HealthPayload;
   onLogout: () => void;
+  themeMode: ThemeMode;
+  onToggleTheme: () => void;
 };
 
 function LoadingScreen() {
@@ -26,7 +29,7 @@ function SuspendedRoute({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<LoadingScreen />}>{children}</Suspense>;
 }
 
-export function AuthenticatedApp({ auth, health, onLogout }: AuthenticatedAppProps) {
+export function AuthenticatedApp({ auth, health, onLogout, themeMode, onToggleTheme }: AuthenticatedAppProps) {
   const location = useLocation();
   const metaQuery = useQuery({
     queryKey: ['meta'],
@@ -50,7 +53,7 @@ export function AuthenticatedApp({ auth, health, onLogout }: AuthenticatedAppPro
   const fallbackView = moduleConfigMap[currentKey] || moduleConfigMap.overview;
 
   return (
-    <AppShell auth={auth} meta={metaQuery.data} health={health} onLogout={onLogout}>
+    <AppShell auth={auth} meta={metaQuery.data} health={health} onLogout={onLogout} themeMode={themeMode} onToggleTheme={onToggleTheme}>
       <Routes>
         <Route path="/" element={<Navigate to="/overview" replace />} />
         <Route

@@ -13,13 +13,16 @@ import {
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  MoonOutlined,
   ProfileOutlined,
+  SunOutlined,
   SwapOutlined,
   TeamOutlined
 } from '@ant-design/icons';
 import type { AuthState, HealthPayload, MetaPayload } from '../api';
 import { menuSections, moduleConfigMap, type ModuleKey } from '../config';
 import { preloadModuleRoute } from '../routes';
+import type { ThemeMode } from '../App';
 
 const { Header, Sider, Content } = Layout;
 const sidebarStorageKey = 'cfqh-react-admin-sidebar-collapsed';
@@ -29,6 +32,8 @@ type AppShellProps = {
   meta: MetaPayload;
   health: HealthPayload;
   onLogout: () => void;
+  themeMode: ThemeMode;
+  onToggleTheme: () => void;
   children: React.ReactNode;
 };
 
@@ -44,7 +49,7 @@ const menuIcons: Record<string, ReactNode> = {
   idcard: <IdcardOutlined />
 };
 
-export function AppShell({ auth, meta, health, onLogout, children }: AppShellProps) {
+export function AppShell({ auth, meta, health, onLogout, themeMode, onToggleTheme, children }: AppShellProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const selectedKey = location.pathname.replace(/^\/+/, '') || 'overview';
@@ -124,7 +129,7 @@ export function AppShell({ auth, meta, health, onLogout, children }: AppShellPro
           </div>
         </div>
         <Menu
-          theme="light"
+          theme={themeMode === 'dark' ? 'dark' : 'light'}
           mode="inline"
           inlineCollapsed={collapsed}
           className="app-shell-menu"
@@ -148,6 +153,15 @@ export function AppShell({ auth, meta, health, onLogout, children }: AppShellPro
           <Space size="middle" wrap className="app-shell-header-actions">
             <Tag color="processing">{String(meta.currentUser?.name || auth.user?.name || '未命名账号')}</Tag>
             <Tag>{String(meta.currentUser?.roleLabel || '未分配角色')}</Tag>
+            <Tooltip title={themeMode === 'dark' ? '切换到明亮模式' : '切换到暗色模式'}>
+              <Button
+                icon={themeMode === 'dark' ? <SunOutlined /> : <MoonOutlined />}
+                onClick={onToggleTheme}
+                className="theme-toggle"
+              >
+                {themeMode === 'dark' ? '明亮' : '暗色'}
+              </Button>
+            </Tooltip>
             <Button icon={<SwapOutlined />} href="/" target="_blank">
               旧后台
             </Button>

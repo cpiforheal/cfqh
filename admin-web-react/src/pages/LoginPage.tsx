@@ -1,11 +1,14 @@
 import { Alert, App, Button, Card, Form, Input, Space, Tag, Typography } from 'antd';
-import { LockOutlined, SafetyCertificateOutlined, UserOutlined } from '@ant-design/icons';
+import { LockOutlined, MoonOutlined, SafetyCertificateOutlined, SunOutlined, UserOutlined } from '@ant-design/icons';
 import { api, type AuthState, type HealthPayload } from '../api';
+import type { ThemeMode } from '../App';
 
 type LoginPageProps = {
   auth: AuthState;
   health: HealthPayload | undefined;
   onSuccess: () => void;
+  themeMode: ThemeMode;
+  onToggleTheme: () => void;
 };
 
 type LoginFormValues = {
@@ -14,7 +17,7 @@ type LoginFormValues = {
   password: string;
 };
 
-export function LoginPage({ auth, health, onSuccess }: LoginPageProps) {
+export function LoginPage({ auth, health, onSuccess, themeMode, onToggleTheme }: LoginPageProps) {
   const [form] = Form.useForm<LoginFormValues>();
   const { message } = App.useApp();
 
@@ -41,7 +44,16 @@ export function LoginPage({ auth, health, onSuccess }: LoginPageProps) {
   return (
     <div className="auth-screen">
       <div className="auth-hero">
-        <Tag color="blue">/react-admin/</Tag>
+        <Space wrap align="center" className="auth-hero-top">
+          <Tag color="blue">/react-admin/</Tag>
+          <Button
+            icon={themeMode === 'dark' ? <SunOutlined /> : <MoonOutlined />}
+            onClick={onToggleTheme}
+            className="theme-toggle"
+          >
+            {themeMode === 'dark' ? '明亮模式' : '暗色模式'}
+          </Button>
+        </Space>
         <Typography.Title>3200 后台 React 验证版</Typography.Title>
         <Typography.Paragraph>
           这一版先把登录、工作台、帖子 ProTable 和学习用户主控区迁过来，旧后台仍保留在根路径。
