@@ -13,54 +13,147 @@
   },
   pages: {
     home: {
-      hero: {
-        chip: '护理 / 助产 / 医护背景同学',
-        title: '想冲江苏专转本？',
-        highlightTitle: '先判断方向，再安排课程',
-        desc: '新同学先看适合方向和课程安排，在学同学再进入每日一题、模拟题和错题本。',
-        tags: ['92.3% 上岸率', '1:8 小班跟进', '独立校区学习'],
-        primaryButton: { text: '了解课程安排', url: '/pages/courses/index', openType: 'switchTab' },
-        secondaryNote: '先选方向，再做训练',
-        backgroundImageUrl: '',
-        backgroundImageSeed: 'university'
+      header: {
+        title: '今日学习',
+        subtitle: '先做题，再沉淀进度',
+        resourceSectionTitle: '免费精选资源',
+        resourceMoreText: '更多'
       },
-      overviewStats: [
-        { value: '92.3%', label: '上岸率', note: '2025届实际数据' },
-        { value: '1:8', label: '师生比', note: '小班精细化' },
-        { value: '365天', label: '全年答疑', note: '全职坐班' }
-      ],
-      quickLinks: [
-        { label: '机构介绍', desc: '看品牌介绍', url: '/pages/about/index', openType: 'navigate', icon: 'building' },
-        { label: '每日一题', desc: '在学每日打卡', url: '/pages/question-bank/daily-question/index', openType: 'navigate', icon: 'daily' },
-        { label: '模拟题', desc: '考前整卷冲刺', url: '/pages/question-bank/past-papers/index', openType: 'navigate', icon: 'paper' },
-        { label: '错题本', desc: '回看薄弱题', url: '/pages/question-bank/wrong-book/index', openType: 'navigate', icon: 'wrongbook' }
-      ],
-      advantages: [
-        { icon: 'team', title: '答疑有人盯', desc: '第一次来了解也能先把基础、目标院校和卡点问清楚，问题当天就有人跟进。' },
-        { icon: 'building', title: '备考节奏更稳', desc: '课程、督学和住宿安排放在同一节奏里，适合想集中投入、少走弯路的同学。' },
-        { icon: 'book', title: '阶段反馈更清楚', desc: '每一阶段先看哪里薄弱、哪里该补，再决定下一步怎么学，不会一直闷头硬扛。' },
-        { icon: 'check', title: '学情评估先做', desc: '如果专业跨度大或还没想清方向，可以先做 1 对 1 学情评估，再安排更合适的备考线。' }
-      ],
-      directionsIntro: '',
-      featuredDirectionIds: ['direction_medical', 'direction_math'],
-      moreDirectionCard: {
-        title: '',
-        tag: '',
-        desc: ''
-      },
-      environmentSection: {
-        title: '',
-        subtitle: '',
-        cards: [
-          { label: '多媒体教室', imageUrl: '', imageSeed: 'classroom1' },
-          { label: '标准化宿舍', imageUrl: '', imageSeed: 'dorm1' }
-        ]
-      },
-      cta: {
-        title: '先聊清楚，再决定报哪条线',
-        desc: '把当前专业、目标院校和备考时间说明白，我们会先帮你判断适合的方向，再给课程安排建议。',
-        buttonText: '预约咨询',
-        footnote: ''
+      subjects: {
+        math: {
+          learningCard: {
+            title: '今日高数学习',
+            subtitle: '保持题感，稳定推进',
+            streakText: '连续 9 天',
+            taskLabel: '每日刷题任务',
+            progressText: '15 / 30',
+            progressPercent: 50,
+            actionText: '开始练题',
+            actionUrl: '/pages/question-bank/daily-question/index',
+            actionOpenType: 'navigate'
+          },
+          quickEntries: [
+            {
+              label: '题库练习',
+              note: '快速上手',
+              url: '/pages/question-bank/daily-question/index',
+              openType: 'navigate',
+              kind: 'practice',
+              accent: '#FFB6C1',
+              bg: '#fff7f9'
+            },
+            {
+              label: '每日一题',
+              note: '保持手感',
+              url: '/pages/question-bank/daily-question/index',
+              openType: 'navigate',
+              kind: 'daily',
+              accent: '#FFB6C1',
+              bg: '#fff7f9'
+            },
+            {
+              label: '模拟考试',
+              note: '整卷热身',
+              url: '/pages/question-bank/past-papers/index',
+              openType: 'navigate',
+              kind: 'mock',
+              accent: '#0ea5e9',
+              bg: '#e0f2fe'
+            },
+            {
+              label: '错题本',
+              note: '回炉复盘',
+              url: '/pages/question-bank/wrong-book/index',
+              openType: 'navigate',
+              kind: 'wrong',
+              accent: '#f43f5e',
+              bg: '#ffe4e6'
+            }
+          ],
+          resources: [
+            {
+              type: 'V',
+              title: '2026 高数核心考点串讲',
+              subtitle: '名师带练 · 快速入门',
+              chip: '免费观看',
+              meta: '1.2w 人已学'
+            },
+            {
+              type: 'P',
+              title: '高数历年真题与解析合集',
+              subtitle: '官方正版 · 独家整理',
+              chip: '免费领取',
+              meta: '真题速刷'
+            }
+          ]
+        },
+        medical: {
+          learningCard: {
+            title: '今日医护学习',
+            subtitle: '保持专注，稳步提升',
+            streakText: '连续 12 天',
+            taskLabel: '核心考点背诵',
+            progressText: '8 / 20',
+            progressPercent: 40,
+            actionText: '开始背诵',
+            actionUrl: '/pages/question-bank/daily-question/index',
+            actionOpenType: 'navigate'
+          },
+          quickEntries: [
+            {
+              label: '题库练习',
+              note: '快速上手',
+              url: '/pages/question-bank/daily-question/index',
+              openType: 'navigate',
+              kind: 'practice',
+              accent: '#059669',
+              bg: '#ecfdf5'
+            },
+            {
+              label: '每日一题',
+              note: '保持手感',
+              url: '/pages/question-bank/daily-question/index',
+              openType: 'navigate',
+              kind: 'daily',
+              accent: '#059669',
+              bg: '#ecfdf5'
+            },
+            {
+              label: '模拟考试',
+              note: '整卷热身',
+              url: '/pages/question-bank/past-papers/index',
+              openType: 'navigate',
+              kind: 'mock',
+              accent: '#0ea5e9',
+              bg: '#e0f2fe'
+            },
+            {
+              label: '错题本',
+              note: '回炉复盘',
+              url: '/pages/question-bank/wrong-book/index',
+              openType: 'navigate',
+              kind: 'wrong',
+              accent: '#f43f5e',
+              bg: '#ffe4e6'
+            }
+          ],
+          resources: [
+            {
+              type: 'V',
+              title: '医护综合：解剖学核心考点串讲',
+              subtitle: '名师带练 · 快速入门',
+              chip: '免费观看',
+              meta: '8.5k 人已学'
+            },
+            {
+              type: 'P',
+              title: '生理学必背 100 句口诀总结',
+              subtitle: '官方正版 · 独家整理',
+              chip: '免费领取',
+              meta: '考前必背'
+            }
+          ]
+        }
       }
     },
     courses: {

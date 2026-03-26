@@ -100,69 +100,95 @@ export function getAdminPageFormSchema(pageKey) {
 
   if (pageKey === 'home') {
     return [
-      objectField('hero', '首页大屏主视觉', [
-        { key: 'chip', label: '首页大屏小角标', type: 'text', required: true },
-        { key: 'title', label: '首页大屏第一行标题', type: 'text', required: true },
-        { key: 'desc', label: '首页大屏说明', type: 'textarea', required: true },
-        { key: 'highlightTitle', label: '首页大屏第二行标题', type: 'text', required: true },
-        { key: 'backgroundImageUrl', label: '首页大屏背景图地址', type: 'text', validate: 'media-url' },
-        { key: 'tags', label: '首页大屏标签', type: 'stringArray', defaultItem: '' },
-        objectField('primaryButton', '首页大屏按钮', [
-          { key: 'text', label: '按钮文案', type: 'text', required: true },
-          { key: 'url', label: '跳转地址', type: 'text', required: true },
-          { key: 'openType', label: '跳转方式', type: 'select', options: openTypeOptions }
+      objectField('header', '首页顶部文案', [
+        { key: 'title', label: '主标题', type: 'text', required: true },
+        { key: 'subtitle', label: '副标题', type: 'text', required: true },
+        { key: 'resourceSectionTitle', label: '资源区标题', type: 'text', required: true },
+        { key: 'resourceMoreText', label: '资源区右侧文案', type: 'text', required: true }
+      ]),
+      objectField('subjects', '学科内容', [
+        objectField('math', '高数页签', [
+          objectField('learningCard', '今日学习主卡', [
+            { key: 'title', label: '卡片标题', type: 'text', required: true },
+            { key: 'subtitle', label: '卡片说明', type: 'text', required: true },
+            { key: 'streakText', label: '连续学习标签', type: 'text', required: true },
+            { key: 'taskLabel', label: '任务标题', type: 'text', required: true },
+            { key: 'progressText', label: '进度文案', type: 'text', required: true },
+            { key: 'progressPercent', label: '进度百分比', type: 'number', required: true },
+            { key: 'actionText', label: '按钮文案', type: 'text', required: true },
+            { key: 'actionUrl', label: '按钮跳转地址', type: 'text', required: true },
+            { key: 'actionOpenType', label: '按钮跳转方式', type: 'select', options: openTypeOptions }
+          ]),
+          objectArrayField(
+            'quickEntries',
+            '四个快捷入口',
+            [
+              { key: 'label', label: '标题', type: 'text', required: true },
+              { key: 'note', label: '副标题', type: 'text', required: true },
+              { key: 'url', label: '跳转地址', type: 'text', required: true },
+              { key: 'openType', label: '跳转方式', type: 'select', options: openTypeOptions },
+              { key: 'kind', label: '图标类型', type: 'text', required: true },
+              { key: 'accent', label: '强调色', type: 'text', required: true },
+              { key: 'bg', label: '图标底色', type: 'text', required: true }
+            ],
+            { label: '', note: '', url: '', openType: 'navigate', kind: 'practice', accent: '', bg: '' },
+            { maxItems: 4, visibleItems: 4 }
+          ),
+          objectArrayField(
+            'resources',
+            '资源卡片',
+            [
+              { key: 'type', label: '卡片类型', type: 'text', required: true },
+              { key: 'title', label: '标题', type: 'text', required: true },
+              { key: 'subtitle', label: '副标题', type: 'text', required: true },
+              { key: 'chip', label: '标签文案', type: 'text', required: true },
+              { key: 'meta', label: '右侧补充文案', type: 'text', required: true }
+            ],
+            { type: 'V', title: '', subtitle: '', chip: '', meta: '' },
+            { maxItems: 2, visibleItems: 2 }
+          )
+        ]),
+        objectField('medical', '医护页签', [
+          objectField('learningCard', '今日学习主卡', [
+            { key: 'title', label: '卡片标题', type: 'text', required: true },
+            { key: 'subtitle', label: '卡片说明', type: 'text', required: true },
+            { key: 'streakText', label: '连续学习标签', type: 'text', required: true },
+            { key: 'taskLabel', label: '任务标题', type: 'text', required: true },
+            { key: 'progressText', label: '进度文案', type: 'text', required: true },
+            { key: 'progressPercent', label: '进度百分比', type: 'number', required: true },
+            { key: 'actionText', label: '按钮文案', type: 'text', required: true },
+            { key: 'actionUrl', label: '按钮跳转地址', type: 'text', required: true },
+            { key: 'actionOpenType', label: '按钮跳转方式', type: 'select', options: openTypeOptions }
+          ]),
+          objectArrayField(
+            'quickEntries',
+            '四个快捷入口',
+            [
+              { key: 'label', label: '标题', type: 'text', required: true },
+              { key: 'note', label: '副标题', type: 'text', required: true },
+              { key: 'url', label: '跳转地址', type: 'text', required: true },
+              { key: 'openType', label: '跳转方式', type: 'select', options: openTypeOptions },
+              { key: 'kind', label: '图标类型', type: 'text', required: true },
+              { key: 'accent', label: '强调色', type: 'text', required: true },
+              { key: 'bg', label: '图标底色', type: 'text', required: true }
+            ],
+            { label: '', note: '', url: '', openType: 'navigate', kind: 'practice', accent: '', bg: '' },
+            { maxItems: 4, visibleItems: 4 }
+          ),
+          objectArrayField(
+            'resources',
+            '资源卡片',
+            [
+              { key: 'type', label: '卡片类型', type: 'text', required: true },
+              { key: 'title', label: '标题', type: 'text', required: true },
+              { key: 'subtitle', label: '副标题', type: 'text', required: true },
+              { key: 'chip', label: '标签文案', type: 'text', required: true },
+              { key: 'meta', label: '右侧补充文案', type: 'text', required: true }
+            ],
+            { type: 'V', title: '', subtitle: '', chip: '', meta: '' },
+            { maxItems: 2, visibleItems: 2 }
+          )
         ])
-      ]),
-      objectArrayField(
-        'overviewStats',
-        '首屏数据卡（3项）',
-        [
-          { key: 'value', label: '数值', type: 'text', required: true },
-          { key: 'label', label: '标签', type: 'text', required: true }
-        ],
-        { value: '', label: '' },
-        { maxItems: 3, visibleItems: 3 }
-      ),
-      objectArrayField(
-        'quickLinks',
-        '首页四个功能入口',
-        [
-          { key: 'label', label: '标题', type: 'text' },
-          { key: 'url', label: '跳转地址', type: 'text' },
-          { key: 'openType', label: '跳转方式', type: 'select', options: openTypeOptions },
-          { key: 'icon', label: '图标标识', type: 'text' }
-        ],
-        { label: '', url: '', openType: 'navigate', icon: '' },
-        { maxItems: 4, visibleItems: 4 }
-      ),
-      objectArrayField(
-        'advantages',
-        '学习支持（热门方向下方）',
-        [
-          { key: 'icon', label: '图标标识', type: 'text' },
-          { key: 'title', label: '标题', type: 'text' },
-          { key: 'desc', label: '说明', type: 'textarea' }
-        ],
-        { icon: '', title: '', desc: '' },
-        { maxItems: 4, visibleItems: 4 }
-      ),
-      { key: 'featuredDirectionIds', label: '热门方向卡片', type: 'stringArray', defaultItem: '' },
-      objectField('environmentSection', '校区环境（咨询区上方）', [
-        objectArrayField(
-          'cards',
-          '环境图片',
-          [
-            { key: 'label', label: '名称', type: 'text', required: true },
-            { key: 'imageUrl', label: '图片地址', type: 'text', validate: 'media-url' }
-          ],
-          { label: '', imageUrl: '' },
-          { maxItems: 2, visibleItems: 2 }
-        )
-      ]),
-      objectField('cta', '底部咨询区（环境下方）', [
-        { key: 'title', label: '标题', type: 'text', required: true },
-        { key: 'desc', label: '说明', type: 'textarea', required: true },
-        { key: 'buttonText', label: '按钮文案', type: 'text', required: true }
       ])
     ];
   }

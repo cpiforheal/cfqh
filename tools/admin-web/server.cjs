@@ -35,17 +35,7 @@ const ROLE_PERMISSIONS = {
   owner: new Set(['cms.read', 'cms.write', 'cms.publish', 'cms.manageUsers', 'cms.reset'])
 };
 
-const HOME_PORTAL_LINKS = [
-  { label: '机构介绍', desc: '看品牌介绍', url: '/pages/about/index', openType: 'navigate', icon: 'building' },
-  { label: '每日一题', desc: '在学每日打卡', url: '/pages/question-bank/daily-question/index', openType: 'navigate', icon: 'daily' },
-  { label: '模拟题', desc: '考前整卷冲刺', url: '/pages/question-bank/past-papers/index', openType: 'navigate', icon: 'paper' },
-  { label: '错题本', desc: '回看薄弱题', url: '/pages/question-bank/wrong-book/index', openType: 'navigate', icon: 'wrongbook' }
-];
-const HOME_HERO_FALLBACK = seedData.pages?.home?.hero || {};
-const HOME_STATS_FALLBACK = seedData.pages?.home?.overviewStats || [];
-const HOME_ADVANTAGES_FALLBACK = seedData.pages?.home?.advantages || [];
-const HOME_CTA_FALLBACK = seedData.pages?.home?.cta || {};
-const HOME_ENVIRONMENT_FALLBACK = seedData.pages?.home?.environmentSection || { cards: [] };
+const HOME_PAGE_FALLBACK = seedData.pages?.home || {};
 const COURSES_PAGE_FALLBACK = seedData.pages?.courses || {};
 const COURSES_CTA_FALLBACK = seedData.pages?.courses?.cta || {};
 const SUCCESS_PAGE_FALLBACK = seedData.pages?.success || {};
@@ -140,98 +130,71 @@ function buildCorsHeaders(req) {
   };
 }
 
-function normalizeHomeHero(hero) {
-  if (!hero) return HOME_HERO_FALLBACK;
-
-  const isLegacyHero =
-    hero.chip === '江苏省专转本权威培训品牌' ||
-    hero.title === '乘帆启航' ||
-    hero.highlightTitle === '专注江苏专转本医护与高数精细化教研' ||
-    hero.primaryButton?.text === '了解机构实力';
-
-  if (!isLegacyHero) {
-    return hero;
-  }
+function normalizeHomeLearningCard(card, fallback) {
+  const source = card || {};
 
   return {
-    ...hero,
-    ...HOME_HERO_FALLBACK,
-    backgroundImageUrl: hero.backgroundImageUrl,
-    backgroundImageSeed: hero.backgroundImageSeed || HOME_HERO_FALLBACK.backgroundImageSeed
+    ...fallback,
+    ...source,
+    progressPercent: Number.isFinite(Number(source.progressPercent))
+      ? Number(source.progressPercent)
+      : Number(fallback.progressPercent || 0)
   };
 }
 
-function normalizeHomeOverviewStats(stats) {
-  const isLegacyStats =
-    Array.isArray(stats) &&
-    stats.length === 3 &&
-    stats[0]?.value === '核心' &&
-    stats[1]?.value === '精品' &&
-    stats[2]?.value === '高';
-
-  return isLegacyStats ? HOME_STATS_FALLBACK : stats;
-}
-
-function normalizeHomeQuickLinks(quickLinks) {
-  if (!Array.isArray(quickLinks) || !quickLinks.length) {
-    return HOME_PORTAL_LINKS;
+function normalizeHomeQuickEntries(items, fallback) {
+  if (!Array.isArray(items) || !items.length) {
+    return fallback;
   }
 
-  const normalizedLinks = quickLinks.slice(0, 4).map((item, index) => ({
-    ...HOME_PORTAL_LINKS[index],
-    ...item
+  return items.slice(0, 4).map((item, index) => ({
+    ...(fallback[index] || {}),
+    ...(item || {})
   }));
-  const labels = normalizedLinks.map((item) => String(item?.label || '').trim());
-  const joinedLabels = labels.join('|');
-  const legacyLabelSets = [
-    '热门方向|每日一题|模拟题|错题本',
-    '热门方向|每日一题|历年真题|错题本',
-    '机构介绍|开设方向|师资团队|办学成果'
-  ];
-  const shouldResetToPortalDefault =
-    normalizedLinks.length < 4 ||
-    legacyLabelSets.includes(joinedLabels) ||
-    labels.includes('热门方向') ||
-    labels.includes('历年真题');
-
-  return shouldResetToPortalDefault ? HOME_PORTAL_LINKS : normalizedLinks;
 }
 
-function normalizeHomeAdvantages(advantages) {
-  if (!Array.isArray(advantages) || !advantages.length) {
-    return HOME_ADVANTAGES_FALLBACK;
+function normalizeHomeResources(items, fallback) {
+  if (!Array.isArray(items) || !items.length) {
+    return fallback;
   }
 
-  const legacyTitles = ['全职教研团队', '独立校区管理', '精细化教研', '督学管理'];
-  return advantages.some((item) => legacyTitles.includes(item?.title || ''))
-    ? HOME_ADVANTAGES_FALLBACK
-    : advantages;
+  return items.slice(0, 2).map((item, index) => ({
+    ...(fallback[index] || {}),
+    ...(item || {})
+  }));
 }
 
-function normalizeHomeCta(cta) {
-  if (!cta) {
-    return HOME_CTA_FALLBACK;
+function normalizeHomeSubject(subject, fallback) {
+  const source = subject || {};
+
+  return {
+    learningCard: normalizeHomeLearningCard(source.learningCard, fallback.learningCard),
+    quickEntries: normalizeHomeQuickEntries(source.quickEntries, fallback.quickEntries),
+    resources: normalizeHomeResources(source.resources, fallback.resources)
+  };
+}
+
+function normalizeHomePage(payload) {
+  if (!payload) {
+    return payload;
   }
 
-  const isLegacyCta =
-    !cta.desc ||
-    cta.buttonText === '查看上岸学员案例' ||
-    cta.title === '还在纠结如何开始备考？';
-
-  return isLegacyCta ? { ...cta, ...HOME_CTA_FALLBACK } : cta;
-}
-
-function normalizeHomeEnvironmentSection(section) {
-  if (!section || !Array.isArray(section.cards) || !section.cards.length) {
-    return HOME_ENVIRONMENT_FALLBACK;
+  const hasCurrentShape = payload.header && payload.subjects && (payload.subjects.math || payload.subjects.medical);
+  if (!hasCurrentShape) {
+    return HOME_PAGE_FALLBACK;
   }
 
   return {
-    ...section,
-    cards: section.cards.slice(0, 2).map((item, index) => ({
-      ...(HOME_ENVIRONMENT_FALLBACK.cards?.[index] || {}),
-      ...item
-    }))
+    ...HOME_PAGE_FALLBACK,
+    ...payload,
+    header: {
+      ...(HOME_PAGE_FALLBACK.header || {}),
+      ...(payload.header || {})
+    },
+    subjects: {
+      math: normalizeHomeSubject(payload.subjects?.math, HOME_PAGE_FALLBACK.subjects?.math || {}),
+      medical: normalizeHomeSubject(payload.subjects?.medical, HOME_PAGE_FALLBACK.subjects?.medical || {})
+    }
   };
 }
 
@@ -349,15 +312,7 @@ function normalizePagePayload(pageKey, payload) {
   }
 
   if (pageKey === 'home') {
-    return {
-      ...payload,
-      hero: normalizeHomeHero(payload.hero),
-      overviewStats: normalizeHomeOverviewStats(payload.overviewStats),
-      quickLinks: normalizeHomeQuickLinks(payload.quickLinks),
-      advantages: normalizeHomeAdvantages(payload.advantages),
-      environmentSection: normalizeHomeEnvironmentSection(payload.environmentSection),
-      cta: normalizeHomeCta(payload.cta)
-    };
+    return normalizeHomePage(payload);
   }
 
   if (pageKey === 'courses') {

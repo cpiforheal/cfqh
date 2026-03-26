@@ -163,16 +163,58 @@ export interface QuestionBankPage {
 }
 
 // 首页配置
+export type HomeSubjectKey = 'math' | 'medical';
+export type HomeQuickEntryKind = 'practice' | 'daily' | 'mock' | 'wrong';
+
+export interface HomePageHeader {
+  title: string;
+  subtitle: string;
+  resourceSectionTitle: string;
+  resourceMoreText: string;
+}
+
+export interface HomeLearningCard {
+  title: string;
+  subtitle: string;
+  streakText: string;
+  taskLabel: string;
+  progressText: string;
+  progressPercent: number;
+  actionText: string;
+  actionUrl: string;
+  actionOpenType: OpenType;
+}
+
+export interface HomeQuickEntry {
+  label: string;
+  note: string;
+  url: string;
+  openType: OpenType;
+  kind: HomeQuickEntryKind;
+  accent: string;
+  bg: string;
+}
+
+export interface HomeResourceItem {
+  type: string;
+  title: string;
+  subtitle: string;
+  chip: string;
+  meta: string;
+}
+
+export interface HomeSubjectContent {
+  learningCard: HomeLearningCard;
+  quickEntries: HomeQuickEntry[];
+  resources: HomeResourceItem[];
+}
+
 export interface HomePage {
-  hero: HeroSection;
-  overviewStats: StatItem[];
-  quickLinks: QuickLink[];
-  advantages: AdvantageCard[];
-  directionsIntro: string;
-  featuredDirectionIds: string[];
-  moreDirectionCard: MoreSection;
-  environmentSection: EnvironmentSection;
-  cta: CtaSection;
+  header: HomePageHeader;
+  subjects: {
+    math: HomeSubjectContent;
+    medical: HomeSubjectContent;
+  };
 }
 
 // 方向页配置
