@@ -335,9 +335,19 @@
         title: '教材资料库',
         searchLabel: '搜索资料'
       },
+      heroSection: {
+        title: '精选好课'
+      },
       directionTabs: [
         { key: 'math', label: '高等数学', icon: 'grid' },
         { key: 'medical', label: '医护综合', icon: 'medical' }
+      ],
+      categoryTabs: [
+        { key: 'all', label: '全部' },
+        { key: 'system_course', label: '系统班' },
+        { key: 'sprint_camp', label: '冲刺营' },
+        { key: 'paper_book', label: '纸质教材' },
+        { key: 'resource_pack', label: '资料包' }
       ],
       stageTabs: [
         { key: 'foundation', label: '基础阶段' },

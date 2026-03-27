@@ -300,6 +300,16 @@ function normalizeMaterialsPage(payload) {
   return {
     ...payload,
     header: { ...(MATERIALS_PAGE_FALLBACK.header || {}), ...(payload.header || {}) },
+    heroSection: { ...(MATERIALS_PAGE_FALLBACK.heroSection || {}), ...(payload.heroSection || {}) },
+    categoryTabs:
+      Array.isArray(payload.categoryTabs) && payload.categoryTabs.length
+        ? payload.categoryTabs
+            .map((item) => ({
+              key: String(item?.key || '').trim(),
+              label: String(item?.label || '').trim()
+            }))
+            .filter((item) => item.key && item.label)
+        : MATERIALS_PAGE_FALLBACK.categoryTabs || [],
     mainSection: { ...(MATERIALS_PAGE_FALLBACK.mainSection || {}), ...(payload.mainSection || {}) },
     shelfSection: { ...(MATERIALS_PAGE_FALLBACK.shelfSection || {}), ...(payload.shelfSection || {}) },
     consultBar: { ...(MATERIALS_PAGE_FALLBACK.consultBar || {}), ...(payload.consultBar || {}) }
@@ -461,6 +471,8 @@ const LIST_COLLECTIONS = {
 };
 
 const LEARNER_LIST_COLLECTIONS = new Set(['appUsers', 'studyProfiles', 'questionProgress', 'wrongBookItems']);
+const READ_SAFE_EMPTY_COLLECTIONS = new Set(['mallEntitlements']);
+const MALL_COMPAT_COLLECTIONS = new Set(['mallAssets', 'mallProducts', 'mallProductItems']);
 
 function normalizeAdminRole(role) {
   const normalized = String(role || '').trim().toLowerCase();
@@ -1045,6 +1057,30 @@ function toStringList(value) {
   return value.map((item) => String(item || '').trim()).filter(Boolean);
 }
 
+function inferMallCategoryKey(value, fallback = 'all') {
+  const raw = String(value || '').trim();
+  if (!raw) return fallback;
+  if (['all', 'system_course', 'sprint_camp', 'paper_book', 'resource_pack'].includes(raw)) {
+    return raw;
+  }
+
+  const normalized = raw.toLowerCase();
+  if (normalized.includes('system') || normalized.includes('course') || normalized.includes('系统班')) return 'system_course';
+  if (normalized.includes('sprint') || normalized.includes('camp') || normalized.includes('冲刺')) return 'sprint_camp';
+  if (normalized.includes('book') || normalized.includes('paper') || normalized.includes('教材') || normalized.includes('书')) return 'paper_book';
+  if (normalized.includes('asset') || normalized.includes('resource') || normalized.includes('资料')) return 'resource_pack';
+  return fallback;
+}
+
+function readDefaultCoverLabel(productType, categoryKey) {
+  if (categoryKey === 'system_course') return '视频课程';
+  if (categoryKey === 'sprint_camp') return '集训营';
+  if (categoryKey === 'paper_book') return '实体书籍';
+  if (categoryKey === 'resource_pack') return 'PDF资料';
+  if (String(productType || '').includes('course')) return '视频课程';
+  return '学习资料';
+}
+
 function normalizeMaterialPackageRecord(item = {}, index = 0) {
   const direction = readMaterialDirectionFromRecord(item);
   const stage = readMaterialStageFromRecord(item);
@@ -1134,20 +1170,27 @@ function normalizeMallAssetRecord(item = {}, index = 0) {
 function normalizeMallProductRecord(item = {}, index = 0) {
   const direction = readMaterialDirectionFromRecord(item);
   const stage = readMaterialStageFromRecord(item);
+  const categoryKey = inferMallCategoryKey(item.categoryKey || item.productType || item.title || item.tag, 'all');
+  const productType = String(item.productType || 'asset_bundle');
   return {
     _id: item._id || `mall_product_${direction}_${stage}_${index + 1}`,
     productName: String(item.productName || item.title || item.name || ''),
     productSubTitle: String(item.productSubTitle || item.target || item.subtitle || ''),
     productDescription: String(item.productDescription || item.solves || item.description || ''),
-    productType: String(item.productType || 'asset_bundle'),
+    productType,
+    categoryKey,
     direction,
     stage,
     badge: String(item.badge || item.tag || ''),
     coverUrl: String(item.coverUrl || ''),
     bannerUrl: String(item.bannerUrl || ''),
+    coverMark: String(item.coverMark || item.coverBadge || item.displayMark || ''),
+    coverLabel: String(item.coverLabel || readDefaultCoverLabel(productType, categoryKey)),
     price: Number(item.price || 0),
     originPrice: Number(item.originPrice || 0),
     isFree: item.isFree === true || Number(item.price || 0) <= 0,
+    salesLabel: String(item.salesLabel || item.salesText || ''),
+    buttonText: String(item.buttonText || '查看详情'),
     previewEnabled: item.previewEnabled === false ? false : true,
     highlights: toStringList(item.highlights || item.features),
     sortOrder: Number(item.sortOrder || item.sort || (index + 1) * 10),
@@ -1323,7 +1366,12 @@ function buildMallCompatFromLegacy(materialPackages = [], materialItems = []) {
         productDescription: item.solves,
         direction: item.direction,
         stage: item.stage,
+        categoryKey: inferMallCategoryKey(item.title || item.badge || item.features.join(' ')),
         badge: item.badge,
+        coverMark: String.fromCharCode(65 + (index % 26)),
+        coverLabel: readDefaultCoverLabel(item.type, inferMallCategoryKey(item.title || item.badge || item.features.join(' '))),
+        salesLabel: '',
+        buttonText: '查看详情',
         highlights: item.features,
         isFree: true,
         price: 0,
@@ -2464,14 +2512,19 @@ function getEmptyTemplate(collectionKey) {
       productSubTitle: '',
       productDescription: '',
       productType: 'asset_bundle',
+      categoryKey: 'all',
       direction: 'math',
       stage: 'foundation',
       badge: '',
       coverUrl: '',
       bannerUrl: '',
+      coverMark: 'A',
+      coverLabel: '资料包',
       price: 0,
       originPrice: 0,
       isFree: true,
+      salesLabel: '',
+      buttonText: '查看详情',
       previewEnabled: true,
       highlights: [],
       sortOrder: 100,
@@ -2933,18 +2986,20 @@ class CloudStore {
       }
     } catch (error) {
       if (isMissingCollectionError(error)) {
-        if (LEARNER_LIST_COLLECTIONS.has(collectionKey)) {
+        if (LEARNER_LIST_COLLECTIONS.has(collectionKey) || READ_SAFE_EMPTY_COLLECTIONS.has(collectionKey)) {
           await this.ensureCollection(collectionKey).catch(() => false);
           return [];
+        }
+        if (MALL_COMPAT_COLLECTIONS.has(collectionKey)) {
+          const legacyPackages = await this.listCollection('materialPackages').catch(() => []);
+          const legacyItems = await this.listCollection('materialItems').catch(() => []);
+          return buildMallCompatFromLegacy(legacyPackages, legacyItems)[collectionKey] || [];
         }
       }
       throw error;
     }
 
-    if (
-      !allItems.length &&
-      (collectionKey === 'mallAssets' || collectionKey === 'mallProducts' || collectionKey === 'mallProductItems')
-    ) {
+    if (!allItems.length && MALL_COMPAT_COLLECTIONS.has(collectionKey)) {
       const legacyPackages = await this.listCollection('materialPackages').catch(() => []);
       const legacyItems = await this.listCollection('materialItems').catch(() => []);
       return buildMallCompatFromLegacy(legacyPackages, legacyItems)[collectionKey] || [];
@@ -2962,17 +3017,20 @@ class CloudStore {
       if (normalized) {
         return normalized;
       }
-      if (collectionKey === 'mallAssets' || collectionKey === 'mallProducts' || collectionKey === 'mallProductItems') {
+      if (MALL_COMPAT_COLLECTIONS.has(collectionKey)) {
         const compat = await this.listCollection(collectionKey).catch(() => []);
         return compat.find((entry) => entry._id === itemId) || null;
       }
       return null;
     } catch (error) {
-      if (isMissingCollectionError(error) && LEARNER_LIST_COLLECTIONS.has(collectionKey)) {
+      if (
+        isMissingCollectionError(error) &&
+        (LEARNER_LIST_COLLECTIONS.has(collectionKey) || READ_SAFE_EMPTY_COLLECTIONS.has(collectionKey))
+      ) {
         await this.ensureCollection(collectionKey).catch(() => false);
         return null;
       }
-      if (isMissingCollectionError(error) && (collectionKey === 'mallAssets' || collectionKey === 'mallProducts' || collectionKey === 'mallProductItems')) {
+      if (isMissingCollectionError(error) && MALL_COMPAT_COLLECTIONS.has(collectionKey)) {
         const compat = await this.listCollection(collectionKey).catch(() => []);
         return compat.find((entry) => entry._id === itemId) || null;
       }
@@ -3003,7 +3061,16 @@ class CloudStore {
     if (!collection) throw new Error('未知集合');
     const existing = await this.getItem(collectionKey, itemId).catch(() => null);
     const nextItem = normalizeCollectionRecord(collectionKey, stampCollectionItem(payload, itemId, existing));
-    await this.db.collection(collection).doc(itemId).set(stripId(nextItem));
+    try {
+      await this.db.collection(collection).doc(itemId).set(stripId(nextItem));
+    } catch (error) {
+      if (isMissingCollectionError(error) && MALL_COMPAT_COLLECTIONS.has(collectionKey)) {
+        await this.ensureCollection(collectionKey);
+        await this.db.collection(collection).doc(itemId).set(stripId(nextItem));
+      } else {
+        throw error;
+      }
+    }
     return nextItem;
   }
 
@@ -3013,7 +3080,10 @@ class CloudStore {
     try {
       await this.db.collection(collection).doc(itemId).remove();
     } catch (error) {
-      if (isMissingCollectionError(error) && LEARNER_LIST_COLLECTIONS.has(collectionKey)) {
+      if (
+        isMissingCollectionError(error) &&
+        (LEARNER_LIST_COLLECTIONS.has(collectionKey) || READ_SAFE_EMPTY_COLLECTIONS.has(collectionKey))
+      ) {
         return;
       }
       throw error;

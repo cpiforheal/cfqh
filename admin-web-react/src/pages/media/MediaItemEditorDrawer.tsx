@@ -74,7 +74,7 @@ export function MediaItemEditorDrawer({
 
   return (
     <DrawerForm<MallProductItemFormValues>
-      title={record?._id ? '编辑商品内容项' : '新增商品内容项'}
+      title={record?._id ? '编辑商品附属内容项' : '新增商品附属内容项'}
       open={open}
       width={560}
       form={form}
@@ -107,33 +107,43 @@ export function MediaItemEditorDrawer({
     >
       <ProFormSelect
         name="itemId"
-        label="对应哪份资料资产"
-        rules={[{ required: true, message: '请选择资料资产' }]}
+        label="这条内容项对应哪份资料"
+        rules={[{ required: true, message: '请选择资料' }]}
         options={assetOptions.map((asset) => ({
           label: asset.title || asset.name || asset._id || '未命名资料',
           value: asset._id
         }))}
       />
-      <ProFormText name="displayType" label="卡片左侧标签" rules={[{ required: true, message: '请填写左侧标签' }]} />
-      <ProFormText name="displayName" label="卡片标题" rules={[{ required: true, message: '请填写标题' }]} />
-      <ProFormText name="displaySubTitle" label="卡片副标题" rules={[{ required: true, message: '请填写副标题' }]} />
+      <ProFormText
+        name="displayType"
+        label="封面底部类型字"
+        extra="如果后续详情页或组合展示需要这条内容项，会显示这个类型字。"
+        rules={[{ required: true, message: '请填写封面底部类型字' }]}
+      />
+      <ProFormText name="displayName" label="内容项主标题" rules={[{ required: true, message: '请填写内容项主标题' }]} />
+      <ProFormText
+        name="displaySubTitle"
+        label="内容项副标题"
+        rules={[{ required: true, message: '请填写内容项副标题' }]}
+      />
       <ProFormTextArea
         name="displayDescription"
-        label="卡片简介"
+        label="内容项正文说明"
         fieldProps={{ rows: 3 }}
-        rules={[{ required: true, message: '请填写短简介' }]}
+        rules={[{ required: true, message: '请填写卡片正文说明' }]}
       />
       <ProFormTextArea
         name="displayDetails"
-        label="按钮右侧说明"
+        label="底部强调说明"
+        extra="这类文案更偏详情或附属展示，不是当前商城主列表直接显示的商品卡。"
         fieldProps={{ rows: 4 }}
-        rules={[{ required: true, message: '请填写展开说明' }]}
+        rules={[{ required: true, message: '请填写底部强调说明' }]}
       />
       <ProFormSwitch name="previewEnabled" label="是否允许预览" />
       <ProFormDigit name="previewPageCount" label="预览页数" min={0} />
-      <ProFormText name="accentStart" label="卡片主色" rules={[{ required: true, message: '请填写起始色' }]} />
-      <ProFormText name="accentEnd" label="卡片辅色" rules={[{ required: true, message: '请填写结束色' }]} />
-      <ProFormDigit name="sortOrder" label="排序" min={0} />
+      <ProFormText name="accentStart" label="封面渐变主色" rules={[{ required: true, message: '请填写起始色' }]} />
+      <ProFormText name="accentEnd" label="封面渐变辅色" rules={[{ required: true, message: '请填写结束色' }]} />
+      <ProFormDigit name="sortOrder" label="排序" min={0} extra="数字越小，越靠前显示在资料列表顶部。" />
       <ProFormSelect
         name="status"
         label="状态"

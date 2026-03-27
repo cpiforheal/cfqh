@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
-import { Alert, Button, Drawer, Form, Input, Select, Space, Typography } from 'antd';
+import { Alert, Button, Drawer, Form, Input, Space, Typography } from 'antd';
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
-import { defaultMaterialsPage, materialStageLabels, mediaSectionModels, type MaterialSectionId, type MaterialsPageContent } from './types';
+import { defaultMaterialsPage, mediaSectionModels, type MaterialSectionId, type MaterialsPageContent } from './types';
 
 type MediaSectionEditorDrawerProps = {
   open: boolean;
@@ -16,44 +16,30 @@ type MediaSectionEditorDrawerProps = {
 type SectionValues = MaterialsPageContent;
 
 const sectionTitleMap: Record<MaterialSectionId, string> = {
-  header: '顶部信息',
-  stageTabs: '阶段按钮',
-  package: '主推商品卡',
-  items: '商品内容列表',
-  consultBar: '底部咨询条'
+  hero: '页面主标题',
+  categories: '商品分类按钮',
+  consultBar: '底部咨询浮条'
 };
 
 const sectionNoteMap: Record<MaterialSectionId, string> = {
-  header: '这里对应商城页最上方。主标题和搜索提示尽量写得直白，让老师一看就知道学生会看到什么。',
-  stageTabs: '前台阶段按钮就是这里的顺序。建议名称保持短，避免在手机端换行。',
-  package: '这里先改主推区标题，再到下面的商品表里改具体商品内容。老师会更容易按“标题在上，主卡在下”的方式维护。',
-  items: '这里先改商品内容列表的标题和右侧提示，再到下面内容项表里逐张修改卡片内容。',
-  consultBar: '这是商城最底部的引导区，适合放咨询老师的承接话术。'
+  hero: '这里只改商城页大标题，也就是老师和学生进入商城后第一眼看到的那句主标题。',
+  categories: '这里改的是主标题下面那一排分类按钮。按钮顺序就是前台从左到右的顺序，建议名称保持简短。',
+  consultBar: '这是商城页底部的咨询浮条，适合放引导咨询的话术和按钮文案。'
 };
 
 const sectionFieldHintMap: Record<MaterialSectionId, string> = {
-  header: '会修改：页面标题、搜索提示',
-  stageTabs: '会修改：3 个阶段按钮名称',
-  package: '会修改：主推区标题、右侧提示',
-  items: '会修改：内容区标题、右侧提示',
-  consultBar: '会修改：咨询标题、说明、按钮文案'
+  hero: '会修改：商城大标题',
+  categories: '会修改：分类按钮名称与顺序',
+  consultBar: '会修改：咨询标题、说明、按钮字'
 };
 
 function buildSectionPreview(sectionId: MaterialSectionId, page: MaterialsPageContent) {
-  if (sectionId === 'header') {
-    return `${page.header.title || '未填写标题'} / ${page.header.searchLabel || '未填写搜索提示'}`;
+  if (sectionId === 'hero') {
+    return page.heroSection.title || '未填写商城大标题';
   }
 
-  if (sectionId === 'stageTabs') {
-    return page.stageTabs.length ? page.stageTabs.map((item) => item.label || '未命名阶段').join(' / ') : '还没有配置阶段按钮';
-  }
-
-  if (sectionId === 'package') {
-    return `${page.mainSection.title || '未填写主推区标题'} / ${page.mainSection.sideNote || '未填写右侧提示'}`;
-  }
-
-  if (sectionId === 'items') {
-    return `${page.shelfSection.title || '未填写资料区标题'} / ${page.shelfSection.hint || '未填写右侧提示'}`;
+  if (sectionId === 'categories') {
+    return page.categoryTabs.length ? page.categoryTabs.map((item) => item.label || '未命名分类').join(' / ') : '还没有配置商品分类按钮';
   }
 
   return `${page.consultBar.title || '未填写标题'} / ${page.consultBar.buttonText || '未填写按钮文案'}`;
@@ -62,23 +48,21 @@ function buildSectionPreview(sectionId: MaterialSectionId, page: MaterialsPageCo
 function SectionListHeader({
   title,
   count,
-  max,
   onAdd,
   disabled
 }: {
   title: string;
   count: number;
-  max: number;
   onAdd: () => void;
   disabled: boolean;
 }) {
   return (
     <Space style={{ width: '100%', justifyContent: 'space-between' }}>
       <Typography.Text strong>
-        {title} {count ? `(${count}/${max})` : ''}
+        {title} {count ? `(${count})` : ''}
       </Typography.Text>
-      <Button type="dashed" icon={<PlusOutlined />} onClick={onAdd} disabled={disabled || count >= max}>
-        新增一项
+      <Button type="dashed" icon={<PlusOutlined />} onClick={onAdd} disabled={disabled}>
+        新增一个
       </Button>
     </Space>
   );
@@ -110,27 +94,29 @@ export function MediaSectionEditorDrawer({
     const nextPage: MaterialsPageContent = {
       ...page,
       header: { ...page.header },
+      heroSection: { ...page.heroSection },
       directionTabs: [...page.directionTabs],
+      categoryTabs: [...page.categoryTabs],
       stageTabs: [...page.stageTabs],
       mainSection: { ...page.mainSection },
       shelfSection: { ...page.shelfSection },
       consultBar: { ...page.consultBar }
     };
 
-    if (sectionId === 'header') {
-      nextPage.header = values.header;
+    if (sectionId === 'hero') {
+      nextPage.heroSection = {
+        ...page.heroSection,
+        title: values.heroSection.title
+      };
     }
 
-    if (sectionId === 'stageTabs') {
-      nextPage.stageTabs = values.stageTabs.slice(0, 3);
-    }
-
-    if (sectionId === 'package') {
-      nextPage.mainSection = values.mainSection;
-    }
-
-    if (sectionId === 'items') {
-      nextPage.shelfSection = values.shelfSection;
+    if (sectionId === 'categories') {
+      nextPage.categoryTabs = (values.categoryTabs || [])
+        .map((item) => ({
+          key: String(item?.key || '').trim(),
+          label: String(item?.label || '').trim()
+        }))
+        .filter((item) => item.key && item.label);
     }
 
     if (sectionId === 'consultBar') {
@@ -140,103 +126,52 @@ export function MediaSectionEditorDrawer({
     await onSave(nextPage);
   }
 
-  function renderHeaderEditor() {
+  function renderHeroEditor() {
     return (
       <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-        <Form.Item name={['header', 'title']} label="页面标题" rules={[{ required: true, message: '请填写页面标题' }]}>
-          <Input placeholder="例如 精选资料" disabled={!canWrite} />
-        </Form.Item>
-        <Form.Item
-          name={['header', 'searchLabel']}
-          label="搜索提示"
-          rules={[{ required: true, message: '请填写搜索提示' }]}
-        >
-          <Input placeholder="例如 搜索资料" disabled={!canWrite} />
+        <Form.Item name={['heroSection', 'title']} label="商城大标题" rules={[{ required: true, message: '请填写商城大标题' }]}>
+          <Input placeholder="例如 精选好课" disabled={!canWrite} />
         </Form.Item>
       </Space>
     );
   }
 
-  function renderStageTabsEditor() {
+  function renderCategoryEditor() {
     return (
-      <Form.List name="stageTabs">
+      <Form.List name="categoryTabs">
         {(fields, { add, remove }) => (
           <Space direction="vertical" size="middle" style={{ width: '100%' }}>
             <SectionListHeader
-              title="阶段按钮"
+              title="商品分类按钮"
               count={fields.length}
-              max={3}
-              onAdd={() => {
-                const defaults = [
-                  { key: 'foundation', label: materialStageLabels.foundation },
-                  { key: 'reinforcement', label: materialStageLabels.reinforcement },
-                  { key: 'sprint', label: materialStageLabels.sprint }
-                ];
-                add(defaults[Math.min(fields.length, defaults.length - 1)]);
-              }}
+              onAdd={() => add({ key: `custom_${fields.length + 1}`, label: '' })}
               disabled={!canWrite}
             />
-            {fields.map((field) => (
+            {fields.map((field, index) => (
               <div className="home-editor-item" key={field.key}>
-                <Form.Item name={[field.name, 'key']} label="阶段标识" rules={[{ required: true, message: '请选择阶段' }]}>
-                  <Select
-                    disabled={!canWrite}
-                    options={[
-                      { label: '基础阶段', value: 'foundation' },
-                      { label: '强化阶段', value: 'reinforcement' },
-                      { label: '冲刺阶段', value: 'sprint' }
-                    ]}
-                  />
+                <Form.Item
+                  name={[field.name, 'label']}
+                  label={`第 ${index + 1} 个按钮显示什么字`}
+                  rules={[{ required: true, message: '请填写按钮名称' }]}
+                >
+                  <Input placeholder="例如 系统班" disabled={!canWrite} />
                 </Form.Item>
-                <Form.Item name={[field.name, 'label']} label="显示名称" rules={[{ required: true, message: '请填写显示名称' }]}>
-                  <Input placeholder="例如 基础阶段" disabled={!canWrite} />
+                <Form.Item
+                  name={[field.name, 'key']}
+                  label="后台识别名"
+                  rules={[{ required: true, message: '请填写后台识别名' }]}
+                  extra="建议使用英文下划线，例如 system_course。老师日常只需要关注上面的显示名称。"
+                >
+                  <Input placeholder="例如 system_course" disabled={!canWrite} />
                 </Form.Item>
                 <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} disabled={!canWrite}>
-                  删除这个阶段
+                  删除这个按钮
                 </Button>
               </div>
             ))}
           </Space>
         )}
       </Form.List>
-    );
-  }
-
-  function renderPackageSectionEditor() {
-    return (
-      <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-        <Form.Item
-          name={['mainSection', 'title']}
-          label="主推区标题"
-          rules={[{ required: true, message: '请填写主推区标题' }]}
-        >
-          <Input placeholder="例如 本阶段主推资料" disabled={!canWrite} />
-        </Form.Item>
-        <Form.Item
-          name={['mainSection', 'sideNote']}
-          label="右侧提示"
-          rules={[{ required: true, message: '请填写右侧提示' }]}
-        >
-          <Input placeholder="例如 老师优先推荐这一套" disabled={!canWrite} />
-        </Form.Item>
-      </Space>
-    );
-  }
-
-  function renderItemsSectionEditor() {
-    return (
-      <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-        <Form.Item
-          name={['shelfSection', 'title']}
-          label="内容区标题"
-          rules={[{ required: true, message: '请填写内容区标题' }]}
-        >
-          <Input placeholder="例如 免费精选资料" disabled={!canWrite} />
-        </Form.Item>
-        <Form.Item name={['shelfSection', 'hint']} label="右侧提示" rules={[{ required: true, message: '请填写右侧提示' }]}>
-          <Input placeholder="例如 更多" disabled={!canWrite} />
-        </Form.Item>
-      </Space>
     );
   }
 
@@ -251,12 +186,12 @@ export function MediaSectionEditorDrawer({
           <Input placeholder="例如 不知道怎么选？" disabled={!canWrite} />
         </Form.Item>
         <Form.Item name={['consultBar', 'desc']} label="咨询说明" rules={[{ required: true, message: '请填写咨询说明' }]}>
-          <Input.TextArea rows={4} placeholder="例如 专业老师会帮你按当前阶段选资料" disabled={!canWrite} />
+          <Input.TextArea rows={4} placeholder="例如 专业老师会帮你按当前基础推荐合适的资料和课程" disabled={!canWrite} />
         </Form.Item>
         <Form.Item
           name={['consultBar', 'buttonText']}
-          label="按钮文案"
-          rules={[{ required: true, message: '请填写按钮文案' }]}
+          label="按钮字"
+          rules={[{ required: true, message: '请填写按钮字' }]}
         >
           <Input placeholder="例如 免费咨询" disabled={!canWrite} />
         </Form.Item>
@@ -275,7 +210,7 @@ export function MediaSectionEditorDrawer({
         <Space>
           <Button onClick={onClose}>取消</Button>
           <Button type="primary" onClick={handleSubmit} loading={saving} disabled={!canWrite}>
-            保存这一区块
+            保存这一块
           </Button>
         </Space>
       }
@@ -295,10 +230,8 @@ export function MediaSectionEditorDrawer({
             }
           />
           <Form form={form} layout="vertical" initialValues={initialValues}>
-            {sectionId === 'header' ? renderHeaderEditor() : null}
-            {sectionId === 'stageTabs' ? renderStageTabsEditor() : null}
-            {sectionId === 'package' ? renderPackageSectionEditor() : null}
-            {sectionId === 'items' ? renderItemsSectionEditor() : null}
+            {sectionId === 'hero' ? renderHeroEditor() : null}
+            {sectionId === 'categories' ? renderCategoryEditor() : null}
             {sectionId === 'consultBar' ? renderConsultBarEditor() : null}
           </Form>
         </Space>

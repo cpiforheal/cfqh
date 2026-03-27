@@ -22,17 +22,17 @@ import { api } from '../api';
 import { formatDateTime } from '../utils';
 import {
   defaultMallAsset,
+  defaultMallProduct,
   defaultMallProductItem,
+  getMaterialCategoryLabel,
   materialDirectionLabels,
   materialStageLabels,
-  mediaSectionModels,
   normalizeMallAsset,
   normalizeMallEntitlement,
   normalizeMallProduct,
   normalizeMallProductItem,
   normalizeMaterialsPage,
   readMaterialDirection,
-  readMaterialStage,
   sortBySortOrder,
   type MallAssetRecord,
   type MallProductItemRecord,
@@ -57,16 +57,21 @@ type MediaContentPageProps = {
   auth: AuthState;
 };
 
-type MediaSectionRow = {
-  id: MaterialSectionId;
+type MediaWorkspacePanel = 'products' | 'items' | 'assets' | 'entitlements';
+
+type MediaFrontendRow = {
+  id: string;
   step: string;
   title: string;
-  desc: string;
   location: string;
   summary: string;
   editFields: string;
   statusLabel: string;
   statusTone: 'success' | 'warning';
+  actionLabel: string;
+  actionType: 'section' | 'product' | 'createProduct';
+  sectionId?: MaterialSectionId;
+  productId?: string;
 };
 
 function isOnline(status: string) {
@@ -83,78 +88,88 @@ function formatPrice(record: MallProductRecord) {
   return `¥${current}`;
 }
 
-function buildSectionRows(
+function buildFrontendRows(
   page: ReturnType<typeof normalizeMaterialsPage>,
-  featuredProduct: MallProductRecord | null,
-  featuredItems: MallProductItemRecord[]
-): MediaSectionRow[] {
-  return mediaSectionModels.map((section) => {
-    if (section.id === 'header') {
-      const ready = Boolean(page.header.title && page.header.searchLabel);
-      return {
-        ...section,
-        summary: `${page.header.title || '未填写标题'} / 搜索提示：${page.header.searchLabel || '未填写'}`,
-        editFields: '页面标题、搜索提示',
-        statusLabel: ready ? '顶部已完整' : '建议补齐顶部文案',
-        statusTone: ready ? 'success' : 'warning'
-      };
+  visibleProducts: MallProductRecord[]
+): MediaFrontendRow[] {
+  const rows: MediaFrontendRow[] = [
+    {
+      id: 'hero',
+      step: '第 1 行',
+      title: '页面主标题',
+      location: 'LOGO 和学科切换下方的大标题',
+      summary: page.heroSection.title || '未填写商城大标题',
+      editFields: '商城大标题',
+      statusLabel: page.heroSection.title ? '已填写' : '待补充',
+      statusTone: page.heroSection.title ? 'success' : 'warning',
+      actionLabel: '编辑主标题',
+      actionType: 'section',
+      sectionId: 'hero'
+    },
+    {
+      id: 'categories',
+      step: '第 2 行',
+      title: '商品分类按钮',
+      location: '主标题下方的分类按钮行',
+      summary: page.categoryTabs.length ? page.categoryTabs.map((item) => item.label).join(' / ') : '还没有配置分类按钮',
+      editFields: '分类按钮名称与顺序',
+      statusLabel: page.categoryTabs.length ? `已配置 ${page.categoryTabs.length} 个` : '待补充',
+      statusTone: page.categoryTabs.length ? 'success' : 'warning',
+      actionLabel: '编辑分类',
+      actionType: 'section',
+      sectionId: 'categories'
     }
+  ];
 
-    if (section.id === 'stageTabs') {
-      const ready = page.stageTabs.length >= 3 && page.stageTabs.every((item) => item.label);
-      return {
-        ...section,
-        summary: page.stageTabs.map((item) => item.label).join(' / ') || '还没有配置阶段按钮',
-        editFields: '3 个阶段按钮名称',
-        statusLabel: ready ? '阶段按钮已完整' : `已配置 ${page.stageTabs.length}/3`,
-        statusTone: ready ? 'success' : 'warning'
-      };
-    }
+  if (visibleProducts.length) {
+    visibleProducts.forEach((product, index) => {
+      const ready = Boolean(product.productName && product.productSubTitle && product.coverMark && product.coverLabel && product.buttonText);
+      rows.push({
+        id: `product-${product._id || index}`,
+        step: `第 3.${index + 1} 张`,
+        title: `商品卡 ${index + 1}`,
+        location: `${getMaterialCategoryLabel(product.categoryKey)} · 商城商品列表`,
+        summary: `${product.coverLabel || '未填封面底部字'} / ${product.productName || '未填写标题'} / ${
+          product.productSubTitle || '未填写说明'
+        } / ${product.salesLabel || '未填写销量字'}`,
+        editFields: '封面大字、封面底部字、标题、说明、价格、销量字、按钮字',
+        statusLabel: ready ? '商品卡已完整' : '建议补齐商品卡',
+        statusTone: ready ? 'success' : 'warning',
+        actionLabel: '编辑这张卡',
+        actionType: 'product',
+        productId: product._id
+      });
+    });
+  } else {
+    rows.push({
+      id: 'product-empty',
+      step: '第 3 块',
+      title: '商品卡列表',
+      location: '商城商品列表',
+      summary: '当前学科下还没有商品卡',
+      editFields: '先创建第一张商品卡',
+      statusLabel: '待创建',
+      statusTone: 'warning',
+      actionLabel: '新建商品卡',
+      actionType: 'createProduct'
+    });
+  }
 
-    if (section.id === 'package') {
-      const ready = Boolean(
-        page.mainSection.title &&
-          page.mainSection.sideNote &&
-          featuredProduct?.productName &&
-          featuredProduct?.productSubTitle &&
-          featuredProduct?.productDescription
-      );
-      return {
-        ...section,
-        summary: featuredProduct
-          ? `${page.mainSection.title || '未填写区块标题'} / ${featuredProduct.productName}`
-          : `${page.mainSection.title || '未填写区块标题'} / 当前学科阶段还没有主推商品`,
-        editFields: '主推区标题、右侧提示、商品标题、简介、价格与状态',
-        statusLabel: ready ? '主推商品已完整' : featuredProduct ? '建议补齐主推商品信息' : '建议先创建商品',
-        statusTone: ready ? 'success' : 'warning'
-      };
-    }
-
-    if (section.id === 'items') {
-      const ready =
-        Boolean(page.shelfSection.title && page.shelfSection.hint) &&
-        featuredItems.length > 0 &&
-        featuredItems.every((item) => item.displayName && item.displaySubTitle);
-      return {
-        ...section,
-        summary: featuredItems.length
-          ? `${page.shelfSection.title || '未填写内容区标题'} / ${featuredItems.length} 个内容项`
-          : `${page.shelfSection.title || '未填写内容区标题'} / 当前商品还没有挂内容项`,
-        editFields: '内容区标题、右侧提示、内容项标题、副标题、预览说明',
-        statusLabel: ready ? `内容项 ${featuredItems.length} 个` : '建议先补 1 个内容项',
-        statusTone: ready ? 'success' : 'warning'
-      };
-    }
-
-    const ready = Boolean(page.consultBar.title && page.consultBar.desc && page.consultBar.buttonText);
-    return {
-      ...section,
-      summary: `${page.consultBar.title || '未填写标题'} / ${page.consultBar.buttonText || '未填写按钮'}`,
-      editFields: '咨询标题、说明、按钮文案',
-      statusLabel: ready ? '咨询条已完整' : '建议补齐咨询文案',
-      statusTone: ready ? 'success' : 'warning'
-    };
+  rows.push({
+    id: 'consult-bar',
+    step: '最后一块',
+    title: '底部咨询浮条',
+    location: '商城页底部深色咨询条',
+    summary: `${page.consultBar.title || '未填写标题'} / ${page.consultBar.buttonText || '未填写按钮字'}`,
+    editFields: '咨询标题、说明、按钮字',
+    statusLabel: page.consultBar.title && page.consultBar.desc && page.consultBar.buttonText ? '已完整' : '待补充',
+    statusTone: page.consultBar.title && page.consultBar.desc && page.consultBar.buttonText ? 'success' : 'warning',
+    actionLabel: '编辑浮条',
+    actionType: 'section',
+    sectionId: 'consultBar'
   });
+
+  return rows;
 }
 
 function formatEntitlementStatus(status: string) {
@@ -174,9 +189,9 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
   const [editingItem, setEditingItem] = useState<MallProductItemRecord | null>(null);
   const [assetDrawerOpen, setAssetDrawerOpen] = useState(false);
   const [editingAsset, setEditingAsset] = useState<MallAssetRecord | null>(null);
+  const [workspacePanel, setWorkspacePanel] = useState<MediaWorkspacePanel>('products');
 
   const direction = readMaterialDirection(searchParams.get('subject'));
-  const stage = readMaterialStage(searchParams.get('stage'));
 
   const pageQuery = useQuery({
     queryKey: ['page', 'materials'],
@@ -262,31 +277,21 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
   );
   const entitlementCount = allEntitlements.length;
 
-  const currentAssets = useMemo(
-    () => allAssets.filter((item) => item.direction === direction && item.stage === stage),
-    [allAssets, direction, stage]
-  );
-  const currentProducts = useMemo(
-    () => allProducts.filter((item) => item.direction === direction && item.stage === stage),
-    [allProducts, direction, stage]
-  );
-  const onlineProducts = useMemo(
-    () => currentProducts.filter((item) => isOnline(item.status)),
-    [currentProducts]
-  );
-  const featuredProduct = onlineProducts[0] || currentProducts[0] || null;
-  const selectedProductId = searchParams.get('product') || featuredProduct?._id || '';
+  const currentAssets = useMemo(() => allAssets.filter((item) => item.direction === direction), [allAssets, direction]);
+  const currentProducts = useMemo(() => allProducts.filter((item) => item.direction === direction), [allProducts, direction]);
+  const visibleProducts = useMemo(() => {
+    const onlineProducts = currentProducts.filter((item) => isOnline(item.status));
+    return onlineProducts.length ? onlineProducts : currentProducts;
+  }, [currentProducts]);
+  const selectedProductId = searchParams.get('product') || visibleProducts[0]?._id || currentProducts[0]?._id || '';
   const selectedProduct =
-    currentProducts.find((item) => item._id === selectedProductId) || featuredProduct || currentProducts[0] || null;
+    currentProducts.find((item) => item._id === selectedProductId) || visibleProducts[0] || currentProducts[0] || null;
   const currentProductItems = useMemo(
     () => allProductItems.filter((item) => item.productId === selectedProduct?._id),
     [allProductItems, selectedProduct]
   );
 
-  const sections = useMemo(
-    () => buildSectionRows(page, featuredProduct, currentProductItems),
-    [page, featuredProduct, currentProductItems]
-  );
+  const frontRows = useMemo(() => buildFrontendRows(page, visibleProducts), [page, visibleProducts]);
   const lastUpdated = formatDateTime(page._meta?.updatedAt || page._updatedAt);
 
   if (!auth.permissions.canRead) {
@@ -326,7 +331,7 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
         id: editingProduct._id,
         payload: nextProduct as unknown as Record<string, unknown>
       });
-      message.success('商品已保存');
+      message.success('商品卡已保存');
     } else {
       const created = await createProductMutation.mutateAsync(nextProduct as unknown as Record<string, unknown>);
       if (created?._id) {
@@ -336,7 +341,7 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
           return next;
         });
       }
-      message.success('商品已创建');
+      message.success('商品卡已创建');
     }
     await queryClient.invalidateQueries({ queryKey: ['collection', 'mallProducts'] });
     setProductDrawerOpen(false);
@@ -350,10 +355,10 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
         id: editingItem._id,
         payload: nextItem as unknown as Record<string, unknown>
       });
-      message.success('商品内容项已保存');
+      message.success('附属内容项已保存');
     } else {
       await createItemMutation.mutateAsync(nextItem as unknown as Record<string, unknown>);
-      message.success('商品内容项已创建');
+      message.success('附属内容项已创建');
     }
     await queryClient.invalidateQueries({ queryKey: ['collection', 'mallProductItems'] });
     setItemDrawerOpen(false);
@@ -379,151 +384,144 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
         return next;
       });
     }
-    message.success('商品已删除');
+    message.success('商品卡已删除');
   }
 
   async function handleDeleteItem(record: MallProductItemRecord) {
     if (!record._id) return;
     await deleteItemMutation.mutateAsync(record._id);
     await queryClient.invalidateQueries({ queryKey: ['collection', 'mallProductItems'] });
-    message.success('商品内容项已删除');
+    message.success('附属内容项已删除');
   }
 
-  const sectionColumns: TableProps<MediaSectionRow>['columns'] = [
-    { title: '前台顺序', dataIndex: 'step', width: 108 },
+  function focusProduct(productId: string) {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      next.set('product', productId);
+      return next;
+    });
+  }
+
+  const sectionColumns: TableProps<MediaFrontendRow>['columns'] = [
+    { title: '前台顺序', dataIndex: 'step', width: 110 },
     {
-      title: '前台区块',
+      title: '当前展示块',
       dataIndex: 'title',
-      width: 320,
+      width: 250,
       render: (_, record) => (
         <Space direction="vertical" size={2}>
           <Typography.Text strong>{record.title}</Typography.Text>
-          <Typography.Text type="secondary">{record.desc}</Typography.Text>
+          <Typography.Text type="secondary">{record.location}</Typography.Text>
         </Space>
       )
     },
-    { title: '前台位置', dataIndex: 'location', width: 180 },
-    { title: '老师当前会看到', dataIndex: 'summary', ellipsis: true },
-    { title: '点开后会改什么', dataIndex: 'editFields', width: 260 },
+    { title: '老师现在看到', dataIndex: 'summary', ellipsis: true },
+    { title: '点开后会改什么', dataIndex: 'editFields', width: 320 },
     {
-      title: '完成状态',
+      title: '状态',
       dataIndex: 'statusLabel',
-      width: 170,
+      width: 150,
       render: (_, record) => <Tag color={record.statusTone === 'success' ? 'success' : 'warning'}>{record.statusLabel}</Tag>
     },
     {
       title: '操作',
       key: 'option',
-      width: 220,
+      width: 160,
       fixed: 'right',
-      render: (_, record) => [
-        record.id === 'package' ? (
-          <a key="package-section" onClick={() => setEditingSection('package')}>
-            编辑区块
-          </a>
-        ) : null,
-        record.id === 'package' ? (
+      render: (_, record) => {
+        if (record.actionType === 'section' && record.sectionId) {
+          return <a onClick={() => setEditingSection(record.sectionId || null)}>{record.actionLabel}</a>;
+        }
+
+        if (record.actionType === 'product' && record.productId) {
+          return (
+            <a
+              onClick={() => {
+                const target = currentProducts.find((item) => item._id === record.productId) || null;
+                setEditingProduct(target);
+                setProductDrawerOpen(true);
+              }}
+            >
+              {record.actionLabel}
+            </a>
+          );
+        }
+
+        return (
           <a
-            key="package-card"
             onClick={() => {
-              setEditingProduct(featuredProduct);
+              setEditingProduct(null);
               setProductDrawerOpen(true);
             }}
           >
-            {featuredProduct ? '编辑主推商品' : '新建商品'}
+            {record.actionLabel}
           </a>
-        ) : null,
-        record.id === 'items' ? (
-          <a key="items-section" onClick={() => setEditingSection('items')}>
-            编辑区块
-          </a>
-        ) : null,
-        record.id === 'items' ? (
-          <a
-            key="items-card"
-            onClick={() => {
-              if (!selectedProduct?._id) {
-                message.warning('请先创建或选择一个商品，再添加商品内容项。');
-                return;
-              }
-              setEditingItem({
-                ...defaultMallProductItem,
-                direction,
-                productId: selectedProduct._id
-              });
-              setItemDrawerOpen(true);
-            }}
-          >
-            新增内容项
-          </a>
-        ) : null,
-        record.id !== 'package' && record.id !== 'items' ? (
-          <a key="edit" onClick={() => setEditingSection(record.id)}>
-            编辑
-          </a>
-        ) : null
-      ]
+        );
+      }
     }
   ];
 
   const productColumns: TableProps<MallProductRecord>['columns'] = [
     {
-      title: '商品',
+      title: '商城商品卡',
       dataIndex: 'productName',
       width: 320,
       render: (_, record) => (
         <Space direction="vertical" size={2}>
-          <Typography.Text strong>{record.productName || '未填写商品标题'}</Typography.Text>
+          <Typography.Text strong>{record.productName || '未填写商品卡标题'}</Typography.Text>
           <Typography.Text type="secondary">
-            {record.badge || '未填写角标'} / {record.productSubTitle || '未填写适合对象'}
+            {record.coverLabel || '未填封面底部字'} / {record.productSubTitle || '未填写说明'}
           </Typography.Text>
         </Space>
       )
     },
     {
-      title: '类型 / 价格',
+      title: '分类 / 阶段',
       width: 180,
       render: (_, record) => (
         <Space direction="vertical" size={2}>
-          <Typography.Text>{record.productType}</Typography.Text>
-          <Typography.Text type="secondary">{formatPrice(record)}</Typography.Text>
+          <Typography.Text>{getMaterialCategoryLabel(record.categoryKey)}</Typography.Text>
+          <Typography.Text type="secondary">{materialStageLabels[record.stage] || record.stage}</Typography.Text>
         </Space>
       )
     },
     {
-      title: '摘要',
-      dataIndex: 'productDescription',
-      ellipsis: true
+      title: '封面与价格',
+      width: 220,
+      render: (_, record) => (
+        <Space direction="vertical" size={2}>
+          <Typography.Text>{`${record.coverMark || 'A'} / ${record.buttonText || '查看详情'}`}</Typography.Text>
+          <Typography.Text type="secondary">{`${formatPrice(record)} ${record.salesLabel ? `/ ${record.salesLabel}` : ''}`}</Typography.Text>
+        </Space>
+      )
     },
     {
       title: '状态',
-      width: 140,
+      width: 160,
       render: (_, record) => (
         <Space wrap>
           <Tag color={record.status === 'online' ? 'success' : record.status === 'pending' ? 'warning' : 'default'}>
             {record.status === 'online' ? '已上架' : record.status === 'pending' ? '待审核' : record.status === 'offline' ? '已下架' : '草稿'}
           </Tag>
-          {featuredProduct?._id === record._id ? <Tag color="processing">当前主推</Tag> : null}
+          {visibleProducts.some((item) => item._id === record._id) ? <Tag color="processing">前台可见</Tag> : null}
         </Space>
       )
     },
     {
       title: '操作',
       key: 'option',
-      width: 180,
+      width: 170,
       fixed: 'right',
       render: (_, record) => [
         <a
           key="manage"
-          onClick={() =>
-            setSearchParams((current) => {
-              const next = new URLSearchParams(current);
-              next.set('product', record._id || '');
-              return next;
-            })
-          }
+          onClick={() => {
+            if (record._id) {
+              focusProduct(record._id);
+            }
+          }}
         >
-          管理内容
+          管理附属项
         </a>,
         <a
           key="edit"
@@ -536,7 +534,7 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
         </a>,
         <Popconfirm
           key="delete"
-          title="确定删除这个商品吗？"
+          title="确定删除这张商品卡吗？"
           onConfirm={() => handleDeleteProduct(record)}
           okButtonProps={{ danger: true }}
           disabled={!auth.permissions.canWrite}
@@ -548,20 +546,16 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
   ];
 
   const productItemColumns: TableProps<MallProductItemRecord>['columns'] = [
+    { title: '排序', dataIndex: 'sortOrder', width: 90 },
     {
-      title: '排序',
-      dataIndex: 'sortOrder',
-      width: 90
-    },
-    {
-      title: '商品内容项',
+      title: '附属内容项',
       dataIndex: 'displayName',
       width: 320,
       render: (_, record) => {
         const asset = allAssets.find((item) => item._id === record.itemId);
         return (
           <Space direction="vertical" size={2}>
-            <Typography.Text strong>{record.displayName || '未填写内容标题'}</Typography.Text>
+            <Typography.Text strong>{record.displayName || '未填写内容项标题'}</Typography.Text>
             <Typography.Text type="secondary">
               {record.displayType || '资料'} / {record.displaySubTitle || '未填写副标题'}
             </Typography.Text>
@@ -576,7 +570,7 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
       render: (_, record) => <Tag color={record.previewEnabled ? 'success' : 'default'}>{record.previewEnabled ? `预览 ${record.previewPageCount} 页` : '不允许预览'}</Tag>
     },
     {
-      title: '简介',
+      title: '说明',
       dataIndex: 'displayDescription',
       ellipsis: true
     },
@@ -589,6 +583,7 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
         <a
           key="edit"
           onClick={() => {
+            focusProduct(record.productId);
             setEditingItem(record);
             setItemDrawerOpen(true);
           }}
@@ -597,7 +592,7 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
         </a>,
         <Popconfirm
           key="delete"
-          title="确定删除这个内容项吗？"
+          title="确定删除这条附属内容项吗？"
           onConfirm={() => handleDeleteItem(record)}
           okButtonProps={{ danger: true }}
           disabled={!auth.permissions.canWrite}
@@ -623,9 +618,14 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
       )
     },
     {
-      title: '预览',
-      width: 140,
-      render: (_, record) => <Tag color={record.previewEnabled ? 'success' : 'default'}>{record.previewEnabled ? `${record.previewPageCount} 页` : '关闭'}</Tag>
+      title: '阶段 / 预览',
+      width: 160,
+      render: (_, record) => (
+        <Space direction="vertical" size={2}>
+          <Typography.Text>{materialStageLabels[record.stage] || record.stage}</Typography.Text>
+          <Typography.Text type="secondary">{record.previewEnabled ? `${record.previewPageCount} 页` : '关闭预览'}</Typography.Text>
+        </Space>
+      )
     },
     {
       title: '来源信息',
@@ -705,6 +705,94 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
     }
   ];
 
+  const workspacePanelOptions = [
+    { label: `商品卡 ${currentProducts.length}`, value: 'products' as const },
+    { label: `附属项 ${currentProductItems.length}`, value: 'items' as const },
+    { label: `资料资产 ${currentAssets.length}`, value: 'assets' as const },
+    { label: `权益记录 ${entitlementCount}`, value: 'entitlements' as const }
+  ];
+
+  const workspaceAction = (() => {
+    if (workspacePanel === 'products') {
+      return (
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          disabled={!auth.permissions.canWrite}
+          onClick={() => {
+            setEditingProduct(null);
+            setProductDrawerOpen(true);
+          }}
+        >
+          新建商品卡
+        </Button>
+      );
+    }
+
+    if (workspacePanel === 'items') {
+      return (
+        <Space wrap>
+          <Select
+            style={{ minWidth: 260 }}
+            placeholder="先选择要维护的商品卡"
+            value={selectedProduct?._id}
+            options={currentProducts.map((item) => ({
+              label: item.productName || item._id || '未命名商品卡',
+              value: item._id
+            }))}
+            onChange={(value) =>
+              setSearchParams((current) => {
+                const next = new URLSearchParams(current);
+                next.set('product', String(value));
+                return next;
+              })
+            }
+          />
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            disabled={!auth.permissions.canWrite || !selectedProduct?._id}
+            onClick={() => {
+              if (!selectedProduct?._id) {
+                message.warning('请先选择一张商品卡。');
+                return;
+              }
+              setEditingItem({
+                ...defaultMallProductItem,
+                direction,
+                productId: selectedProduct._id
+              });
+              setItemDrawerOpen(true);
+            }}
+          >
+            新增附属项
+          </Button>
+        </Space>
+      );
+    }
+
+    if (workspacePanel === 'assets') {
+      return (
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          disabled={!auth.permissions.canWrite}
+          onClick={() => {
+            setEditingAsset({
+              ...defaultMallAsset,
+              direction
+            });
+            setAssetDrawerOpen(true);
+          }}
+        >
+          新增资料资产
+        </Button>
+      );
+    }
+
+    return null;
+  })();
+
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
       <Card className="hero-card">
@@ -712,10 +800,10 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
           <div>
             <Typography.Text className="eyebrow">商城业务主控区</Typography.Text>
             <Typography.Title level={3} style={{ marginTop: 0, marginBottom: 8 }}>
-              先选学科和阶段，再按“区块、商品、内容项、资料资产”顺序维护
+              这一页只按当前商城真实显示顺序来维护
             </Typography.Title>
             <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
-              小程序前端展示先保持不变，3200 后台先把商城底层换成资料资产、商品、内容项和权益四层结构。
+              除了 LOGO 和学科切换这种全局壳子，老师现在看到的每一行，都对应商城页里实际会出现的一块内容或一张商品卡。
             </Typography.Paragraph>
           </div>
 
@@ -736,18 +824,6 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
                   })
                 }
               />
-              <Segmented
-                value={stage}
-                options={page.stageTabs.map((item) => ({ label: item.label, value: item.key }))}
-                onChange={(value) =>
-                  setSearchParams((current) => {
-                    const next = new URLSearchParams(current);
-                    next.set('stage', String(value));
-                    next.delete('product');
-                    return next;
-                  })
-                }
-              />
             </Space>
             <Space wrap>
               <Tag color={auth.permissions.canWrite ? 'success' : 'default'}>
@@ -757,206 +833,148 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
             </Space>
           </Space>
 
-          <Space wrap size="middle">
-            <div className="home-workspace-summary">
-              <Typography.Text type="secondary">你当前正在维护</Typography.Text>
-              <Typography.Title level={3} style={{ margin: 0 }}>
-                {materialDirectionLabels[direction]} · {materialStageLabels[stage]}
+          <div className="home-workspace-compact-bar">
+            <Typography.Text>当前维护：{materialDirectionLabels[direction]}</Typography.Text>
+            <Typography.Text>前台可见商品卡：{visibleProducts.length}</Typography.Text>
+            <Typography.Text>资料资产：{currentAssets.length}</Typography.Text>
+            <Typography.Text>权益记录：{entitlementCount}</Typography.Text>
+            <Typography.Text>建议顺序：先改标题分类，再改商品卡</Typography.Text>
+          </div>
+
+          <div className="workspace-guide-grid">
+            <div className="workspace-guide-card">
+              <Typography.Text className="workspace-guide-label">第一步</Typography.Text>
+              <Typography.Title level={5} style={{ marginTop: 6, marginBottom: 6 }}>
+                先改页面抬头和分类
               </Typography.Title>
-            </div>
-            <div className="home-workspace-summary">
-              <Typography.Text type="secondary">主推商品数</Typography.Text>
-              <Typography.Title level={3} style={{ margin: 0 }}>
-                {currentProducts.length}
-              </Typography.Title>
-            </div>
-            <div className="home-workspace-summary">
-              <Typography.Text type="secondary">资料资产数</Typography.Text>
-              <Typography.Title level={3} style={{ margin: 0 }}>
-                {currentAssets.length}
-              </Typography.Title>
-            </div>
-            <div className="home-workspace-summary">
-              <Typography.Text type="secondary">权益记录</Typography.Text>
-              <Typography.Title level={3} style={{ margin: 0 }}>
-                {entitlementCount}
-              </Typography.Title>
-            </div>
-            <div className="home-workspace-tip">
-              <Typography.Text strong>老师操作顺序</Typography.Text>
-              <Typography.Paragraph style={{ marginBottom: 0 }}>
-                先建资料资产，再建商品，然后给商品挂内容项。前台会优先展示当前阶段排序最靠前且已上架的商品。
+              <Typography.Paragraph type="secondary" style={{ marginBottom: 12 }}>
+                先把商城主标题和那一排分类按钮改对，老师再去改单张商品卡会更不容易迷路。
               </Typography.Paragraph>
+              <Button type="link" style={{ paddingInline: 0 }} onClick={() => setEditingSection('hero')}>
+                先从第 1 行开始
+              </Button>
             </div>
-          </Space>
-          <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
-            理解方式很简单：前台主卡来自“商品”，下面的资料卡来自“商品内容项”，而真正的 PDF 和封面沉淀在“资料资产库”。
-          </Typography.Paragraph>
+            <div className="workspace-guide-card">
+              <Typography.Text className="workspace-guide-label">第二步</Typography.Text>
+              <Typography.Title level={5} style={{ marginTop: 6, marginBottom: 6 }}>
+                再逐张改前台商品卡
+              </Typography.Title>
+              <Typography.Paragraph type="secondary" style={{ marginBottom: 12 }}>
+                商品卡里改的是学生会直接看到的标题、说明、价格、销量字和按钮字。
+              </Typography.Paragraph>
+              <Button type="link" style={{ paddingInline: 0 }} onClick={() => setWorkspacePanel('products')}>
+                打开商品卡工作台
+              </Button>
+            </div>
+            <div className="workspace-guide-card">
+              <Typography.Text className="workspace-guide-label">第三步</Typography.Text>
+              <Typography.Title level={5} style={{ marginTop: 6, marginBottom: 6 }}>
+                资料资产留在后面批量维护
+              </Typography.Title>
+              <Typography.Paragraph type="secondary" style={{ marginBottom: 12 }}>
+                资料资产更像仓库，适合先准备 PDF、预览页数和云端 Key，再回到商品卡做关联。
+              </Typography.Paragraph>
+              <Button type="link" style={{ paddingInline: 0 }} onClick={() => setWorkspacePanel('assets')}>
+                打开资料资产库
+              </Button>
+            </div>
+          </div>
         </Space>
       </Card>
 
       <Card
         className="home-workspace-card"
-        title="商城关键区块"
+        title="商城真实显示总表"
         extra={
           <Button
             type="primary"
             icon={<EditOutlined />}
             disabled={!auth.permissions.canWrite}
-            onClick={() => setEditingSection('header')}
+            onClick={() => setEditingSection('hero')}
           >
-            从顶部开始编辑
+            从第 1 行开始修改
           </Button>
         }
       >
-        <Table<MediaSectionRow>
+        <Table<MediaFrontendRow>
           rowKey="id"
-          loading={pageQuery.isLoading || assetsQuery.isLoading || productsQuery.isLoading || productItemsQuery.isLoading}
+          loading={pageQuery.isLoading || assetsQuery.isLoading || productsQuery.isLoading}
           columns={sectionColumns}
-          dataSource={sections}
+          dataSource={frontRows}
           pagination={false}
-          scroll={{ x: 1120 }}
+          scroll={{ x: 1040 }}
         />
       </Card>
 
       <Card
         className="home-workspace-card"
-        title="当前阶段商品"
-        extra={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            disabled={!auth.permissions.canWrite}
-            onClick={() => {
-              setEditingProduct(null);
-              setProductDrawerOpen(true);
-            }}
-          />
-        }
-      >
-        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-          <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
-            小程序主卡会优先取当前学科和阶段中“排序最靠前且已上架”的商品。需要精简时，只保留 1 个在架商品最稳妥。
-          </Typography.Paragraph>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            disabled={!auth.permissions.canWrite}
-            onClick={() => {
-              setEditingProduct(null);
-              setProductDrawerOpen(true);
-            }}
-          >
-            新建商品
-          </Button>
-          <Table<MallProductRecord>
-            rowKey={(record) => record._id || `${record.direction}-${record.stage}-${record.sortOrder}`}
-            loading={productsQuery.isLoading}
-            columns={productColumns}
-            dataSource={currentProducts}
-            pagination={false}
-            scroll={{ x: 1080 }}
-            locale={{ emptyText: '当前学科和阶段还没有商品' }}
-          />
-        </Space>
-      </Card>
-
-      <Card
-        className="home-workspace-card"
-        title="当前商品内容项"
+        title="商城业务工作台"
         extra={
           <Space wrap>
-            <Select
-              style={{ minWidth: 260 }}
-              placeholder="先选择要维护的商品"
-              value={selectedProduct?._id}
-              options={currentProducts.map((item) => ({
-                label: item.productName || item._id || '未命名商品',
-                value: item._id
-              }))}
-              onChange={(value) =>
-                setSearchParams((current) => {
-                  const next = new URLSearchParams(current);
-                  next.set('product', String(value));
-                  return next;
-                })
-              }
-            />
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              disabled={!auth.permissions.canWrite || !selectedProduct?._id}
-              onClick={() => {
-                if (!selectedProduct?._id) {
-                  message.warning('请先选择一个商品。');
-                  return;
-                }
-                setEditingItem({
-                  ...defaultMallProductItem,
-                  direction,
-                  productId: selectedProduct._id
-                });
-                setItemDrawerOpen(true);
-              }}
-            >
-              新增内容项
-            </Button>
+            <Segmented options={workspacePanelOptions} value={workspacePanel} onChange={(value) => setWorkspacePanel(value as MediaWorkspacePanel)} />
+            {workspaceAction}
           </Space>
         }
       >
-        <Table<MallProductItemRecord>
-          rowKey={(record) => record._id || `${record.productId}-${record.itemId}-${record.sortOrder}`}
-          loading={productItemsQuery.isLoading}
-          columns={productItemColumns}
-          dataSource={currentProductItems}
-          pagination={false}
-          scroll={{ x: 1020 }}
-          locale={{ emptyText: selectedProduct ? '当前商品还没有内容项' : '请先创建或选择一个商品' }}
-        />
-      </Card>
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          {workspacePanel === 'products' ? (
+            <>
+              <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+                这里管理的是商城主列表里直接展示的商品卡。老师改卡片标题、封面字、价格、按钮字，都会直接影响这页的实际展示。
+              </Typography.Paragraph>
+              <Table<MallProductRecord>
+                rowKey={(record) => record._id || `${record.direction}-${record.stage}-${record.sortOrder}`}
+                loading={productsQuery.isLoading}
+                columns={productColumns}
+                dataSource={currentProducts}
+                pagination={false}
+                scroll={{ x: 1080 }}
+                locale={{ emptyText: '当前学科还没有商品卡' }}
+              />
+            </>
+          ) : null}
 
-      <Card
-        className="home-workspace-card"
-        title="资料资产库"
-        extra={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            disabled={!auth.permissions.canWrite}
-            onClick={() => {
-              setEditingAsset({
-                ...defaultMallAsset,
-                direction,
-                stage
-              });
-              setAssetDrawerOpen(true);
-            }}
-          >
-            新增资料资产
-          </Button>
-        }
-      >
-        <Table<MallAssetRecord>
-          rowKey={(record) => record._id || `${record.direction}-${record.stage}-${record.sortOrder}-${record.title}`}
-          loading={assetsQuery.isLoading}
-          columns={assetColumns}
-          dataSource={currentAssets}
-          pagination={false}
-          scroll={{ x: 1060 }}
-          locale={{ emptyText: '当前学科和阶段还没有资料资产' }}
-        />
-      </Card>
+          {workspacePanel === 'items' ? (
+            <>
+              <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+                这张表更偏业务支撑，不是商城主列表的直接商品卡。如果后续要做商品详情、资料组合或权益发放，这里会继续用到。
+              </Typography.Paragraph>
+              <Table<MallProductItemRecord>
+                rowKey={(record) => record._id || `${record.productId}-${record.itemId}-${record.sortOrder}`}
+                loading={productItemsQuery.isLoading}
+                columns={productItemColumns}
+                dataSource={currentProductItems}
+                pagination={false}
+                scroll={{ x: 1020 }}
+                locale={{ emptyText: selectedProduct ? '当前商品卡下还没有附属内容项' : '请先创建或选择一张商品卡' }}
+              />
+            </>
+          ) : null}
 
-      <Card className="home-workspace-card" title="最近权益记录">
-        <Table
-          rowKey={(record) => record._id || `${record.userId}-${record.productId}-${record.createdAt || 'unknown'}`}
-          loading={entitlementsQuery.isLoading}
-          columns={entitlementColumns}
-          dataSource={allEntitlements.slice(0, 10)}
-          pagination={false}
-          scroll={{ x: 940 }}
-          locale={{ emptyText: '当前还没有用户权益记录' }}
-        />
+          {workspacePanel === 'assets' ? (
+            <Table<MallAssetRecord>
+              rowKey={(record) => record._id || `${record.direction}-${record.stage}-${record.sortOrder}-${record.title}`}
+              loading={assetsQuery.isLoading}
+              columns={assetColumns}
+              dataSource={currentAssets}
+              pagination={false}
+              scroll={{ x: 1060 }}
+              locale={{ emptyText: '当前学科还没有资料资产' }}
+            />
+          ) : null}
+
+          {workspacePanel === 'entitlements' ? (
+            <Table
+              rowKey={(record) => record._id || `${record.userId}-${record.productId}-${record.createdAt || 'unknown'}`}
+              loading={entitlementsQuery.isLoading}
+              columns={entitlementColumns}
+              dataSource={allEntitlements.slice(0, 10)}
+              pagination={false}
+              scroll={{ x: 940 }}
+              locale={{ emptyText: '当前还没有用户权益记录' }}
+            />
+          ) : null}
+        </Space>
       </Card>
 
       <Suspense
@@ -981,7 +999,7 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
           open={productDrawerOpen}
           record={editingProduct}
           direction={direction}
-          stage={stage}
+          stage={editingProduct?.stage || selectedProduct?.stage || 'foundation'}
           onOpenChange={(open) => {
             setProductDrawerOpen(open);
             if (!open) {
@@ -993,7 +1011,7 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
         <MediaItemEditorDrawer
           open={itemDrawerOpen}
           record={editingItem}
-          productId={selectedProduct?._id || editingItem?.productId || ''}
+          productId={editingItem?.productId || selectedProduct?._id || ''}
           direction={direction}
           assetOptions={currentAssets}
           onOpenChange={(open) => {
@@ -1008,7 +1026,7 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
           open={assetDrawerOpen}
           record={editingAsset}
           direction={direction}
-          stage={stage}
+          stage={editingAsset?.stage || selectedProduct?.stage || 'foundation'}
           onOpenChange={(open) => {
             setAssetDrawerOpen(open);
             if (!open) {

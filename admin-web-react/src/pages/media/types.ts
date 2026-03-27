@@ -1,16 +1,24 @@
 export type MaterialDirectionKey = 'math' | 'medical';
 export type MaterialStageKey = 'foundation' | 'reinforcement' | 'sprint';
-export type MaterialSectionId = 'header' | 'stageTabs' | 'package' | 'items' | 'consultBar';
+export type MaterialSectionId = 'hero' | 'categories' | 'consultBar';
+export type MaterialCategoryKey = string;
 
 export type MaterialsPageContent = {
   header: {
     title: string;
     searchLabel: string;
   };
+  heroSection: {
+    title: string;
+  };
   directionTabs: Array<{
     key: MaterialDirectionKey;
     label: string;
     icon: string;
+  }>;
+  categoryTabs: Array<{
+    key: MaterialCategoryKey;
+    label: string;
   }>;
   stageTabs: Array<{
     key: MaterialStageKey;
@@ -106,14 +114,19 @@ export type MallProductRecord = {
   productSubTitle: string;
   productDescription: string;
   productType: string;
+  categoryKey: MaterialCategoryKey;
   direction: MaterialDirectionKey;
   stage: MaterialStageKey;
   badge: string;
   coverUrl: string;
   bannerUrl: string;
+  coverMark: string;
+  coverLabel: string;
   price: number;
   originPrice: number;
   isFree: boolean;
+  salesLabel: string;
+  buttonText: string;
   previewEnabled: boolean;
   highlights: string[];
   sortOrder: number;
@@ -175,6 +188,19 @@ export const materialStageLabels: Record<MaterialStageKey, string> = {
   sprint: '冲刺阶段'
 };
 
+export const materialCategoryOptions: Array<{ key: MaterialCategoryKey; label: string }> = [
+  { key: 'all', label: '全部' },
+  { key: 'system_course', label: '系统班' },
+  { key: 'sprint_camp', label: '冲刺营' },
+  { key: 'paper_book', label: '纸质教材' },
+  { key: 'resource_pack', label: '资料包' }
+];
+
+export const materialCategoryLabelMap = materialCategoryOptions.reduce<Record<string, string>>((output, item) => {
+  output[item.key] = item.label;
+  return output;
+}, {});
+
 export const materialThemeMeta: Record<
   MaterialDirectionKey,
   {
@@ -203,39 +229,25 @@ export const materialThemeMeta: Record<
 
 export const mediaSectionModels: MediaSectionModel[] = [
   {
-    id: 'header',
+    id: 'hero',
     step: '第 1 行',
-    title: '顶部信息',
-    desc: '对应商城页最上方的标题和搜索提示。',
-    location: '标题 / 搜索提示'
+    title: '页面主标题',
+    desc: '对应商城页 LOGO 和学科切换下方那行大标题。',
+    location: '精选好课这类主标题'
   },
   {
-    id: 'stageTabs',
+    id: 'categories',
     step: '第 2 行',
-    title: '阶段按钮',
-    desc: '对应商城页的阶段切换按钮，从左到右就是前台顺序。',
-    location: '阶段名称'
-  },
-  {
-    id: 'package',
-    step: '第 3 块',
-    title: '主推商品卡',
-    desc: '对应商城当前学科阶段的主推商品，排序最靠前且已上架的商品会优先展示。',
-    location: '区块标题 / 商品主卡'
-  },
-  {
-    id: 'items',
-    step: '第 4 块',
-    title: '商品内容列表',
-    desc: '对应商品卡下方的资料内容卡片，从上到下就是前台顺序。',
-    location: '列表标题 / 内容卡片'
+    title: '商品分类按钮',
+    desc: '对应主标题下方那一排圆角分类按钮，从左到右就是前台顺序。',
+    location: '全部 / 系统班 / 冲刺营 / 纸质教材 / 资料包'
   },
   {
     id: 'consultBar',
-    step: '第 5 块',
-    title: '底部咨询条',
-    desc: '对应最底部的咨询提示，适合放老师想引导咨询的话术。',
-    location: '标题 / 说明 / 按钮文案'
+    step: '最后一块',
+    title: '底部咨询浮条',
+    desc: '对应商城页最底部深色咨询条，适合放引导咨询的话术。没有这块时可直接留空。',
+    location: '标题 / 说明 / 按钮字'
   }
 ];
 
@@ -244,10 +256,14 @@ export const defaultMaterialsPage: MaterialsPageContent = {
     title: '教材资料库',
     searchLabel: '搜索资料'
   },
+  heroSection: {
+    title: '精选好课'
+  },
   directionTabs: [
     { key: 'math', label: '高等数学', icon: 'grid' },
     { key: 'medical', label: '医护综合', icon: 'medical' }
   ],
+  categoryTabs: materialCategoryOptions,
   stageTabs: [
     { key: 'foundation', label: '基础阶段' },
     { key: 'reinforcement', label: '强化阶段' },
@@ -322,14 +338,19 @@ export const defaultMallProduct: MallProductRecord = {
   productSubTitle: '',
   productDescription: '',
   productType: 'asset_bundle',
+  categoryKey: 'all',
   direction: 'math',
   stage: 'foundation',
   badge: '',
   coverUrl: '',
   bannerUrl: '',
+  coverMark: 'A',
+  coverLabel: '资料包',
   price: 0,
   originPrice: 0,
   isFree: true,
+  salesLabel: '',
+  buttonText: '查看详情',
   previewEnabled: true,
   highlights: [],
   sortOrder: 100,
@@ -365,12 +386,32 @@ export function readMaterialStage(value: string | null): MaterialStageKey {
   return 'foundation';
 }
 
+export function inferMaterialCategoryKey(value: unknown, fallback = 'all'): MaterialCategoryKey {
+  const raw = String(value || '').trim();
+  if (!raw) return fallback;
+  if (materialCategoryOptions.some((item) => item.key === raw)) {
+    return raw;
+  }
+
+  const normalized = raw.toLowerCase();
+  if (normalized.includes('system') || normalized.includes('course') || normalized.includes('系统班')) return 'system_course';
+  if (normalized.includes('sprint') || normalized.includes('camp') || normalized.includes('冲刺')) return 'sprint_camp';
+  if (normalized.includes('book') || normalized.includes('paper') || normalized.includes('教材') || normalized.includes('书')) return 'paper_book';
+  if (normalized.includes('asset') || normalized.includes('resource') || normalized.includes('资料')) return 'resource_pack';
+  return fallback;
+}
+
+export function getMaterialCategoryLabel(categoryKey: MaterialCategoryKey) {
+  return materialCategoryLabelMap[categoryKey] || categoryKey || '未分类';
+}
+
 export function normalizeMaterialsPage(value: unknown): MaterialsPageContent {
   const page = (value || {}) as Partial<MaterialsPageContent>;
   return {
     ...defaultMaterialsPage,
     ...page,
     header: { ...defaultMaterialsPage.header, ...(page.header || {}) },
+    heroSection: { ...defaultMaterialsPage.heroSection, ...(page.heroSection || {}) },
     directionTabs:
       Array.isArray(page.directionTabs) && page.directionTabs.length
         ? page.directionTabs
@@ -381,6 +422,15 @@ export function normalizeMaterialsPage(value: unknown): MaterialsPageContent {
             }))
             .slice(0, 2)
         : defaultMaterialsPage.directionTabs,
+    categoryTabs:
+      Array.isArray(page.categoryTabs) && page.categoryTabs.length
+        ? page.categoryTabs
+            .map((item) => ({
+              key: String(item?.key || ''),
+              label: String(item?.label || '')
+            }))
+            .filter((item) => item.key && item.label)
+        : defaultMaterialsPage.categoryTabs,
     stageTabs:
       Array.isArray(page.stageTabs) && page.stageTabs.length
         ? page.stageTabs
@@ -498,12 +548,17 @@ export function normalizeMallProduct(value: Record<string, unknown> | null | und
     productSubTitle: String(value?.productSubTitle || value?.target || defaultMallProduct.productSubTitle),
     productDescription: String(value?.productDescription || value?.solves || defaultMallProduct.productDescription),
     productType: String(value?.productType || defaultMallProduct.productType),
+    categoryKey: inferMaterialCategoryKey(value?.categoryKey || value?.productType || value?.title, defaultMallProduct.categoryKey),
     badge: String(value?.badge || defaultMallProduct.badge),
     coverUrl: String(value?.coverUrl || defaultMallProduct.coverUrl),
     bannerUrl: String(value?.bannerUrl || defaultMallProduct.bannerUrl),
+    coverMark: String(value?.coverMark || defaultMallProduct.coverMark),
+    coverLabel: String(value?.coverLabel || defaultMallProduct.coverLabel),
     price: Number(value?.price || defaultMallProduct.price),
     originPrice: Number(value?.originPrice || defaultMallProduct.originPrice),
     isFree: value?.isFree === true || Number(value?.price || 0) <= 0,
+    salesLabel: String(value?.salesLabel || defaultMallProduct.salesLabel),
+    buttonText: String(value?.buttonText || defaultMallProduct.buttonText),
     previewEnabled: value?.previewEnabled === false ? false : defaultMallProduct.previewEnabled,
     highlights: Array.isArray(value?.highlights) ? value.highlights.map((item) => String(item)).filter(Boolean) : defaultMallProduct.highlights,
     sortOrder: Number(value?.sortOrder || value?.sort || defaultMallProduct.sortOrder),
