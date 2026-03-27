@@ -56,7 +56,7 @@ export const moduleConfigs: ModuleConfig[] = [
     key: 'directions',
     label: '帖子',
     title: '帖子',
-    subtitle: '使用 ProTable 管理帖子列表，支持搜索、筛选、新建与编辑。',
+    subtitle: '使用轻量表格工作台管理帖子列表，支持搜索、筛选、新建与编辑。',
     pageKey: 'courses',
     collections: [{ key: 'directions', label: '帖子列表' }],
     iconKey: 'compass',
@@ -95,7 +95,7 @@ export const moduleConfigs: ModuleConfig[] = [
     key: 'learners',
     label: '我的',
     title: '我的',
-    subtitle: '学习用户主控区已切到 ProTable，适合看用户、概况、做题与错题沉淀。',
+    subtitle: '学习用户主控区已切到轻量表格工作台，适合看用户、概况、做题与错题沉淀。',
     pageKey: null,
     collections: [
       { key: 'appUsers', label: '学习用户' },

@@ -22,18 +22,6 @@ function resolveManualChunk(id: string) {
     return 'react-query';
   }
 
-  if (normalizedId.startsWith('dayjs/')) {
-    return 'dayjs-vendor';
-  }
-
-  if (
-    normalizedId.startsWith('@ant-design/pro-') ||
-    normalizedId.startsWith('@ant-design/pro-components/') ||
-    normalizedId.startsWith('@ant-design/pro-provider/')
-  ) {
-    return 'pro-components';
-  }
-
   if (
     normalizedId.startsWith('antd/') ||
     normalizedId.startsWith('@ant-design/') ||

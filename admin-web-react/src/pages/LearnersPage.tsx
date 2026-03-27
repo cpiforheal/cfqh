@@ -1,7 +1,21 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Card, Drawer, Result, Segmented, Space, Spin, Tag, Typography } from 'antd';
-import ProTable from '@ant-design/pro-table';
-import type { ActionType, ProColumns } from '@ant-design/pro-table';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import {
+  Button,
+  Card,
+  Drawer,
+  Form,
+  Input,
+  Result,
+  Segmented,
+  Select,
+  Space,
+  Spin,
+  Table,
+  Tag,
+  Typography,
+  type TableColumnsType,
+  type TablePaginationConfig
+} from 'antd';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import type { AuthState } from '../api';
@@ -31,24 +45,38 @@ function preloadRecordPreviewDrawer() {
   return import('../components/RecordPreviewDrawer');
 }
 
-function getColumns(collectionKey: string): ProColumns<LearnerRecord>[] {
-  const sharedAction: ProColumns<LearnerRecord> = {
+function getColumns(collectionKey: string, onView: (record: LearnerRecord) => void): TableColumnsType<LearnerRecord> {
+  const sharedAction = {
     title: '操作',
-    valueType: 'option',
     key: 'option',
-    fixed: 'right',
+    fixed: 'right' as const,
     width: 120,
-    render: (_, record) => [<a key="view">查看</a>]
+    render: (_: unknown, record: LearnerRecord) => (
+      <Button
+        type="link"
+        size="small"
+        onMouseEnter={() => {
+          void preloadRecordPreviewDrawer();
+        }}
+        onFocus={() => {
+          void preloadRecordPreviewDrawer();
+        }}
+        onClick={() => {
+          void preloadRecordPreviewDrawer();
+          onView(record);
+        }}
+      >
+        查看
+      </Button>
+    )
   };
 
   if (collectionKey === 'appUsers') {
     return [
-      { title: '关键词', dataIndex: 'keyword', hideInTable: true },
       {
         title: '学习用户',
         dataIndex: 'nickname',
         width: 220,
-        search: false,
         render: (_, record) => (
           <Space direction="vertical" size={2}>
             <Typography.Text strong>{String(record.nickname || record.displayName || '未命名用户')}</Typography.Text>
@@ -66,17 +94,13 @@ function getColumns(collectionKey: string): ProColumns<LearnerRecord>[] {
         title: '状态',
         dataIndex: 'status',
         width: 120,
-        valueType: 'select',
-        valueEnum: {
-          active: { text: '正常使用', status: 'Success' },
-          disabled: { text: '已停用', status: 'Default' }
-        }
+        render: (_, record) =>
+          String(record.status || '') === 'active' ? <Tag color="success">正常使用</Tag> : <Tag>已停用</Tag>
       },
       {
         title: '最近访问',
         dataIndex: 'lastSeenAt',
         width: 180,
-        search: false,
         render: (_, record) => formatDateTime(record.lastSeenAt || record.updatedAt)
       },
       sharedAction
@@ -85,12 +109,10 @@ function getColumns(collectionKey: string): ProColumns<LearnerRecord>[] {
 
   if (collectionKey === 'studyProfiles') {
     return [
-      { title: '关键词', dataIndex: 'keyword', hideInTable: true },
       {
         title: '用户',
         dataIndex: 'userId',
         width: 220,
-        search: false,
         render: (_, record) => (
           <Space direction="vertical" size={2}>
             <Typography.Text strong>{String(record.nickname || record.userId || '未命名用户')}</Typography.Text>
@@ -102,26 +124,18 @@ function getColumns(collectionKey: string): ProColumns<LearnerRecord>[] {
         title: '科目方向',
         dataIndex: 'direction',
         width: 140,
-        valueType: 'select',
-        fieldProps: {
-          options: [
-            { label: 'math', value: 'math' },
-            { label: 'medical', value: 'medical' }
-          ]
-        }
+        render: (_, record) => String(record.direction || '-')
       },
       {
         title: '目标',
         dataIndex: 'target',
         width: 220,
-        search: false,
         render: (_, record) => String(record.target || record.goal || '未填写')
       },
       {
         title: '更新时间',
         dataIndex: 'updatedAt',
         width: 180,
-        search: false,
         render: (_, record) => formatDateTime(record.updatedAt || record._updatedAt || record.createdAt)
       },
       sharedAction
@@ -130,12 +144,10 @@ function getColumns(collectionKey: string): ProColumns<LearnerRecord>[] {
 
   if (collectionKey === 'questionProgress') {
     return [
-      { title: '关键词', dataIndex: 'keyword', hideInTable: true },
       {
         title: '用户 / 题目',
         dataIndex: 'userId',
         width: 240,
-        search: false,
         render: (_, record) => (
           <Space direction="vertical" size={2}>
             <Typography.Text strong>{String(record.userId || '未知用户')}</Typography.Text>
@@ -147,26 +159,18 @@ function getColumns(collectionKey: string): ProColumns<LearnerRecord>[] {
         title: '方向',
         dataIndex: 'direction',
         width: 140,
-        valueType: 'select',
-        fieldProps: {
-          options: [
-            { label: 'math', value: 'math' },
-            { label: 'medical', value: 'medical' }
-          ]
-        }
+        render: (_, record) => String(record.direction || '-')
       },
       {
         title: '掌握度',
         dataIndex: 'accuracy',
         width: 120,
-        search: false,
         render: (_, record) => `${Number(record.accuracy || record.correctRate || 0)}%`
       },
       {
         title: '更新时间',
         dataIndex: 'updatedAt',
         width: 180,
-        search: false,
         render: (_, record) => formatDateTime(record.updatedAt || record._updatedAt || record.createdAt)
       },
       sharedAction
@@ -174,12 +178,10 @@ function getColumns(collectionKey: string): ProColumns<LearnerRecord>[] {
   }
 
   return [
-    { title: '关键词', dataIndex: 'keyword', hideInTable: true },
     {
       title: '用户',
       dataIndex: 'userId',
       width: 220,
-      search: false,
       render: (_, record) => (
         <Space direction="vertical" size={2}>
           <Typography.Text strong>{String(record.userId || record.nickname || '未知用户')}</Typography.Text>
@@ -201,7 +203,6 @@ function getColumns(collectionKey: string): ProColumns<LearnerRecord>[] {
       title: '更新时间',
       dataIndex: 'updatedAt',
       width: 180,
-      search: false,
       render: (_, record) => formatDateTime(record.updatedAt || record._updatedAt || record.createdAt)
     },
     sharedAction
@@ -211,46 +212,35 @@ function getColumns(collectionKey: string): ProColumns<LearnerRecord>[] {
 export function LearnersPage({ auth }: LearnersPageProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
+  const [filterForm] = Form.useForm();
   const [detailRecord, setDetailRecord] = useState<LearnerRecord | null>(null);
-  const actionRef = useRef<ActionType>();
   const currentTab = learnerTabs.some((item) => item.key === searchParams.get('tab')) ? searchParams.get('tab')! : 'appUsers';
   const keyword = searchParams.get('keyword') || '';
   const direction = searchParams.get('direction') || '';
   const status = searchParams.get('status') || '';
   const current = Math.max(1, Number(searchParams.get('page') || 1));
   const pageSize = Math.max(1, Number(searchParams.get('pageSize') || 10));
+
   const learnersQuery = useQuery({
     queryKey: ['collection', currentTab],
     queryFn: () => api.listCollection(currentTab)
   });
 
-  const columns = useMemo(() => {
-    const defs = getColumns(currentTab).map((column) =>
-      column.key === 'option'
-        ? {
-            ...column,
-            render: (_: unknown, record: LearnerRecord) => [
-              <a
-                key="view"
-                onMouseEnter={() => {
-                  void preloadRecordPreviewDrawer();
-                }}
-                onFocus={() => {
-                  void preloadRecordPreviewDrawer();
-                }}
-                onClick={() => {
-                  void preloadRecordPreviewDrawer();
-                  setDetailRecord(record);
-                }}
-              >
-                查看
-              </a>
-            ]
-          }
-        : column
-    );
-    return defs;
-  }, [currentTab]);
+  const columns = useMemo(
+    () =>
+      getColumns(currentTab, (record) => {
+        setDetailRecord(record);
+      }),
+    [currentTab]
+  );
+
+  useEffect(() => {
+    filterForm.setFieldsValue({
+      keyword,
+      direction,
+      status
+    });
+  }, [direction, filterForm, keyword, status]);
 
   useEffect(() => {
     const remainingTabs = learnerTabs.filter((item) => item.key !== currentTab);
@@ -265,11 +255,32 @@ export function LearnersPage({ auth }: LearnersPageProps) {
     });
   }, [currentTab, queryClient]);
 
-  useEffect(() => {
-    if (learnersQuery.data) {
-      actionRef.current?.reload();
-    }
-  }, [learnersQuery.data]);
+  const filteredItems = useMemo(() => {
+    const items = learnersQuery.data || [];
+    const keywordValue = normalizeKeyword(keyword);
+    return items
+      .filter((item) =>
+        matchesKeyword(item, keywordValue, [
+          'nickname',
+          'displayName',
+          'userId',
+          'questionId',
+          'paperId',
+          'target',
+          'goal',
+          'status'
+        ])
+      )
+      .filter((item) => (!direction ? true : String(item.direction || '') === direction))
+      .filter((item) => (!status ? true : String(item.status || '') === status))
+      .sort((left, right) => {
+        const leftTime = new Date(String(left.updatedAt || left._updatedAt || left.createdAt || 0)).getTime();
+        const rightTime = new Date(String(right.updatedAt || right._updatedAt || right.createdAt || 0)).getTime();
+        return rightTime - leftTime;
+      });
+  }, [direction, keyword, learnersQuery.data, status]);
+
+  const pagedItems = useMemo(() => paginate(filteredItems, current, pageSize), [current, filteredItems, pageSize]);
 
   if (!auth.permissions.canManageUsers) {
     return (
@@ -285,16 +296,68 @@ export function LearnersPage({ auth }: LearnersPageProps) {
     return <Result status="error" title="学习数据读取失败" subTitle="请稍后刷新重试，或检查当前账号是否仍具备查看权限。" />;
   }
 
+  function applyFilters(values: Record<string, unknown>) {
+    setSearchParams(
+      compactSearchParams(searchParams, {
+        tab: currentTab,
+        keyword: String(values.keyword || ''),
+        direction: String(values.direction || ''),
+        status: String(values.status || ''),
+        page: 1
+      })
+    );
+  }
+
+  function handleTableChange(pagination: TablePaginationConfig) {
+    setSearchParams(
+      compactSearchParams(searchParams, {
+        tab: currentTab,
+        page: pagination.current || 1,
+        pageSize: pagination.pageSize || pageSize
+      })
+    );
+  }
+
+  const directionOptions = [
+    { label: '全部方向', value: '' },
+    { label: 'math', value: 'math' },
+    { label: 'medical', value: 'medical' }
+  ];
+
+  const statusOptions =
+    currentTab === 'appUsers'
+      ? [
+          { label: '全部状态', value: '' },
+          { label: '正常使用', value: 'active' },
+          { label: '已停用', value: 'disabled' }
+        ]
+      : [
+          { label: '全部状态', value: '' },
+          { label: '已完成', value: 'done' },
+          { label: '进行中', value: 'active' }
+        ];
+
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
       <Card className="hero-card">
-        <Typography.Text className="eyebrow">学习与运营</Typography.Text>
-        <Typography.Title level={3} style={{ marginTop: 0 }}>
-          学习用户主控区已切到正式 ProTable
-        </Typography.Title>
-        <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
-          当前阶段以读为主，先让你能集中查看用户、学习概况、做题状态和错题队列。后续再补批量动作和深度编辑。
-        </Typography.Paragraph>
+        <Space direction="vertical" size="small" style={{ width: '100%' }}>
+          <div>
+            <Typography.Text className="eyebrow">学习与运营</Typography.Text>
+            <Typography.Title level={3} style={{ marginTop: 0, marginBottom: 8 }}>
+              先筛选，再快速查看记录
+            </Typography.Title>
+            <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+              这一页重点是快速过滤、快速定位和快速判断状态，不在首屏堆太多说明。
+            </Typography.Paragraph>
+          </div>
+          <div className="workspace-status-row">
+            <Tag color="processing">{learnerTabs.find((item) => item.key === currentTab)?.label}</Tag>
+            <Tag color="default">详情面板已接入</Tag>
+            <Button href="/" target="_blank">
+              去旧后台看完整入口
+            </Button>
+          </div>
+        </Space>
       </Card>
 
       <Card bodyStyle={{ paddingBottom: 8 }}>
@@ -310,97 +373,63 @@ export function LearnersPage({ auth }: LearnersPageProps) {
                   page: 1
                 })
               );
-              actionRef.current?.reload();
             }}
           />
-          <Space wrap>
-            <Tag color="processing">{learnerTabs.find((item) => item.key === currentTab)?.label}</Tag>
-            <Button href="/" target="_blank">
-              去旧后台看完整维护入口
-            </Button>
-          </Space>
         </Space>
       </Card>
 
-      <ProTable<LearnerRecord>
-        rowKey={(record) => stableRowKey(record, ['_id', 'userId', 'questionId', 'paperId', 'nickname'])}
-        actionRef={actionRef}
-        cardBordered
-        columns={columns}
-        params={{ keyword, direction, status, current, pageSize, tab: currentTab }}
-        loading={learnersQuery.isFetching}
-        columnsState={{
-          persistenceKey: `cfqh-react-${currentTab}-columns`,
-          persistenceType: 'localStorage'
-        }}
-        options={{
-          density: true,
-          reload: async (_event, action) => {
-            await learnersQuery.refetch();
-            action?.reload();
-          },
-          setting: true
-        }}
-        scroll={{ x: 980 }}
-        search={{ labelWidth: 'auto', defaultCollapsed: false }}
-        pagination={{
-          current,
-          pageSize,
-          showSizeChanger: true,
-          onChange: (page, size) => {
-            setSearchParams(compactSearchParams(searchParams, { page, pageSize: size }));
-          }
-        }}
-        request={async (params) => {
-          const tableCurrent = Math.max(1, Number(params.current || current));
-          const tablePageSize = Math.max(1, Number(params.pageSize || pageSize));
-          const items = learnersQuery.data || [];
-          const keywordValue = normalizeKeyword(params.keyword);
-          const nextItems = items
-            .filter((item) =>
-              matchesKeyword(item, keywordValue, [
-                'nickname',
-                'displayName',
-                'userId',
-                'questionId',
-                'paperId',
-                'target',
-                'goal',
-                'status'
-              ])
-            )
-            .filter((item) => (!params.direction ? true : String(item.direction || '') === String(params.direction)))
-            .filter((item) => (!params.status ? true : String(item.status || '') === String(params.status)))
-            .sort((left, right) => {
-              const leftTime = new Date(String(left.updatedAt || left._updatedAt || left.createdAt || 0)).getTime();
-              const rightTime = new Date(String(right.updatedAt || right._updatedAt || right.createdAt || 0)).getTime();
-              return rightTime - leftTime;
-            });
+      <Card title={learnerTabs.find((item) => item.key === currentTab)?.label || '学习数据'}>
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <Form form={filterForm} layout="inline" onFinish={applyFilters}>
+            <Form.Item name="keyword" style={{ minWidth: 220 }}>
+              <Input allowClear placeholder="搜索用户、题目、目标" />
+            </Form.Item>
+            <Form.Item name="direction" style={{ minWidth: 140 }}>
+              <Select allowClear placeholder="全部方向" options={directionOptions} />
+            </Form.Item>
+            <Form.Item name="status" style={{ minWidth: 140 }}>
+              <Select allowClear placeholder="全部状态" options={statusOptions} />
+            </Form.Item>
+            <Form.Item>
+              <Space>
+                <Button type="primary" htmlType="submit">
+                  筛选
+                </Button>
+                <Button
+                  onClick={() => {
+                    filterForm.resetFields();
+                    setSearchParams(compactSearchParams(new URLSearchParams(), { tab: currentTab }));
+                  }}
+                >
+                  重置
+                </Button>
+                <Button
+                  onClick={async () => {
+                    await learnersQuery.refetch();
+                  }}
+                >
+                  刷新
+                </Button>
+              </Space>
+            </Form.Item>
+          </Form>
 
-          return {
-            success: true,
-            total: nextItems.length,
-            data: paginate(nextItems, tableCurrent, tablePageSize)
-          };
-        }}
-        beforeSearchSubmit={(values) => {
-          setSearchParams(
-            compactSearchParams(searchParams, {
-              keyword: String(values.keyword || ''),
-              direction: String(values.direction || ''),
-              status: String(values.status || ''),
-              page: 1
-            })
-          );
-          return values;
-        }}
-        onReset={() => {
-          setSearchParams(compactSearchParams(new URLSearchParams(), { tab: currentTab }));
-        }}
-        toolbar={{
-          title: learnerTabs.find((item) => item.key === currentTab)?.label || '学习数据'
-        }}
-      />
+          <Table<LearnerRecord>
+            rowKey={(record) => stableRowKey(record, ['_id', 'userId', 'questionId', 'paperId', 'nickname'])}
+            columns={columns}
+            dataSource={pagedItems}
+            loading={learnersQuery.isFetching}
+            scroll={{ x: 980 }}
+            onChange={handleTableChange}
+            pagination={{
+              current,
+              pageSize,
+              total: filteredItems.length,
+              showSizeChanger: true
+            }}
+          />
+        </Space>
+      </Card>
 
       {detailRecord ? (
         <Suspense

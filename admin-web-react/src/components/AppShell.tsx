@@ -67,6 +67,8 @@ export function AppShell({ auth, meta, health, onLogout, themeMode, onToggleThem
 
   const activeModule = moduleConfigMap[selectedKey as ModuleKey] || moduleConfigMap.overview;
   const compactLabel = activeModule.label.length > 2 ? activeModule.label.slice(0, 2) : activeModule.label;
+  const currentUserName = String(meta.currentUser?.name || auth.user?.name || '未命名账号');
+  const currentUserRole = String(meta.currentUser?.roleLabel || auth.user?.roleLabel || '未分配角色');
 
   const handlePreload = (moduleKey: string) => {
     if (moduleKey in moduleConfigMap) {
@@ -120,7 +122,7 @@ export function AppShell({ auth, meta, health, onLogout, themeMode, onToggleThem
               乘帆后台
             </Typography.Title>
             <Typography.Paragraph className="brand-subtitle">
-              ProTable 主控区验证版
+              轻量工作台验证版
             </Typography.Paragraph>
           </div>
           <div className="collapsed-current" aria-hidden={!collapsed}>
@@ -138,21 +140,28 @@ export function AppShell({ auth, meta, health, onLogout, themeMode, onToggleThem
           onClick={({ key }) => navigate(`/${key}`)}
         />
         <div className="sider-footer">
-          <Tag color={health.cloudReady ? 'blue' : 'gold'}>{health.modeLabel}</Tag>
+          <Tag bordered={false} color={health.cloudReady ? 'processing' : 'warning'}>
+            {health.modeLabel}
+          </Tag>
           <Typography.Text className="sider-footer-text">{health.writeTargetLabel}</Typography.Text>
         </div>
       </Sider>
       <Layout className="app-shell-main">
         <Header className="app-shell-header">
           <div className="app-shell-header-copy">
-            <Typography.Text className="eyebrow">3200 后台 React 重写中</Typography.Text>
+            <Typography.Text className="eyebrow">3200 后台 React 工作台</Typography.Text>
             <Typography.Title level={3} className="page-title">
               {activeModule.title}
             </Typography.Title>
+            <Typography.Paragraph className="app-shell-header-meta">{activeModule.subtitle}</Typography.Paragraph>
           </div>
-          <Space size="middle" wrap className="app-shell-header-actions">
-            <Tag color="processing">{String(meta.currentUser?.name || auth.user?.name || '未命名账号')}</Tag>
-            <Tag>{String(meta.currentUser?.roleLabel || '未分配角色')}</Tag>
+          <Space size="small" wrap className="app-shell-header-actions">
+            <div className="header-user-chip">
+              <Typography.Text strong className="header-user-name">
+                {currentUserName}
+              </Typography.Text>
+              <Typography.Text className="header-user-role">{currentUserRole}</Typography.Text>
+            </div>
             <Tooltip title={themeMode === 'dark' ? '切换到明亮模式' : '切换到暗色模式'}>
               <Button
                 icon={themeMode === 'dark' ? <SunOutlined /> : <MoonOutlined />}
