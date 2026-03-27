@@ -403,6 +403,10 @@ const listOptions = [
   { key: 'questionImports', label: '纯文本导入' },
   { key: 'teachers', label: '师资列表' },
   { key: 'successCases', label: '成果案例' },
+  { key: 'mallAssets', label: '资料资产' },
+  { key: 'mallProducts', label: '商城商品' },
+  { key: 'mallProductItems', label: '商品内容项' },
+  { key: 'mallEntitlements', label: '用户权益' },
   { key: 'materialPackages', label: '主推套系包' },
   { key: 'materialItems', label: '货架资料卡' },
   { key: 'mediaAssets', label: '媒体资源' },
@@ -442,6 +446,10 @@ const LIST_COLLECTIONS = {
   questionImports: 'question_imports',
   teachers: 'teachers',
   successCases: 'success_cases',
+  mallAssets: 'mall_assets',
+  mallProducts: 'mall_products',
+  mallProductItems: 'mall_product_items',
+  mallEntitlements: 'mall_entitlements',
   materialPackages: 'material_packages',
   materialItems: 'material_items',
   mediaAssets: 'media_assets',
@@ -520,6 +528,15 @@ function getCollectionOrder(collectionKey) {
   }
   if (collectionKey === 'questionProgress' || collectionKey === 'wrongBookItems') {
     return { field: 'lastAnsweredAt', direction: 'desc' };
+  }
+  if (collectionKey === 'mallAssets') {
+    return { field: 'updatedAt', direction: 'desc' };
+  }
+  if (collectionKey === 'mallEntitlements') {
+    return { field: 'createdAt', direction: 'desc' };
+  }
+  if (collectionKey === 'mallProducts' || collectionKey === 'mallProductItems') {
+    return { field: 'sortOrder', direction: 'asc' };
   }
   return { field: 'sort', direction: 'asc' };
 }
@@ -1071,9 +1088,313 @@ function normalizeMaterialItemRecord(item = {}, index = 0) {
   };
 }
 
+function normalizeMallStatus(status, fallback = 'draft') {
+  const value = String(status || '').trim().toLowerCase();
+  if (value === 'pending') return 'pending';
+  if (value === 'online' || value === 'published') return 'online';
+  if (value === 'offline') return 'offline';
+  if (value === 'archived') return 'archived';
+  if (value === 'active') return 'active';
+  if (value === 'expired') return 'expired';
+  if (value === 'revoked') return 'revoked';
+  return fallback;
+}
+
+function normalizeMallAssetRecord(item = {}, index = 0) {
+  const direction = readMaterialDirectionFromRecord(item);
+  const stage = readMaterialStageFromRecord(item);
+  const assetType = String(item.assetType || item.categoryType || item.type || 'pdf');
+  return {
+    _id: item._id || `mall_asset_${direction}_${stage}_${index + 1}`,
+    name: String(item.name || item.fileName || ''),
+    title: String(item.title || item.name || ''),
+    subTitle: String(item.subTitle || item.subtitle || ''),
+    description: String(item.description || item.desc || ''),
+    direction,
+    stage,
+    assetType,
+    coverUrl: String(item.coverUrl || ''),
+    coverKey: String(item.coverKey || ''),
+    pdfUrl: String(item.pdfUrl || item.url || ''),
+    pdfKey: String(item.pdfKey || ''),
+    pdfPageCount: Number(item.pdfPageCount || item.pageCount || 0),
+    pdfFileSize: Number(item.pdfFileSize || item.fileSize || 0),
+    previewEnabled: item.previewEnabled === false ? false : true,
+    previewPageCount: Number(item.previewPageCount || 0),
+    tags: toStringList(item.tags),
+    accentStart: String(item.accentStart || (MATERIAL_ITEM_THEME[direction] || MATERIAL_ITEM_THEME.math).accentStart),
+    accentEnd: String(item.accentEnd || (MATERIAL_ITEM_THEME[direction] || MATERIAL_ITEM_THEME.math).accentEnd),
+    sortOrder: Number(item.sortOrder || item.sort || (index + 1) * 10),
+    status: normalizeMallStatus(item.status, 'draft'),
+    createdAt: item.createdAt || '',
+    updatedAt: item.updatedAt || ''
+  };
+}
+
+function normalizeMallProductRecord(item = {}, index = 0) {
+  const direction = readMaterialDirectionFromRecord(item);
+  const stage = readMaterialStageFromRecord(item);
+  return {
+    _id: item._id || `mall_product_${direction}_${stage}_${index + 1}`,
+    productName: String(item.productName || item.title || item.name || ''),
+    productSubTitle: String(item.productSubTitle || item.target || item.subtitle || ''),
+    productDescription: String(item.productDescription || item.solves || item.description || ''),
+    productType: String(item.productType || 'asset_bundle'),
+    direction,
+    stage,
+    badge: String(item.badge || item.tag || ''),
+    coverUrl: String(item.coverUrl || ''),
+    bannerUrl: String(item.bannerUrl || ''),
+    price: Number(item.price || 0),
+    originPrice: Number(item.originPrice || 0),
+    isFree: item.isFree === true || Number(item.price || 0) <= 0,
+    previewEnabled: item.previewEnabled === false ? false : true,
+    highlights: toStringList(item.highlights || item.features),
+    sortOrder: Number(item.sortOrder || item.sort || (index + 1) * 10),
+    status: normalizeMallStatus(item.status, 'draft'),
+    creatorId: String(item.creatorId || ''),
+    createdAt: item.createdAt || '',
+    updatedAt: item.updatedAt || ''
+  };
+}
+
+function normalizeMallProductItemRecord(item = {}, index = 0) {
+  const direction = readMaterialDirectionFromRecord(item);
+  const theme = MATERIAL_ITEM_THEME[direction] || MATERIAL_ITEM_THEME.math;
+  return {
+    _id: item._id || `mall_product_item_${index + 1}`,
+    productId: String(item.productId || ''),
+    itemType: String(item.itemType || 'asset'),
+    itemId: String(item.itemId || ''),
+    displayType: String(item.displayType || item.type || '资料'),
+    displayName: String(item.displayName || item.title || ''),
+    displaySubTitle: String(item.displaySubTitle || item.subtitle || ''),
+    displayDescription: String(item.displayDescription || item.desc || item.description || ''),
+    displayDetails: String(item.displayDetails || item.details || ''),
+    direction,
+    previewEnabled: item.previewEnabled === false ? false : true,
+    previewPageCount: Number(item.previewPageCount || 0),
+    accentStart: String(item.accentStart || theme.accentStart),
+    accentEnd: String(item.accentEnd || theme.accentEnd),
+    sortOrder: Number(item.sortOrder || item.sort || (index + 1) * 10),
+    status: normalizeMallStatus(item.status, 'draft'),
+    createdAt: item.createdAt || '',
+    updatedAt: item.updatedAt || ''
+  };
+}
+
+function normalizeMallEntitlementRecord(item = {}, index = 0) {
+  return {
+    _id: item._id || `mall_entitlement_${index + 1}`,
+    userId: String(item.userId || ''),
+    productId: String(item.productId || ''),
+    entitlementType: String(item.entitlementType || 'bundle'),
+    sourceType: String(item.sourceType || 'admin_grant'),
+    status: normalizeMallStatus(item.status, 'active'),
+    claimedAt: item.claimedAt || '',
+    expiredAt: item.expiredAt || '',
+    createdAt: item.createdAt || '',
+    updatedAt: item.updatedAt || ''
+  };
+}
+
+function isMallVisible(item) {
+  const status = normalizeMallStatus(item?.status, 'draft');
+  return status === 'online' || status === 'active';
+}
+
+function buildMaterialCompatFromMall(products = [], productItems = [], assets = []) {
+  const visibleProducts = products
+    .filter(isMallVisible)
+    .sort((left, right) => Number(left.sortOrder || 0) - Number(right.sortOrder || 0));
+  const visibleItems = productItems
+    .filter(isMallVisible)
+    .sort((left, right) => Number(left.sortOrder || 0) - Number(right.sortOrder || 0));
+  const visibleAssets = assets.filter((item) => {
+    const status = normalizeMallStatus(item?.status, 'draft');
+    return status === 'online' || status === 'draft' || status === 'pending';
+  });
+
+  if (!visibleProducts.length) {
+    return {
+      materialPackages: [],
+      materialItems: []
+    };
+  }
+
+  const assetMap = new Map(visibleAssets.map((item) => [item._id, item]));
+  const itemsByProduct = new Map();
+  for (const item of visibleItems) {
+    const current = itemsByProduct.get(item.productId) || [];
+    current.push(item);
+    itemsByProduct.set(item.productId, current);
+  }
+
+  const materialPackages = visibleProducts.map((product, index) => {
+    const relatedItems = itemsByProduct.get(product._id) || [];
+    return normalizeMaterialPackageRecord(
+      {
+        _id: product._id,
+        direction: product.direction,
+        stage: product.stage,
+        badge: product.badge || (product.isFree ? '免费领取' : product.productType),
+        title: product.productName,
+        target: product.productSubTitle,
+        solves: product.productDescription,
+        features: product.highlights,
+        contentItemIds: relatedItems.map((item) => item._id),
+        sort: product.sortOrder || (index + 1) * 10,
+        status: product.status === 'online' ? 'published' : 'draft',
+        createdAt: product.createdAt,
+        updatedAt: product.updatedAt
+      },
+      index
+    );
+  });
+
+  const materialItems = visibleItems.map((item, index) => {
+    const product = visibleProducts.find((entry) => entry._id === item.productId) || {};
+    const asset = assetMap.get(item.itemId) || {};
+    return normalizeMaterialItemRecord(
+      {
+        _id: item._id,
+        direction: product.direction || asset.direction || item.direction,
+        stage: product.stage || asset.stage || 'foundation',
+        type: item.displayType || asset.assetType || '资料',
+        title: item.displayName || asset.title || '',
+        subtitle: item.displaySubTitle || asset.subTitle || '',
+        desc: item.displayDescription || asset.description || '',
+        details: item.displayDetails || asset.description || '',
+        accentStart: item.accentStart || asset.accentStart,
+        accentEnd: item.accentEnd || asset.accentEnd,
+        sort: item.sortOrder || (index + 1) * 10,
+        status: item.status === 'online' ? 'published' : 'draft',
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt
+      },
+      index
+    );
+  });
+
+  return {
+    materialPackages,
+    materialItems
+  };
+}
+
+function buildMallCompatFromLegacy(materialPackages = [], materialItems = []) {
+  const normalizedPackages = materialPackages.map((item, index) => normalizeMaterialPackageRecord(item, index));
+  const normalizedItems = materialItems.map((item, index) => normalizeMaterialItemRecord(item, index));
+
+  const mallAssets = normalizedItems.map((item, index) =>
+    normalizeMallAssetRecord(
+      {
+        _id: `legacy_asset_${item._id || index + 1}`,
+        name: item.title,
+        title: item.title,
+        subTitle: item.subtitle,
+        description: item.details || item.desc,
+        direction: item.direction,
+        stage: item.stage,
+        assetType: item.type || '资料',
+        accentStart: item.accentStart,
+        accentEnd: item.accentEnd,
+        previewEnabled: true,
+        previewPageCount: 5,
+        sortOrder: item.sort,
+        status: item.status === 'published' ? 'online' : 'draft',
+        updatedAt: item.updatedAt,
+        createdAt: item.createdAt
+      },
+      index
+    )
+  );
+
+  const assetIdByLegacyItemId = new Map(
+    normalizedItems.map((item, index) => [item._id, mallAssets[index]?._id || `legacy_asset_${index + 1}`])
+  );
+
+  const mallProducts = normalizedPackages.map((item, index) =>
+    normalizeMallProductRecord(
+      {
+        _id: `legacy_product_${item._id || index + 1}`,
+        productName: item.title,
+        productSubTitle: item.target,
+        productDescription: item.solves,
+        direction: item.direction,
+        stage: item.stage,
+        badge: item.badge,
+        highlights: item.features,
+        isFree: true,
+        price: 0,
+        sortOrder: item.sort,
+        status: item.status === 'published' ? 'online' : 'draft',
+        updatedAt: item.updatedAt,
+        createdAt: item.createdAt
+      },
+      index
+    )
+  );
+
+  const mallProductItems = [];
+  normalizedPackages.forEach((pkg, packageIndex) => {
+    const product = mallProducts[packageIndex];
+    const linkedItems = (pkg.contentItemIds || []).length
+      ? normalizedItems.filter((item) => pkg.contentItemIds.includes(item._id))
+      : normalizedItems.filter((item) => item.direction === pkg.direction && item.stage === pkg.stage);
+
+    linkedItems.forEach((item, itemIndex) => {
+      mallProductItems.push(
+        normalizeMallProductItemRecord({
+          _id: `legacy_product_item_${pkg._id || packageIndex + 1}_${item._id || itemIndex + 1}`,
+          productId: product?._id || '',
+          itemType: 'asset',
+          itemId: assetIdByLegacyItemId.get(item._id) || '',
+          displayType: item.type,
+          displayName: item.title,
+          displaySubTitle: item.subtitle,
+          displayDescription: item.desc,
+          displayDetails: item.details,
+          direction: item.direction,
+          accentStart: item.accentStart,
+          accentEnd: item.accentEnd,
+          previewEnabled: true,
+          previewPageCount: 5,
+          sortOrder: item.sort || (itemIndex + 1) * 10,
+          status: item.status === 'published' ? 'online' : 'draft',
+          updatedAt: item.updatedAt,
+          createdAt: item.createdAt
+        })
+      );
+    });
+  });
+
+  return {
+    mallAssets,
+    mallProducts,
+    mallProductItems
+  };
+}
+
 function normalizeCollectionRecord(collectionKey, item, index = 0) {
   if (!item || typeof item !== 'object' || Array.isArray(item)) {
     return item;
+  }
+
+  if (collectionKey === 'mallAssets') {
+    return normalizeMallAssetRecord(item, index);
+  }
+
+  if (collectionKey === 'mallProducts') {
+    return normalizeMallProductRecord(item, index);
+  }
+
+  if (collectionKey === 'mallProductItems') {
+    return normalizeMallProductItemRecord(item, index);
+  }
+
+  if (collectionKey === 'mallEntitlements') {
+    return normalizeMallEntitlementRecord(item, index);
   }
 
   if (collectionKey === 'materialPackages') {
@@ -2110,6 +2431,88 @@ function getEmptyTemplate(collectionKey) {
     };
   }
 
+  if (collectionKey === 'mallAssets') {
+    return {
+      _id: '',
+      name: '',
+      title: '',
+      subTitle: '',
+      description: '',
+      direction: 'math',
+      stage: 'foundation',
+      assetType: 'pdf',
+      coverUrl: '',
+      coverKey: '',
+      pdfUrl: '',
+      pdfKey: '',
+      pdfPageCount: 0,
+      pdfFileSize: 0,
+      previewEnabled: true,
+      previewPageCount: 5,
+      tags: [],
+      accentStart: '#2f66ff',
+      accentEnd: '#4f8dff',
+      sortOrder: 100,
+      status: 'draft'
+    };
+  }
+
+  if (collectionKey === 'mallProducts') {
+    return {
+      _id: '',
+      productName: '',
+      productSubTitle: '',
+      productDescription: '',
+      productType: 'asset_bundle',
+      direction: 'math',
+      stage: 'foundation',
+      badge: '',
+      coverUrl: '',
+      bannerUrl: '',
+      price: 0,
+      originPrice: 0,
+      isFree: true,
+      previewEnabled: true,
+      highlights: [],
+      sortOrder: 100,
+      status: 'draft'
+    };
+  }
+
+  if (collectionKey === 'mallProductItems') {
+    return {
+      _id: '',
+      productId: '',
+      itemType: 'asset',
+      itemId: '',
+      displayType: '资料',
+      displayName: '',
+      displaySubTitle: '',
+      displayDescription: '',
+      displayDetails: '',
+      direction: 'math',
+      previewEnabled: true,
+      previewPageCount: 5,
+      accentStart: '#2f66ff',
+      accentEnd: '#4f8dff',
+      sortOrder: 100,
+      status: 'draft'
+    };
+  }
+
+  if (collectionKey === 'mallEntitlements') {
+    return {
+      _id: '',
+      userId: '',
+      productId: '',
+      entitlementType: 'bundle',
+      sourceType: 'admin_grant',
+      status: 'active',
+      claimedAt: '',
+      expiredAt: ''
+    };
+  }
+
   if (collectionKey === 'materialPackages') {
     return {
       _id: '',
@@ -2240,6 +2643,10 @@ function collectPublicEntries(payload) {
   return [
     payload.site,
     payload.page,
+    ...(payload.mallAssets || []),
+    ...(payload.mallProducts || []),
+    ...(payload.mallProductItems || []),
+    ...(payload.mallEntitlements || []),
     ...(payload.directions || []),
     ...(payload.medicalQuestions || []),
     ...(payload.pastPapers || []),
@@ -2294,8 +2701,18 @@ async function buildPublicPayload(pageKey) {
   }
 
   if (pageKey === 'materials') {
-    payload.materialPackages = sortPublished(await store.listCollection('materialPackages'));
-    payload.materialItems = sortPublished(await store.listCollection('materialItems'));
+    payload.mallAssets = await store.listCollection('mallAssets').catch(() => []);
+    payload.mallProducts = await store.listCollection('mallProducts').catch(() => []);
+    payload.mallProductItems = await store.listCollection('mallProductItems').catch(() => []);
+    payload.mallEntitlements = await store.listCollection('mallEntitlements').catch(() => []);
+
+    const compat = buildMaterialCompatFromMall(payload.mallProducts, payload.mallProductItems, payload.mallAssets);
+    payload.materialPackages = compat.materialPackages.length
+      ? compat.materialPackages
+      : sortPublished(await store.listCollection('materialPackages'));
+    payload.materialItems = compat.materialItems.length
+      ? compat.materialItems
+      : sortPublished(await store.listCollection('materialItems'));
   }
 
   if (pageKey === 'questionBank') {
@@ -2346,7 +2763,14 @@ class LocalStore {
 
   async listCollection(collectionKey) {
     const data = readData();
-    const items = data[collectionKey] || [];
+    let items = data[collectionKey] || [];
+    if (
+      !items.length &&
+      (collectionKey === 'mallAssets' || collectionKey === 'mallProducts' || collectionKey === 'mallProductItems')
+    ) {
+      const compat = buildMallCompatFromLegacy(data.materialPackages || [], data.materialItems || []);
+      items = compat[collectionKey] || [];
+    }
     const { field, direction } = getCollectionOrder(collectionKey);
     return [...items].sort((left, right) => {
       const leftValue = left?.[field] || '';
@@ -2360,7 +2784,14 @@ class LocalStore {
 
   async getItem(collectionKey, itemId) {
     const data = readData();
-    const item = (data[collectionKey] || []).find((entry) => entry._id === itemId) || null;
+    let item = (data[collectionKey] || []).find((entry) => entry._id === itemId) || null;
+    if (
+      !item &&
+      (collectionKey === 'mallAssets' || collectionKey === 'mallProducts' || collectionKey === 'mallProductItems')
+    ) {
+      const compat = buildMallCompatFromLegacy(data.materialPackages || [], data.materialItems || []);
+      item = (compat[collectionKey] || []).find((entry) => entry._id === itemId) || null;
+    }
     return item ? normalizeCollectionRecord(collectionKey, item) : null;
   }
 
@@ -2510,6 +2941,15 @@ class CloudStore {
       throw error;
     }
 
+    if (
+      !allItems.length &&
+      (collectionKey === 'mallAssets' || collectionKey === 'mallProducts' || collectionKey === 'mallProductItems')
+    ) {
+      const legacyPackages = await this.listCollection('materialPackages').catch(() => []);
+      const legacyItems = await this.listCollection('materialItems').catch(() => []);
+      return buildMallCompatFromLegacy(legacyPackages, legacyItems)[collectionKey] || [];
+    }
+
     return allItems.map((item, index) => normalizeCollectionRecord(collectionKey, item, index));
   }
 
@@ -2518,11 +2958,23 @@ class CloudStore {
     if (!collection) throw new Error('未知集合');
     try {
       const result = await this.db.collection(collection).doc(itemId).get();
-      return normalizeCollectionRecord(collectionKey, normalizeDocResult(result));
+      const normalized = normalizeCollectionRecord(collectionKey, normalizeDocResult(result));
+      if (normalized) {
+        return normalized;
+      }
+      if (collectionKey === 'mallAssets' || collectionKey === 'mallProducts' || collectionKey === 'mallProductItems') {
+        const compat = await this.listCollection(collectionKey).catch(() => []);
+        return compat.find((entry) => entry._id === itemId) || null;
+      }
+      return null;
     } catch (error) {
       if (isMissingCollectionError(error) && LEARNER_LIST_COLLECTIONS.has(collectionKey)) {
         await this.ensureCollection(collectionKey).catch(() => false);
         return null;
+      }
+      if (isMissingCollectionError(error) && (collectionKey === 'mallAssets' || collectionKey === 'mallProducts' || collectionKey === 'mallProductItems')) {
+        const compat = await this.listCollection(collectionKey).catch(() => []);
+        return compat.find((entry) => entry._id === itemId) || null;
       }
       throw error;
     }

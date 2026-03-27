@@ -80,12 +80,13 @@ export const moduleConfigs: ModuleConfig[] = [
     key: 'media',
     label: '商城',
     title: '商城',
-    subtitle: '按小程序商城真实顺序维护资料内容，老师可直接编辑顶部切换、主推套系和资料卡片。',
+    subtitle: '按小程序商城真实顺序维护区块、商品、内容项和资料资产，小程序前端 UI 暂时保持不变。',
     pageKey: 'materials',
     collections: [
-      { key: 'mediaAssets', label: '素材库' },
-      { key: 'materialPackages', label: '资料套餐' },
-      { key: 'materialItems', label: '资料列表' }
+      { key: 'mallAssets', label: '资料资产' },
+      { key: 'mallProducts', label: '商城商品' },
+      { key: 'mallProductItems', label: '商品内容项' },
+      { key: 'mallEntitlements', label: '用户权益' }
     ],
     iconKey: 'appstore',
     mode: 'mixed'

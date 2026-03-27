@@ -1,26 +1,31 @@
 import { useEffect, useMemo } from 'react';
 import { Form } from 'antd';
-import { DrawerForm, ProFormDigit, ProFormSelect, ProFormText, ProFormTextArea } from '@ant-design/pro-form';
-import { defaultMaterialPackage, materialDirectionLabels, materialStageLabels, type MaterialPackageRecord } from './types';
+import { DrawerForm, ProFormDigit, ProFormSelect, ProFormSwitch, ProFormText, ProFormTextArea } from '@ant-design/pro-form';
+import { defaultMallProduct, materialDirectionLabels, materialStageLabels, type MallProductRecord } from './types';
 import { toMultilineText, toStringArray } from '../../utils';
 
 type MediaPackageEditorDrawerProps = {
   open: boolean;
-  record: MaterialPackageRecord | null;
-  direction: MaterialPackageRecord['direction'];
-  stage: MaterialPackageRecord['stage'];
+  record: MallProductRecord | null;
+  direction: MallProductRecord['direction'];
+  stage: MallProductRecord['stage'];
   onOpenChange: (open: boolean) => void;
-  onSubmit: (payload: MaterialPackageRecord) => Promise<boolean>;
+  onSubmit: (payload: MallProductRecord) => Promise<boolean>;
 };
 
-type MaterialPackageFormValues = {
+type MallProductFormValues = {
   badge: string;
-  title: string;
-  target: string;
-  solves: string;
-  featuresText: string;
-  sort: number;
-  status: MaterialPackageRecord['status'];
+  productName: string;
+  productSubTitle: string;
+  productDescription: string;
+  highlightsText: string;
+  productType: string;
+  price: number;
+  originPrice: number;
+  isFree: boolean;
+  previewEnabled: boolean;
+  sortOrder: number;
+  status: MallProductRecord['status'];
 };
 
 export function MediaPackageEditorDrawer({
@@ -31,16 +36,21 @@ export function MediaPackageEditorDrawer({
   onOpenChange,
   onSubmit
 }: MediaPackageEditorDrawerProps) {
-  const [form] = Form.useForm<MaterialPackageFormValues>();
+  const [form] = Form.useForm<MallProductFormValues>();
 
   const initialValues = useMemo(
     () => ({
-      badge: String(record?.badge || defaultMaterialPackage.badge),
-      title: String(record?.title || defaultMaterialPackage.title),
-      target: String(record?.target || defaultMaterialPackage.target),
-      solves: String(record?.solves || defaultMaterialPackage.solves),
-      featuresText: toMultilineText(record?.features || defaultMaterialPackage.features),
-      sort: Number(record?.sort || defaultMaterialPackage.sort),
+      badge: String(record?.badge || defaultMallProduct.badge),
+      productName: String(record?.productName || defaultMallProduct.productName),
+      productSubTitle: String(record?.productSubTitle || defaultMallProduct.productSubTitle),
+      productDescription: String(record?.productDescription || defaultMallProduct.productDescription),
+      highlightsText: toMultilineText(record?.highlights || defaultMallProduct.highlights),
+      productType: String(record?.productType || defaultMallProduct.productType),
+      price: Number(record?.price || defaultMallProduct.price),
+      originPrice: Number(record?.originPrice || defaultMallProduct.originPrice),
+      isFree: record?.isFree ?? defaultMallProduct.isFree,
+      previewEnabled: record?.previewEnabled ?? defaultMallProduct.previewEnabled,
+      sortOrder: Number(record?.sortOrder || defaultMallProduct.sortOrder),
       status: record?.status || 'draft'
     }),
     [record]
@@ -55,8 +65,8 @@ export function MediaPackageEditorDrawer({
   }, [form, initialValues, open]);
 
   return (
-    <DrawerForm<MaterialPackageFormValues>
-      title={record?._id ? '编辑当前主推套系' : '新建当前主推套系'}
+    <DrawerForm<MallProductFormValues>
+      title={record?._id ? '编辑当前主推商品' : '新建当前主推商品'}
       open={open}
       width={560}
       form={form}
@@ -64,21 +74,26 @@ export function MediaPackageEditorDrawer({
       drawerProps={{ destroyOnClose: true }}
       onFinish={async (values) =>
         onSubmit({
-          ...(record || defaultMaterialPackage),
+          ...(record || defaultMallProduct),
           direction,
           stage,
           badge: values.badge,
-          title: values.title,
-          target: values.target,
-          solves: values.solves,
-          features: toStringArray(values.featuresText),
-          sort: values.sort,
+          productName: values.productName,
+          productSubTitle: values.productSubTitle,
+          productDescription: values.productDescription,
+          highlights: toStringArray(values.highlightsText),
+          productType: values.productType,
+          price: values.isFree ? 0 : values.price,
+          originPrice: values.isFree ? 0 : values.originPrice,
+          isFree: values.isFree,
+          previewEnabled: values.previewEnabled,
+          sortOrder: values.sortOrder,
           status: values.status
         })
       }
       submitter={{
         searchConfig: {
-          submitText: record?._id ? '保存主推套系' : '创建主推套系'
+          submitText: record?._id ? '保存主推商品' : '创建主推商品'
         }
       }}
     >
@@ -88,32 +103,47 @@ export function MediaPackageEditorDrawer({
         extra={`当前会出现在 ${materialDirectionLabels[direction]} · ${materialStageLabels[stage]} 这张主卡上`}
         rules={[{ required: true, message: '请填写角标' }]}
       />
-      <ProFormText name="title" label="主卡标题" rules={[{ required: true, message: '请填写套系标题' }]} />
+      <ProFormText name="productName" label="商品标题" rules={[{ required: true, message: '请填写商品标题' }]} />
       <ProFormTextArea
-        name="target"
-        label="适合对象"
+        name="productSubTitle"
+        label="适合谁看"
         rules={[{ required: true, message: '请填写适合对象' }]}
         fieldProps={{ rows: 3 }}
       />
       <ProFormTextArea
-        name="solves"
-        label="主要解决什么问题"
-        rules={[{ required: true, message: '请填写解决问题说明' }]}
+        name="productDescription"
+        label="商品简介"
+        rules={[{ required: true, message: '请填写商品简介' }]}
         fieldProps={{ rows: 3 }}
       />
       <ProFormTextArea
-        name="featuresText"
+        name="highlightsText"
         label="主卡亮点"
         extra="一行一个，前台会按填写顺序展示。"
         fieldProps={{ rows: 5 }}
       />
-      <ProFormDigit name="sort" label="排序" min={0} />
+      <ProFormSelect
+        name="productType"
+        label="商品类型"
+        options={[
+          { label: '单资料', value: 'single_asset' },
+          { label: '资料包', value: 'asset_bundle' },
+          { label: '书课包', value: 'course_bundle' }
+        ]}
+      />
+      <ProFormSwitch name="isFree" label="是否免费领取" />
+      <ProFormSwitch name="previewEnabled" label="是否允许预览" />
+      <ProFormDigit name="price" label="现价" min={0} />
+      <ProFormDigit name="originPrice" label="原价" min={0} />
+      <ProFormDigit name="sortOrder" label="排序" min={0} />
       <ProFormSelect
         name="status"
         label="状态"
         options={[
           { label: '草稿', value: 'draft' },
-          { label: '已发布', value: 'published' }
+          { label: '待审核', value: 'pending' },
+          { label: '已上架', value: 'online' },
+          { label: '已下架', value: 'offline' }
         ]}
       />
     </DrawerForm>

@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
-import { Button, Drawer, Form, Input, Select, Space, Typography } from 'antd';
+import { Alert, Button, Drawer, Form, Input, Select, Space, Typography } from 'antd';
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
-import { defaultMaterialsPage, materialStageLabels, type MaterialSectionId, type MaterialsPageContent } from './types';
+import { defaultMaterialsPage, materialStageLabels, mediaSectionModels, type MaterialSectionId, type MaterialsPageContent } from './types';
 
 type MediaSectionEditorDrawerProps = {
   open: boolean;
@@ -18,18 +18,46 @@ type SectionValues = MaterialsPageContent;
 const sectionTitleMap: Record<MaterialSectionId, string> = {
   header: '顶部信息',
   stageTabs: '阶段按钮',
-  package: '主推套系卡',
-  items: '资料列表',
+  package: '主推商品卡',
+  items: '商品内容列表',
   consultBar: '底部咨询条'
 };
 
 const sectionNoteMap: Record<MaterialSectionId, string> = {
   header: '这里对应商城页最上方。主标题和搜索提示尽量写得直白，让老师一看就知道学生会看到什么。',
   stageTabs: '前台阶段按钮就是这里的顺序。建议名称保持短，避免在手机端换行。',
-  package: '这里先改主推区标题，再到下面的主推套系列表里改具体卡片内容。老师会更容易按“标题在上，主卡在下”的方式维护。',
-  items: '这里先改资料列表的标题和右侧提示，再到下面资料表里逐张修改卡片内容。',
+  package: '这里先改主推区标题，再到下面的商品表里改具体商品内容。老师会更容易按“标题在上，主卡在下”的方式维护。',
+  items: '这里先改商品内容列表的标题和右侧提示，再到下面内容项表里逐张修改卡片内容。',
   consultBar: '这是商城最底部的引导区，适合放咨询老师的承接话术。'
 };
+
+const sectionFieldHintMap: Record<MaterialSectionId, string> = {
+  header: '会修改：页面标题、搜索提示',
+  stageTabs: '会修改：3 个阶段按钮名称',
+  package: '会修改：主推区标题、右侧提示',
+  items: '会修改：内容区标题、右侧提示',
+  consultBar: '会修改：咨询标题、说明、按钮文案'
+};
+
+function buildSectionPreview(sectionId: MaterialSectionId, page: MaterialsPageContent) {
+  if (sectionId === 'header') {
+    return `${page.header.title || '未填写标题'} / ${page.header.searchLabel || '未填写搜索提示'}`;
+  }
+
+  if (sectionId === 'stageTabs') {
+    return page.stageTabs.length ? page.stageTabs.map((item) => item.label || '未命名阶段').join(' / ') : '还没有配置阶段按钮';
+  }
+
+  if (sectionId === 'package') {
+    return `${page.mainSection.title || '未填写主推区标题'} / ${page.mainSection.sideNote || '未填写右侧提示'}`;
+  }
+
+  if (sectionId === 'items') {
+    return `${page.shelfSection.title || '未填写资料区标题'} / ${page.shelfSection.hint || '未填写右侧提示'}`;
+  }
+
+  return `${page.consultBar.title || '未填写标题'} / ${page.consultBar.buttonText || '未填写按钮文案'}`;
+}
 
 function SectionListHeader({
   title,
@@ -68,6 +96,8 @@ export function MediaSectionEditorDrawer({
   const [form] = Form.useForm<SectionValues>();
 
   const initialValues = useMemo(() => ({ ...defaultMaterialsPage, ...page }), [page]);
+  const sectionMeta = useMemo(() => mediaSectionModels.find((item) => item.id === sectionId) || null, [sectionId]);
+  const sectionPreview = useMemo(() => (sectionId ? buildSectionPreview(sectionId, page) : ''), [page, sectionId]);
 
   useEffect(() => {
     if (!open) return;
@@ -198,8 +228,8 @@ export function MediaSectionEditorDrawer({
       <Space direction="vertical" size="middle" style={{ width: '100%' }}>
         <Form.Item
           name={['shelfSection', 'title']}
-          label="资料区标题"
-          rules={[{ required: true, message: '请填写资料区标题' }]}
+          label="内容区标题"
+          rules={[{ required: true, message: '请填写内容区标题' }]}
         >
           <Input placeholder="例如 免费精选资料" disabled={!canWrite} />
         </Form.Item>
@@ -236,7 +266,7 @@ export function MediaSectionEditorDrawer({
 
   return (
     <Drawer
-      title={sectionId ? sectionTitleMap[sectionId] : '编辑区块'}
+      title={sectionMeta ? `编辑：${sectionMeta.title}` : '编辑区块'}
       open={open}
       onClose={onClose}
       width={560}
@@ -252,9 +282,18 @@ export function MediaSectionEditorDrawer({
     >
       {sectionId ? (
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
-          <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
-            {sectionNoteMap[sectionId]}
-          </Typography.Paragraph>
+          <Alert
+            type="info"
+            showIcon
+            message={`你正在修改：${sectionMeta?.step || '当前区块'} ${sectionTitleMap[sectionId]}`}
+            description={
+              <Space direction="vertical" size={4}>
+                <Typography.Text>{sectionNoteMap[sectionId]}</Typography.Text>
+                <Typography.Text>{sectionFieldHintMap[sectionId]}</Typography.Text>
+                <Typography.Text type="secondary">{`当前摘要：${sectionPreview}`}</Typography.Text>
+              </Space>
+            }
+          />
           <Form form={form} layout="vertical" initialValues={initialValues}>
             {sectionId === 'header' ? renderHeaderEditor() : null}
             {sectionId === 'stageTabs' ? renderStageTabsEditor() : null}

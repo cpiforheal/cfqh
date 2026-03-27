@@ -70,6 +70,92 @@ export type MaterialItemRecord = {
   _updatedAt?: string;
 };
 
+export type MallAssetStatus = 'draft' | 'pending' | 'online' | 'offline' | 'archived';
+export type MallProductStatus = 'draft' | 'pending' | 'online' | 'offline';
+export type MallEntitlementStatus = 'active' | 'expired' | 'revoked';
+
+export type MallAssetRecord = {
+  _id?: string;
+  name: string;
+  title: string;
+  subTitle: string;
+  description: string;
+  direction: MaterialDirectionKey;
+  stage: MaterialStageKey;
+  assetType: string;
+  coverUrl: string;
+  coverKey: string;
+  pdfUrl: string;
+  pdfKey: string;
+  pdfPageCount: number;
+  pdfFileSize: number;
+  previewEnabled: boolean;
+  previewPageCount: number;
+  tags: string[];
+  accentStart: string;
+  accentEnd: string;
+  sortOrder: number;
+  status: MallAssetStatus;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type MallProductRecord = {
+  _id?: string;
+  productName: string;
+  productSubTitle: string;
+  productDescription: string;
+  productType: string;
+  direction: MaterialDirectionKey;
+  stage: MaterialStageKey;
+  badge: string;
+  coverUrl: string;
+  bannerUrl: string;
+  price: number;
+  originPrice: number;
+  isFree: boolean;
+  previewEnabled: boolean;
+  highlights: string[];
+  sortOrder: number;
+  status: MallProductStatus;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type MallProductItemRecord = {
+  _id?: string;
+  productId: string;
+  itemType: string;
+  itemId: string;
+  displayType: string;
+  displayName: string;
+  displaySubTitle: string;
+  displayDescription: string;
+  displayDetails: string;
+  direction: MaterialDirectionKey;
+  previewEnabled: boolean;
+  previewPageCount: number;
+  accentStart: string;
+  accentEnd: string;
+  sortOrder: number;
+  status: MallProductStatus;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type MallEntitlementRecord = {
+  _id?: string;
+  userId: string;
+  productId: string;
+  entitlementType: string;
+  sourceType: string;
+  status: MallEntitlementStatus;
+  claimedAt?: string;
+  expiredAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 export type MediaSectionModel = {
   id: MaterialSectionId;
   step: string;
@@ -133,16 +219,16 @@ export const mediaSectionModels: MediaSectionModel[] = [
   {
     id: 'package',
     step: '第 3 块',
-    title: '主推套系卡',
-    desc: '对应主推大卡片和它上方的引导标题，老师重点改这里。',
-    location: '区块标题 / 主卡内容'
+    title: '主推商品卡',
+    desc: '对应商城当前学科阶段的主推商品，排序最靠前且已上架的商品会优先展示。',
+    location: '区块标题 / 商品主卡'
   },
   {
     id: 'items',
     step: '第 4 块',
-    title: '资料列表',
-    desc: '对应资料区标题和下面的资料卡片，从上到下就是前台顺序。',
-    location: '列表标题 / 资料卡片'
+    title: '商品内容列表',
+    desc: '对应商品卡下方的资料内容卡片，从上到下就是前台顺序。',
+    location: '列表标题 / 内容卡片'
   },
   {
     id: 'consultBar',
@@ -205,6 +291,66 @@ export const defaultMaterialItem: MaterialItemRecord = {
   accentStart: '#5b80ff',
   accentEnd: '#86a2ff',
   sort: 100,
+  status: 'draft'
+};
+
+export const defaultMallAsset: MallAssetRecord = {
+  name: '',
+  title: '',
+  subTitle: '',
+  description: '',
+  direction: 'math',
+  stage: 'foundation',
+  assetType: 'PDF资料',
+  coverUrl: '',
+  coverKey: '',
+  pdfUrl: '',
+  pdfKey: '',
+  pdfPageCount: 0,
+  pdfFileSize: 0,
+  previewEnabled: true,
+  previewPageCount: 5,
+  tags: [],
+  accentStart: '#5b80ff',
+  accentEnd: '#86a2ff',
+  sortOrder: 100,
+  status: 'draft'
+};
+
+export const defaultMallProduct: MallProductRecord = {
+  productName: '',
+  productSubTitle: '',
+  productDescription: '',
+  productType: 'asset_bundle',
+  direction: 'math',
+  stage: 'foundation',
+  badge: '',
+  coverUrl: '',
+  bannerUrl: '',
+  price: 0,
+  originPrice: 0,
+  isFree: true,
+  previewEnabled: true,
+  highlights: [],
+  sortOrder: 100,
+  status: 'draft'
+};
+
+export const defaultMallProductItem: MallProductItemRecord = {
+  productId: '',
+  itemType: 'asset',
+  itemId: '',
+  displayType: '资料',
+  displayName: '',
+  displaySubTitle: '',
+  displayDescription: '',
+  displayDetails: '',
+  direction: 'math',
+  previewEnabled: true,
+  previewPageCount: 5,
+  accentStart: '#5b80ff',
+  accentEnd: '#86a2ff',
+  sortOrder: 100,
   status: 'draft'
 };
 
@@ -296,4 +442,114 @@ export function normalizeMaterialItem(value: Record<string, unknown> | null | un
 
 export function sortBySort<T extends { sort?: number }>(items: T[]) {
   return [...items].sort((left, right) => Number(left.sort || 0) - Number(right.sort || 0));
+}
+
+export function sortBySortOrder<T extends { sortOrder?: number }>(items: T[]) {
+  return [...items].sort((left, right) => Number(left.sortOrder || 0) - Number(right.sortOrder || 0));
+}
+
+function readMallStatus(value: unknown, fallback: MallProductStatus | MallAssetStatus = 'draft') {
+  const raw = String(value || '').trim().toLowerCase();
+  if (raw === 'pending') return 'pending';
+  if (raw === 'online') return 'online';
+  if (raw === 'offline') return 'offline';
+  if (raw === 'archived') return 'archived';
+  return fallback;
+}
+
+export function normalizeMallAsset(value: Record<string, unknown> | null | undefined): MallAssetRecord {
+  return {
+    ...defaultMallAsset,
+    ...(value || {}),
+    _id: value?._id ? String(value._id) : undefined,
+    direction: readMaterialDirection(String(value?.direction || 'math')),
+    stage: readMaterialStage(String(value?.stage || 'foundation')),
+    name: String(value?.name || defaultMallAsset.name),
+    title: String(value?.title || defaultMallAsset.title),
+    subTitle: String(value?.subTitle || value?.subtitle || defaultMallAsset.subTitle),
+    description: String(value?.description || value?.desc || defaultMallAsset.description),
+    assetType: String(value?.assetType || value?.type || defaultMallAsset.assetType),
+    coverUrl: String(value?.coverUrl || defaultMallAsset.coverUrl),
+    coverKey: String(value?.coverKey || defaultMallAsset.coverKey),
+    pdfUrl: String(value?.pdfUrl || defaultMallAsset.pdfUrl),
+    pdfKey: String(value?.pdfKey || defaultMallAsset.pdfKey),
+    pdfPageCount: Number(value?.pdfPageCount || defaultMallAsset.pdfPageCount),
+    pdfFileSize: Number(value?.pdfFileSize || defaultMallAsset.pdfFileSize),
+    previewEnabled: value?.previewEnabled === false ? false : defaultMallAsset.previewEnabled,
+    previewPageCount: Number(value?.previewPageCount || defaultMallAsset.previewPageCount),
+    tags: Array.isArray(value?.tags) ? value.tags.map((item) => String(item)).filter(Boolean) : defaultMallAsset.tags,
+    accentStart: String(value?.accentStart || defaultMallAsset.accentStart),
+    accentEnd: String(value?.accentEnd || defaultMallAsset.accentEnd),
+    sortOrder: Number(value?.sortOrder || value?.sort || defaultMallAsset.sortOrder),
+    status: readMallStatus(value?.status, 'draft') as MallAssetStatus,
+    createdAt: value?.createdAt ? String(value.createdAt) : undefined,
+    updatedAt: value?.updatedAt ? String(value.updatedAt) : undefined
+  };
+}
+
+export function normalizeMallProduct(value: Record<string, unknown> | null | undefined): MallProductRecord {
+  return {
+    ...defaultMallProduct,
+    ...(value || {}),
+    _id: value?._id ? String(value._id) : undefined,
+    direction: readMaterialDirection(String(value?.direction || 'math')),
+    stage: readMaterialStage(String(value?.stage || 'foundation')),
+    productName: String(value?.productName || value?.title || defaultMallProduct.productName),
+    productSubTitle: String(value?.productSubTitle || value?.target || defaultMallProduct.productSubTitle),
+    productDescription: String(value?.productDescription || value?.solves || defaultMallProduct.productDescription),
+    productType: String(value?.productType || defaultMallProduct.productType),
+    badge: String(value?.badge || defaultMallProduct.badge),
+    coverUrl: String(value?.coverUrl || defaultMallProduct.coverUrl),
+    bannerUrl: String(value?.bannerUrl || defaultMallProduct.bannerUrl),
+    price: Number(value?.price || defaultMallProduct.price),
+    originPrice: Number(value?.originPrice || defaultMallProduct.originPrice),
+    isFree: value?.isFree === true || Number(value?.price || 0) <= 0,
+    previewEnabled: value?.previewEnabled === false ? false : defaultMallProduct.previewEnabled,
+    highlights: Array.isArray(value?.highlights) ? value.highlights.map((item) => String(item)).filter(Boolean) : defaultMallProduct.highlights,
+    sortOrder: Number(value?.sortOrder || value?.sort || defaultMallProduct.sortOrder),
+    status: readMallStatus(value?.status, 'draft') as MallProductStatus,
+    createdAt: value?.createdAt ? String(value.createdAt) : undefined,
+    updatedAt: value?.updatedAt ? String(value.updatedAt) : undefined
+  };
+}
+
+export function normalizeMallProductItem(value: Record<string, unknown> | null | undefined): MallProductItemRecord {
+  return {
+    ...defaultMallProductItem,
+    ...(value || {}),
+    _id: value?._id ? String(value._id) : undefined,
+    productId: String(value?.productId || defaultMallProductItem.productId),
+    itemType: String(value?.itemType || defaultMallProductItem.itemType),
+    itemId: String(value?.itemId || defaultMallProductItem.itemId),
+    displayType: String(value?.displayType || value?.type || defaultMallProductItem.displayType),
+    displayName: String(value?.displayName || value?.title || defaultMallProductItem.displayName),
+    displaySubTitle: String(value?.displaySubTitle || value?.subtitle || defaultMallProductItem.displaySubTitle),
+    displayDescription: String(value?.displayDescription || value?.desc || defaultMallProductItem.displayDescription),
+    displayDetails: String(value?.displayDetails || value?.details || defaultMallProductItem.displayDetails),
+    direction: readMaterialDirection(String(value?.direction || 'math')),
+    previewEnabled: value?.previewEnabled === false ? false : defaultMallProductItem.previewEnabled,
+    previewPageCount: Number(value?.previewPageCount || defaultMallProductItem.previewPageCount),
+    accentStart: String(value?.accentStart || defaultMallProductItem.accentStart),
+    accentEnd: String(value?.accentEnd || defaultMallProductItem.accentEnd),
+    sortOrder: Number(value?.sortOrder || value?.sort || defaultMallProductItem.sortOrder),
+    status: readMallStatus(value?.status, 'draft') as MallProductStatus,
+    createdAt: value?.createdAt ? String(value.createdAt) : undefined,
+    updatedAt: value?.updatedAt ? String(value.updatedAt) : undefined
+  };
+}
+
+export function normalizeMallEntitlement(value: Record<string, unknown> | null | undefined): MallEntitlementRecord {
+  const status = String(value?.status || '').trim().toLowerCase();
+  return {
+    _id: value?._id ? String(value._id) : undefined,
+    userId: String(value?.userId || ''),
+    productId: String(value?.productId || ''),
+    entitlementType: String(value?.entitlementType || 'bundle'),
+    sourceType: String(value?.sourceType || 'admin_grant'),
+    status: status === 'expired' || status === 'revoked' ? (status as MallEntitlementStatus) : 'active',
+    claimedAt: value?.claimedAt ? String(value.claimedAt) : undefined,
+    expiredAt: value?.expiredAt ? String(value.expiredAt) : undefined,
+    createdAt: value?.createdAt ? String(value.createdAt) : undefined,
+    updatedAt: value?.updatedAt ? String(value.updatedAt) : undefined
+  };
 }

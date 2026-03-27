@@ -4,52 +4,61 @@ import {
   DrawerForm,
   ProFormDigit,
   ProFormSelect,
+  ProFormSwitch,
   ProFormText,
   ProFormTextArea
 } from '@ant-design/pro-form';
-import { defaultMaterialItem, materialDirectionLabels, materialStageLabels, type MaterialItemRecord } from './types';
+import { defaultMallProductItem, type MallAssetRecord, type MallProductItemRecord } from './types';
 
 type MediaItemEditorDrawerProps = {
   open: boolean;
-  record: MaterialItemRecord | null;
-  direction: MaterialItemRecord['direction'];
-  stage: MaterialItemRecord['stage'];
+  record: MallProductItemRecord | null;
+  productId: string;
+  direction: MallProductItemRecord['direction'];
+  assetOptions: MallAssetRecord[];
   onOpenChange: (open: boolean) => void;
-  onSubmit: (payload: MaterialItemRecord) => Promise<boolean>;
+  onSubmit: (payload: MallProductItemRecord) => Promise<boolean>;
 };
 
-type MaterialItemFormValues = {
-  type: string;
-  title: string;
-  subtitle: string;
-  desc: string;
-  details: string;
+type MallProductItemFormValues = {
+  itemId: string;
+  displayType: string;
+  displayName: string;
+  displaySubTitle: string;
+  displayDescription: string;
+  displayDetails: string;
+  previewEnabled: boolean;
+  previewPageCount: number;
   accentStart: string;
   accentEnd: string;
-  sort: number;
-  status: MaterialItemRecord['status'];
+  sortOrder: number;
+  status: MallProductItemRecord['status'];
 };
 
 export function MediaItemEditorDrawer({
   open,
   record,
+  productId,
   direction,
-  stage,
+  assetOptions,
   onOpenChange,
   onSubmit
 }: MediaItemEditorDrawerProps) {
-  const [form] = Form.useForm<MaterialItemFormValues>();
+  const [form] = Form.useForm<MallProductItemFormValues>();
 
   const initialValues = useMemo(
     () => ({
-      type: String(record?.type || defaultMaterialItem.type),
-      title: String(record?.title || defaultMaterialItem.title),
-      subtitle: String(record?.subtitle || defaultMaterialItem.subtitle),
-      desc: String(record?.desc || defaultMaterialItem.desc),
-      details: String(record?.details || defaultMaterialItem.details),
-      accentStart: String(record?.accentStart || defaultMaterialItem.accentStart),
-      accentEnd: String(record?.accentEnd || defaultMaterialItem.accentEnd),
-      sort: Number(record?.sort || defaultMaterialItem.sort),
+      itemId: String(record?.itemId || defaultMallProductItem.itemId),
+      displayType: String(record?.displayType || defaultMallProductItem.displayType),
+      displayName: String(record?.displayName || defaultMallProductItem.displayName),
+      displaySubTitle: String(record?.displaySubTitle || defaultMallProductItem.displaySubTitle),
+      displayDescription: String(record?.displayDescription || defaultMallProductItem.displayDescription),
+      displayDetails: String(record?.displayDetails || defaultMallProductItem.displayDetails),
+      previewEnabled: record?.previewEnabled ?? defaultMallProductItem.previewEnabled,
+      previewPageCount: Number(record?.previewPageCount || defaultMallProductItem.previewPageCount),
+      accentStart: String(record?.accentStart || defaultMallProductItem.accentStart),
+      accentEnd: String(record?.accentEnd || defaultMallProductItem.accentEnd),
+      sortOrder: Number(record?.sortOrder || defaultMallProductItem.sortOrder),
       status: record?.status || 'draft'
     }),
     [record]
@@ -64,8 +73,8 @@ export function MediaItemEditorDrawer({
   }, [form, initialValues, open]);
 
   return (
-    <DrawerForm<MaterialItemFormValues>
-      title={record?._id ? '编辑资料卡片' : '新增资料卡片'}
+    <DrawerForm<MallProductItemFormValues>
+      title={record?._id ? '编辑商品内容项' : '新增商品内容项'}
       open={open}
       width={560}
       form={form}
@@ -73,55 +82,66 @@ export function MediaItemEditorDrawer({
       drawerProps={{ destroyOnClose: true }}
       onFinish={async (values) =>
         onSubmit({
-          ...(record || defaultMaterialItem),
+          ...(record || defaultMallProductItem),
+          productId,
           direction,
-          stage,
-          type: values.type,
-          title: values.title,
-          subtitle: values.subtitle,
-          desc: values.desc,
-          details: values.details,
+          itemId: values.itemId,
+          displayType: values.displayType,
+          displayName: values.displayName,
+          displaySubTitle: values.displaySubTitle,
+          displayDescription: values.displayDescription,
+          displayDetails: values.displayDetails,
+          previewEnabled: values.previewEnabled,
+          previewPageCount: values.previewPageCount,
           accentStart: values.accentStart,
           accentEnd: values.accentEnd,
-          sort: values.sort,
+          sortOrder: values.sortOrder,
           status: values.status
         })
       }
       submitter={{
         searchConfig: {
-          submitText: record?._id ? '保存资料卡片' : '创建资料卡片'
+          submitText: record?._id ? '保存内容项' : '创建内容项'
         }
       }}
     >
-      <ProFormText
-        name="type"
-        label="资料左侧标签"
-        extra={`当前会出现在 ${materialDirectionLabels[direction]} · ${materialStageLabels[stage]} 的资料列表里`}
-        rules={[{ required: true, message: '请填写资料类型' }]}
+      <ProFormSelect
+        name="itemId"
+        label="对应哪份资料资产"
+        rules={[{ required: true, message: '请选择资料资产' }]}
+        options={assetOptions.map((asset) => ({
+          label: asset.title || asset.name || asset._id || '未命名资料',
+          value: asset._id
+        }))}
       />
-      <ProFormText name="title" label="资料标题" rules={[{ required: true, message: '请填写资料标题' }]} />
-      <ProFormText name="subtitle" label="资料副标题" rules={[{ required: true, message: '请填写资料副标题' }]} />
+      <ProFormText name="displayType" label="卡片左侧标签" rules={[{ required: true, message: '请填写左侧标签' }]} />
+      <ProFormText name="displayName" label="卡片标题" rules={[{ required: true, message: '请填写标题' }]} />
+      <ProFormText name="displaySubTitle" label="卡片副标题" rules={[{ required: true, message: '请填写副标题' }]} />
       <ProFormTextArea
-        name="desc"
+        name="displayDescription"
         label="卡片简介"
         fieldProps={{ rows: 3 }}
         rules={[{ required: true, message: '请填写短简介' }]}
       />
       <ProFormTextArea
-        name="details"
+        name="displayDetails"
         label="按钮右侧说明"
         fieldProps={{ rows: 4 }}
         rules={[{ required: true, message: '请填写展开说明' }]}
       />
+      <ProFormSwitch name="previewEnabled" label="是否允许预览" />
+      <ProFormDigit name="previewPageCount" label="预览页数" min={0} />
       <ProFormText name="accentStart" label="卡片主色" rules={[{ required: true, message: '请填写起始色' }]} />
       <ProFormText name="accentEnd" label="卡片辅色" rules={[{ required: true, message: '请填写结束色' }]} />
-      <ProFormDigit name="sort" label="排序" min={0} />
+      <ProFormDigit name="sortOrder" label="排序" min={0} />
       <ProFormSelect
         name="status"
         label="状态"
         options={[
           { label: '草稿', value: 'draft' },
-          { label: '已发布', value: 'published' }
+          { label: '待审核', value: 'pending' },
+          { label: '已上架', value: 'online' },
+          { label: '已下架', value: 'offline' }
         ]}
       />
     </DrawerForm>
