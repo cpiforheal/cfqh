@@ -7,9 +7,12 @@ import { api } from '../api';
 import { AppShell } from '../components/AppShell';
 import { moduleConfigMap, moduleConfigs, type ModuleKey } from '../config';
 import {
+  AboutContentPageRoute,
+  AccountsPageRoute,
   DirectionsPageRoute,
   HomeContentPageRoute,
   LearnersPageRoute,
+  ContactContentPageRoute,
   MediaContentPageRoute,
   OverviewPageRoute,
   PageWorkbenchRoute
@@ -103,8 +106,32 @@ export function AuthenticatedApp({ auth, health, onLogout, themeMode, onToggleTh
             </SuspendedRoute>
           }
         />
+        <Route
+          path="/about"
+          element={
+            <SuspendedRoute>
+              <AboutContentPageRoute auth={auth} />
+            </SuspendedRoute>
+          }
+        />
+        <Route
+          path="/contact"
+          element={
+            <SuspendedRoute>
+              <ContactContentPageRoute auth={auth} />
+            </SuspendedRoute>
+          }
+        />
+        <Route
+          path="/accounts"
+          element={
+            <SuspendedRoute>
+              <AccountsPageRoute auth={auth} />
+            </SuspendedRoute>
+          }
+        />
         {moduleConfigs
-          .filter((item) => !['overview', 'home', 'directions', 'learners', 'media'].includes(item.key))
+          .filter((item) => !['overview', 'home', 'directions', 'learners', 'media', 'about', 'contact', 'accounts'].includes(item.key))
           .map((item) => (
             <Route
               key={item.key}

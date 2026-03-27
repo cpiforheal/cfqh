@@ -1,5 +1,5 @@
 import { lazy, Suspense, useMemo, useState } from 'react';
-import { App, Button, Card, Progress, Result, Segmented, Space, Spin, Tag, Typography } from 'antd';
+import { App, Button, Card, Result, Segmented, Space, Spin, Tag, Typography } from 'antd';
 import { EditOutlined } from '@ant-design/icons';
 import ProTable from '@ant-design/pro-table';
 import type { ProColumns } from '@ant-design/pro-table';
@@ -27,9 +27,10 @@ type HomeSectionRow = {
   location: string;
   mode: 'shared' | 'subject';
   summary: string;
+  editFields: string;
   statusLabel: string;
   statusTone: 'success' | 'warning';
-  teacherTip: string;
+  priorityLabel: string;
 };
 
 function readSubjectKey(value: string | null): HomeSubjectKey {
@@ -45,9 +46,10 @@ function buildSectionRows(page: HomePageContent, subjectKey: HomeSubjectKey): Ho
       return {
         ...section,
         summary: `${page.header.title || '未填写标题'} / ${page.header.subtitle || '未填写副标题'}`,
+        editFields: '主标题、副标题',
         statusLabel: ready ? '标题已完整' : '建议先补齐标题',
         statusTone: ready ? 'success' : 'warning',
-        teacherTip: '学生先看到这里。先把主标题写直白，再用一句副标题说明今天适合做什么。'
+        priorityLabel: '基础信息'
       };
     }
 
@@ -56,9 +58,10 @@ function buildSectionRows(page: HomePageContent, subjectKey: HomeSubjectKey): Ho
       return {
         ...section,
         summary: `${subject.learningCard.title || '未填写主卡标题'} / ${subject.learningCard.progressText || '未填写进度'}`,
+        editFields: '卡片标题、进度、按钮文案、跳转页面',
         statusLabel: ready ? '学习主卡已成型' : '建议先补齐主卡',
         statusTone: ready ? 'success' : 'warning',
-        teacherTip: '这里放老师最希望学生今天立刻去做的任务，按钮文案尽量直接用动作词。'
+        priorityLabel: '优先修改'
       };
     }
 
@@ -69,9 +72,10 @@ function buildSectionRows(page: HomePageContent, subjectKey: HomeSubjectKey): Ho
         summary: subject.quickEntries.length
           ? subject.quickEntries.slice(0, 4).map((item) => item.label).join(' / ')
           : '还没有配置四个快捷入口',
+        editFields: '4 个入口标题、副标题、图标、跳转页面',
         statusLabel: ready ? '四个入口已完整' : `已配置 ${subject.quickEntries.length}/4`,
         statusTone: ready ? 'success' : 'warning',
-        teacherTip: '入口名称建议都是学生一看就懂的词，老师改哪一个，就直接改对应这一行。'
+        priorityLabel: '常用导航'
       };
     }
 
@@ -80,21 +84,23 @@ function buildSectionRows(page: HomePageContent, subjectKey: HomeSubjectKey): Ho
       return {
         ...section,
         summary: `${page.header.resourceSectionTitle || '未填写资源标题'} / ${page.header.resourceMoreText || '未填写右侧短文案'}`,
+        editFields: '资源区标题、右上角短字',
         statusLabel: ready ? '资源标题栏已完整' : '建议补齐标题栏',
         statusTone: ready ? 'success' : 'warning',
-        teacherTip: '这里最好保持很短，让老师知道这一行只是资源区标题，不需要承载太多信息。'
+        priorityLabel: '辅助说明'
       };
     }
 
     const ready = subject.resources.length >= 2 && subject.resources.every((item) => item.title);
     return {
       ...section,
-      summary: subject.resources.length
-        ? subject.resources.slice(0, 2).map((item) => item.title).join(' / ')
-        : '还没有配置资源卡片',
+        summary: subject.resources.length
+          ? subject.resources.slice(0, 2).map((item) => item.title).join(' / ')
+          : '还没有配置资源卡片',
+      editFields: '2 张资源卡的标题、副标题、标签、辅助信息',
       statusLabel: ready ? '资源卡片已完整' : `已配置 ${subject.resources.length}/2`,
       statusTone: ready ? 'success' : 'warning',
-      teacherTip: '资源区从上到下就是前台展示顺序。老师想改哪一张卡，就在这张表里直接点编辑。'
+      priorityLabel: '优先修改'
     };
   });
 }
@@ -127,7 +133,6 @@ export function HomeContentPage({ auth }: HomeContentPageProps) {
   const subject = page.subjects[subjectKey];
   const sections = useMemo(() => buildSectionRows(page, subjectKey), [page, subjectKey]);
   const readySectionCount = useMemo(() => countReadySections(sections), [sections]);
-  const completionPercent = Math.round((readySectionCount / homeSectionModels.length) * 100);
   const lastUpdated = formatDateTime(page._meta?.updatedAt || page._updatedAt);
 
   if (!auth.permissions.canRead) {
@@ -158,7 +163,17 @@ export function HomeContentPage({ auth }: HomeContentPageProps) {
       search: false,
       render: (_, record) => (
         <Space direction="vertical" size={2}>
-          <Typography.Text strong>{record.title}</Typography.Text>
+          <Space size={8} wrap>
+            <Typography.Text strong>{record.title}</Typography.Text>
+            <Tag color={record.priorityLabel === '优先修改' ? 'gold' : 'default'} bordered={false}>
+              {record.priorityLabel}
+            </Tag>
+            {record.mode === 'shared' ? (
+              <Tag bordered={false}>高数/医护共用</Tag>
+            ) : (
+              <Tag color="processing">{subjectLabels[subjectKey]}专属</Tag>
+            )}
+          </Space>
           <Typography.Text type="secondary">{record.desc}</Typography.Text>
         </Space>
       )
@@ -176,26 +191,17 @@ export function HomeContentPage({ auth }: HomeContentPageProps) {
       search: false
     },
     {
-      title: '适用范围',
-      dataIndex: 'mode',
-      width: 140,
-      search: false,
-      render: (_, record) =>
-        record.mode === 'shared' ? <Tag bordered={false}>高数/医护共用</Tag> : <Tag color="processing">{subjectLabels[subjectKey]}专属</Tag>
+      title: '点编辑后可改',
+      dataIndex: 'editFields',
+      width: 280,
+      search: false
     },
     {
-      title: '完成状态',
+      title: '状态',
       dataIndex: 'statusLabel',
       width: 164,
       search: false,
       render: (_, record) => <Tag color={record.statusTone === 'success' ? 'success' : 'warning'}>{record.statusLabel}</Tag>
-    },
-    {
-      title: '老师提示',
-      dataIndex: 'teacherTip',
-      width: 300,
-      ellipsis: true,
-      search: false
     },
     {
       title: '操作',
@@ -214,69 +220,48 @@ export function HomeContentPage({ auth }: HomeContentPageProps) {
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
       <Card className="hero-card">
-        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+        <Space direction="vertical" size="small" style={{ width: '100%' }}>
           <div>
             <Typography.Text className="eyebrow">首页内容主控区</Typography.Text>
             <Typography.Title level={3} style={{ marginTop: 0, marginBottom: 8 }}>
-              直接按小程序顺序编辑，不再来回找字段
+              按学生看到的顺序维护首页
             </Typography.Title>
             <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
-              老师先选学科，再从第 1 行一路往下编辑。每一行都对应前台同一位置，主视图只保留顺序、状态、摘要和操作。
+              主表只保留老师真正需要先看的信息，具体字段全部收进编辑抽屉。
             </Typography.Paragraph>
           </div>
 
           <Space wrap size="middle" style={{ justifyContent: 'space-between', width: '100%' }}>
-            <Segmented<HomeSubjectKey>
-              value={subjectKey}
-              options={[
-                { label: '高数首页', value: 'math' },
-                { label: '医护首页', value: 'medical' }
-              ]}
-              onChange={(value) => {
-                setSearchParams((current) => {
-                  const next = new URLSearchParams(current);
-                  next.set('subject', value);
-                  return next;
-                });
-              }}
-            />
             <Space wrap>
-              <Tag color="processing">表格主控区</Tag>
+              <Segmented<HomeSubjectKey>
+                value={subjectKey}
+                options={[
+                  { label: '高数首页', value: 'math' },
+                  { label: '医护首页', value: 'medical' }
+                ]}
+                onChange={(value) => {
+                  setSearchParams((current) => {
+                    const next = new URLSearchParams(current);
+                    next.set('subject', value);
+                    return next;
+                  });
+                }}
+              />
+              <Tag color="processing">{`${subjectLabels[subjectKey]}首页`}</Tag>
+            </Space>
+            <Space wrap>
               <Tag color={auth.permissions.canWrite ? 'success' : 'default'}>
-                {auth.permissions.canWrite ? '可直接保存' : '当前为只读'}
+                {auth.permissions.canWrite ? '可直接保存' : '当前只读'}
               </Tag>
               <Tag>{`最近更新 ${lastUpdated}`}</Tag>
             </Space>
           </Space>
-
-          <Progress percent={completionPercent} showInfo={false} />
-
-          <Space wrap size="large">
-            <div className="home-workspace-summary">
-              <Typography.Text type="secondary">当前学科</Typography.Text>
-              <Typography.Title level={3} style={{ margin: 0 }}>
-                {subjectLabels[subjectKey]}
-              </Typography.Title>
-            </div>
-            <div className="home-workspace-summary">
-              <Typography.Text type="secondary">已成型区块</Typography.Text>
-              <Typography.Title level={3} style={{ margin: 0 }}>
-                {readySectionCount}/{homeSectionModels.length}
-              </Typography.Title>
-            </div>
-            <div className="home-workspace-summary">
-              <Typography.Text type="secondary">快捷入口数</Typography.Text>
-              <Typography.Title level={3} style={{ margin: 0 }}>
-                {subject.quickEntries.length}/4
-              </Typography.Title>
-            </div>
-            <div className="home-workspace-tip">
-              <Typography.Text strong>老师友好说明</Typography.Text>
-              <Typography.Paragraph style={{ marginBottom: 0 }}>
-                优先补“今日学习主卡”和“资源卡片”两行，这两块最容易和学生端看到的变化形成直接对应。
-              </Typography.Paragraph>
-            </div>
-          </Space>
+          <div className="home-workspace-compact-bar">
+            <Typography.Text type="secondary">{`区块 ${homeSectionModels.length} 行`}</Typography.Text>
+            <Typography.Text type="secondary">{`已成型 ${readySectionCount}/${homeSectionModels.length}`}</Typography.Text>
+            <Typography.Text type="secondary">{`快捷入口 ${subject.quickEntries.length}/4`}</Typography.Text>
+            <Typography.Text type="secondary">{`资源卡片 ${subject.resources.length}/2`}</Typography.Text>
+          </div>
         </Space>
       </Card>
 
@@ -289,8 +274,8 @@ export function HomeContentPage({ auth }: HomeContentPageProps) {
         pagination={false}
         options={false}
         cardBordered={false}
-        scroll={{ x: 1320 }}
-        headerTitle="首页区块清单"
+        scroll={{ x: 1180 }}
+        headerTitle="首页区块总表"
         toolBarRender={() => [
           <Button
             key="edit-first"

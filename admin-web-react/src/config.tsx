@@ -46,11 +46,11 @@ export const moduleConfigs: ModuleConfig[] = [
     key: 'home',
     label: '首页内容',
     title: '首页内容',
-    subtitle: '按小程序真实展示顺序维护首页内容，支持 1:1 可视化映射与分区编辑。',
+    subtitle: '按小程序真实展示顺序维护首页内容，主表先看顺序与摘要，细字段收进抽屉。',
     pageKey: 'home',
     collections: [],
     iconKey: 'home',
-    mode: 'page'
+    mode: 'list'
   },
   {
     key: 'directions',
@@ -109,31 +109,31 @@ export const moduleConfigs: ModuleConfig[] = [
     key: 'about',
     label: '关于我们',
     title: '关于我们',
-    subtitle: '关于页先用摘要工作台承接，详细编辑仍可走旧后台。',
+    subtitle: '关于页已迁入 React 主控区，老师可按页面顺序编辑首屏、介绍、理念、环境和咨询区。',
     pageKey: 'about',
     collections: [],
     iconKey: 'profile',
-    mode: 'page'
+    mode: 'list'
   },
   {
     key: 'contact',
     label: '联系方式',
     title: '联系方式',
-    subtitle: '站点信息页先用摘要工作台承接，详细编辑仍可走旧后台。',
+    subtitle: '站点设置已迁入 React 主控区，先改品牌与联系方式，再补地址和二维码。',
     pageKey: 'site',
     collections: [],
     iconKey: 'contacts',
-    mode: 'page'
+    mode: 'list'
   },
   {
     key: 'accounts',
     label: '账号管理',
     title: '账号管理',
-    subtitle: '账号管理将在下一阶段整体迁入，目前先提供权限状态与旧后台入口。',
+    subtitle: '账号管理已迁入 React 主控区，可直接新建老师账号、分配角色和启停状态。',
     pageKey: null,
     collections: [{ key: 'adminUsers', label: '账号列表' }],
     iconKey: 'idcard',
-    mode: 'mixed'
+    mode: 'list'
   }
 ];
 

@@ -12,6 +12,12 @@ const loadMediaContentPage = () =>
   import('./pages/MediaContentPage').then((module) => ({ default: module.MediaContentPage }));
 const loadLearnersPage = () =>
   import('./pages/LearnersPage').then((module) => ({ default: module.LearnersPage }));
+const loadAboutContentPage = () =>
+  import('./pages/AboutContentPage').then((module) => ({ default: module.AboutContentPage }));
+const loadContactContentPage = () =>
+  import('./pages/ContactContentPage').then((module) => ({ default: module.ContactContentPage }));
+const loadAccountsPage = () =>
+  import('./pages/AccountsPage').then((module) => ({ default: module.AccountsPage }));
 const loadOverviewPage = () =>
   import('./pages/OverviewPage').then((module) => ({ default: module.OverviewPage }));
 const loadPageWorkbench = () =>
@@ -23,6 +29,9 @@ export const DirectionsPageRoute = lazy(loadDirectionsPage);
 export const HomeContentPageRoute = lazy(loadHomeContentPage);
 export const MediaContentPageRoute = lazy(loadMediaContentPage);
 export const LearnersPageRoute = lazy(loadLearnersPage);
+export const AboutContentPageRoute = lazy(loadAboutContentPage);
+export const ContactContentPageRoute = lazy(loadContactContentPage);
+export const AccountsPageRoute = lazy(loadAccountsPage);
 export const OverviewPageRoute = lazy(loadOverviewPage);
 export const PageWorkbenchRoute = lazy(loadPageWorkbench);
 
@@ -42,6 +51,12 @@ export function preloadModuleRoute(moduleKey: ModuleKey) {
       return loadHomeContentPage();
     case 'learners':
       return loadLearnersPage();
+    case 'about':
+      return loadAboutContentPage();
+    case 'contact':
+      return loadContactContentPage();
+    case 'accounts':
+      return loadAccountsPage();
     case 'media':
       return loadMediaContentPage();
     case 'overview':

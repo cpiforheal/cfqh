@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
-import { Button, Drawer, Form, Input, InputNumber, Select, Space, Typography } from 'antd';
+import { Alert, Button, Drawer, Form, Input, InputNumber, Select, Space, Typography } from 'antd';
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
-import { defaultHomePage, quickEntryKindOptions, subjectLabels, type HomePageContent, type HomeSectionId, type HomeSubjectKey, type LinkOpenType } from './types';
+import { defaultHomePage, homeSectionModels, quickEntryKindOptions, subjectLabels, type HomePageContent, type HomeSectionId, type HomeSubjectKey, type LinkOpenType } from './types';
 
 type HomeSectionEditorDrawerProps = {
   open: boolean;
@@ -37,11 +37,19 @@ const sectionTitleMap: Record<HomeSectionId, string> = {
 };
 
 const sectionNoteMap: Record<HomeSectionId, string> = {
-  header: '这一块对应小程序里“今日学习”和下面那句副标题。',
-  dailyCard: '这一块对应大卡片本体，学生每天最先点击的学习入口通常就在这里。',
-  quickEntries: '四个入口从左到右和小程序完全一致，老师改哪个卡片，就直接改对应序号。',
-  resourceSection: '这里只管资源区标题，不承载资源内容本身。',
-  resources: '资源卡片从上到下就是前台展示顺序，建议老师按第一张、第二张来维护。'
+  header: '这一块就是首页最上面的标题和副标题，建议用老师平时会说的话来写，不用写得太技术化。',
+  dailyCard: '这一块就是学生最先看到、最可能点进去的学习主卡，按钮文案越直接越好。',
+  quickEntries: '四个入口从左到右和小程序完全一致。老师想改哪一个入口，就改对应序号。',
+  resourceSection: '这里只改资源区标题那一行，不包含下面的资源卡片内容。',
+  resources: '资源卡片从上到下就是前台展示顺序。老师通常只需要维护第 1 张和第 2 张。'
+};
+
+const sectionFieldHintMap: Record<HomeSectionId, string> = {
+  header: '会修改：主标题、副标题',
+  dailyCard: '会修改：卡片标题、进度、按钮文案、跳转页面',
+  quickEntries: '会修改：4 个入口的名称、副标题、图标和跳转页面',
+  resourceSection: '会修改：资源区标题、右上角短字',
+  resources: '会修改：2 张资源卡的标题、副标题、标签、辅助信息'
 };
 
 function SectionListHeader({
@@ -80,6 +88,32 @@ function buildInitialValues(page: HomePageContent, subjectKey: HomeSubjectKey): 
   };
 }
 
+function buildSectionPreview(sectionId: HomeSectionId, page: HomePageContent, subjectKey: HomeSubjectKey) {
+  const subject = page.subjects[subjectKey];
+
+  if (sectionId === 'header') {
+    return `${page.header.title || '未填写标题'} / ${page.header.subtitle || '未填写副标题'}`;
+  }
+
+  if (sectionId === 'dailyCard') {
+    return `${subject.learningCard.title || '未填写主卡标题'} / ${subject.learningCard.actionText || '未填写按钮文案'}`;
+  }
+
+  if (sectionId === 'quickEntries') {
+    return subject.quickEntries.length
+      ? subject.quickEntries.map((item, index) => `${index + 1}. ${item.label || '未命名入口'}`).join(' / ')
+      : '还没有配置入口';
+  }
+
+  if (sectionId === 'resourceSection') {
+    return `${page.header.resourceSectionTitle || '未填写资源区标题'} / ${page.header.resourceMoreText || '未填写右上角短字'}`;
+  }
+
+  return subject.resources.length
+    ? subject.resources.map((item, index) => `${index + 1}. ${item.title || '未命名资源卡'}`).join(' / ')
+    : '还没有配置资源卡';
+}
+
 export function HomeSectionEditorDrawer({
   open,
   sectionId,
@@ -93,6 +127,11 @@ export function HomeSectionEditorDrawer({
   const [form] = Form.useForm<SectionValues>();
 
   const initialValues = useMemo(() => buildInitialValues(page, subjectKey), [page, subjectKey]);
+  const sectionMeta = useMemo(() => homeSectionModels.find((item) => item.id === sectionId) || null, [sectionId]);
+  const sectionPreview = useMemo(
+    () => (sectionId ? buildSectionPreview(sectionId, page, subjectKey) : ''),
+    [page, sectionId, subjectKey]
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -175,16 +214,16 @@ export function HomeSectionEditorDrawer({
         <Form.Item name={['learningCard', 'title']} label="主卡标题" rules={[{ required: true, message: '请填写主卡标题' }]}>
           <Input placeholder={`例如 今日${subjectLabels[subjectKey]}学习`} disabled={!canWrite} />
         </Form.Item>
-        <Form.Item name={['learningCard', 'subtitle']} label="主卡副标题" rules={[{ required: true, message: '请填写主卡副标题' }]}>
+        <Form.Item name={['learningCard', 'subtitle']} label="主卡说明" rules={[{ required: true, message: '请填写主卡说明' }]}>
           <Input placeholder="例如 保持题感，稳定推进" disabled={!canWrite} />
         </Form.Item>
-        <Form.Item name={['learningCard', 'streakText']} label="右上角连续天数提示" rules={[{ required: true, message: '请填写连续天数提示' }]}>
+        <Form.Item name={['learningCard', 'streakText']} label="右上角提示" rules={[{ required: true, message: '请填写右上角提示' }]}>
           <Input placeholder="例如 连续 9 天" disabled={!canWrite} />
         </Form.Item>
         <Form.Item name={['learningCard', 'taskLabel']} label="任务标题" rules={[{ required: true, message: '请填写任务标题' }]}>
           <Input placeholder="例如 每日刷题任务" disabled={!canWrite} />
         </Form.Item>
-        <Form.Item name={['learningCard', 'progressText']} label="右侧进度文案" rules={[{ required: true, message: '请填写进度文案' }]}>
+        <Form.Item name={['learningCard', 'progressText']} label="右侧进度数字" rules={[{ required: true, message: '请填写进度数字' }]}>
           <Input placeholder="例如 15 / 30" disabled={!canWrite} />
         </Form.Item>
         <Form.Item name={['learningCard', 'progressPercent']} label="进度条百分比" rules={[{ required: true, message: '请填写进度百分比' }]}>
@@ -193,10 +232,10 @@ export function HomeSectionEditorDrawer({
         <Form.Item name={['learningCard', 'actionText']} label="主按钮文案" rules={[{ required: true, message: '请填写按钮文案' }]}>
           <Input placeholder="例如 开始练题" disabled={!canWrite} />
         </Form.Item>
-        <Form.Item name={['learningCard', 'actionUrl']} label="按钮跳转地址" rules={[{ required: true, message: '请填写按钮跳转地址' }]}>
+        <Form.Item name={['learningCard', 'actionUrl']} label="按钮点击后去哪里" rules={[{ required: true, message: '请填写按钮跳转地址' }]}>
           <Input placeholder="/pages/question-bank/daily-question/index" disabled={!canWrite} />
         </Form.Item>
-        <Form.Item name={['learningCard', 'actionOpenType']} label="按钮跳转方式">
+        <Form.Item name={['learningCard', 'actionOpenType']} label="页面打开方式">
           <Select options={openTypeOptions} disabled={!canWrite} />
         </Form.Item>
       </Space>
@@ -231,16 +270,16 @@ export function HomeSectionEditorDrawer({
                 <Form.Item name={[field.name, 'kind']} label="图标类型" rules={[{ required: true, message: '请选择图标类型' }]}>
                   <Select options={quickEntryKindOptions} disabled={!canWrite} />
                 </Form.Item>
-                <Form.Item name={[field.name, 'accent']} label="图标主色">
+                <Form.Item name={[field.name, 'accent']} label="图标主色（可选）">
                   <Input placeholder="#ffb6c1" disabled={!canWrite} />
                 </Form.Item>
-                <Form.Item name={[field.name, 'bg']} label="图标底色">
+                <Form.Item name={[field.name, 'bg']} label="图标底色（可选）">
                   <Input placeholder="#fff7f9" disabled={!canWrite} />
                 </Form.Item>
-                <Form.Item name={[field.name, 'url']} label="跳转地址" rules={[{ required: true, message: '请填写跳转地址' }]}>
+                <Form.Item name={[field.name, 'url']} label="点击后去哪里" rules={[{ required: true, message: '请填写跳转地址' }]}>
                   <Input placeholder="/pages/question-bank/daily-question/index" disabled={!canWrite} />
                 </Form.Item>
-                <Form.Item name={[field.name, 'openType']} label="跳转方式">
+                <Form.Item name={[field.name, 'openType']} label="页面打开方式">
                   <Select options={openTypeOptions} disabled={!canWrite} />
                 </Form.Item>
                 <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} disabled={!canWrite}>
@@ -266,7 +305,7 @@ export function HomeSectionEditorDrawer({
         </Form.Item>
         <Form.Item
           name={['header', 'resourceMoreText']}
-          label="右侧短文案"
+          label="右上角短字"
           rules={[{ required: true, message: '请填写右侧短文案' }]}
         >
           <Input placeholder="例如 更多" disabled={!canWrite} />
@@ -352,9 +391,20 @@ export function HomeSectionEditorDrawer({
       }
     >
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
-          {sectionId ? sectionNoteMap[sectionId] : ''}
-        </Typography.Paragraph>
+        {sectionId && sectionMeta ? (
+          <Alert
+            type="info"
+            showIcon
+            message={`${sectionMeta.step} · ${sectionMeta.title}${sectionMeta.mode === 'subject' ? ` · ${subjectLabels[subjectKey]}` : ''}`}
+            description={
+              <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                <Typography.Text type="secondary">{sectionNoteMap[sectionId]}</Typography.Text>
+                <Typography.Text type="secondary">{sectionFieldHintMap[sectionId]}</Typography.Text>
+                <Typography.Text strong>{`当前摘要：${sectionPreview}`}</Typography.Text>
+              </Space>
+            }
+          />
+        ) : null}
         <Form form={form} layout="vertical" initialValues={initialValues} disabled={!canWrite}>
           {renderContent()}
         </Form>
