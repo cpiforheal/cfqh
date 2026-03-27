@@ -41,6 +41,42 @@ export type HealthPayload = {
   limits: Record<string, number>;
 };
 
+export type QuestionBankImportPreview = {
+  fileName: string;
+  direction: string;
+  sourceFormat: string;
+  expectedHeaders: string[];
+  totalRows: number;
+  validCount: number;
+  invalidCount: number;
+  previewRows: Array<{
+    lineNumber: number;
+    questionId: string;
+    paperId: string;
+    questionType: string;
+    stem: string;
+    optionsCount: number;
+    year: number;
+    status: string;
+  }>;
+  errors: Array<{
+    lineNumber: number;
+    message: string;
+  }>;
+};
+
+export type QuestionBankImportCommitSummary = {
+  fileName: string;
+  direction: string;
+  totalRows: number;
+  createdCount: number;
+  updatedCount: number;
+  paperCount: number;
+  paperCreatedCount: number;
+  paperUpdatedCount: number;
+  importedCount: number;
+};
+
 class ApiError extends Error {
   statusCode: number;
   code: string;
@@ -143,6 +179,18 @@ export const api = {
   deleteCollectionItem(collectionKey: string, itemId: string) {
     return request<{ ok: boolean }>(`/api/collection/${collectionKey}/${itemId}`, {
       method: 'DELETE'
+    });
+  },
+  previewQuestionBankCsvImport(payload: { fileName?: string; csvText: string; direction: string }) {
+    return request<QuestionBankImportPreview>('/api/import/question-bank-csv/preview', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+  commitQuestionBankCsvImport(payload: { fileName?: string; csvText: string; direction: string }) {
+    return request<QuestionBankImportCommitSummary>('/api/import/question-bank-csv/commit', {
+      method: 'POST',
+      body: JSON.stringify(payload)
     });
   }
 };

@@ -1,7 +1,5 @@
 import { lazy, Suspense, useMemo, useState } from 'react';
-import { App, Card, Result, Space, Spin, Tag, Typography } from 'antd';
-import ProTable from '@ant-design/pro-table';
-import type { ProColumns } from '@ant-design/pro-table';
+import { App, Card, Result, Space, Spin, Table, Tag, Typography, type TableProps } from 'antd';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AuthState } from '../api';
 import { api } from '../api';
@@ -123,18 +121,16 @@ export function AboutContentPage({ auth }: AboutContentPageProps) {
     setEditingSection(null);
   }
 
-  const columns: ProColumns<AboutSectionRow>[] = [
+  const columns: TableProps<AboutSectionRow>['columns'] = [
     {
       title: '顺序',
       dataIndex: 'step',
       width: 96,
-      search: false
     },
     {
       title: '区块',
       dataIndex: 'title',
       width: 260,
-      search: false,
       render: (_, record) => (
         <Space direction="vertical" size={2}>
           <Typography.Text strong>{record.title}</Typography.Text>
@@ -146,32 +142,27 @@ export function AboutContentPage({ auth }: AboutContentPageProps) {
       title: '前台位置',
       dataIndex: 'location',
       width: 160,
-      search: false
     },
     {
       title: '当前内容摘要',
       dataIndex: 'summary',
-      search: false,
       ellipsis: true
     },
     {
       title: '点编辑后可改',
       dataIndex: 'editFields',
-      width: 240,
-      search: false
+      width: 240
     },
     {
       title: '状态',
       dataIndex: 'statusLabel',
       width: 160,
-      search: false,
       render: (_, record) => <Tag color={record.statusTone === 'success' ? 'success' : 'warning'}>{record.statusLabel}</Tag>
     },
     {
       title: '操作',
       key: 'option',
       width: 120,
-      valueType: 'option',
       fixed: 'right',
       render: (_, record) => [
         <a key="edit" onClick={() => setEditingSection(record.id)}>
@@ -188,10 +179,10 @@ export function AboutContentPage({ auth }: AboutContentPageProps) {
           <div>
             <Typography.Text className="eyebrow">关于我们主控区</Typography.Text>
             <Typography.Title level={3} style={{ marginTop: 0, marginBottom: 8 }}>
-              先按页面顺序看，再打开抽屉细改
+              新老师先顺着页面顺序看，再点开抽屉细改
             </Typography.Title>
             <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
-              老师只需要从上到下看每一行现在展示什么，具体字段都收进二级抽屉。
+              表格只保留前台位置、当前摘要和可修改范围，让老师不用先理解数据结构也能上手。
             </Typography.Paragraph>
           </div>
 
@@ -202,6 +193,26 @@ export function AboutContentPage({ auth }: AboutContentPageProps) {
             <Tag>{`已成型 ${readyCount}/${rows.length}`}</Tag>
             <Tag>{`最近更新 ${lastUpdated}`}</Tag>
           </Space>
+          <div className="workspace-guide-grid">
+            <div className="workspace-guide-card">
+              <Typography.Text className="workspace-guide-label">建议修改顺序</Typography.Text>
+              <Typography.Title level={5} style={{ marginTop: 8, marginBottom: 6 }}>
+                先首屏，再机构介绍，再底部咨询
+              </Typography.Title>
+              <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+                这样第一次维护时，最容易先把学生最先看到和最后承接的两块内容补齐。
+              </Typography.Paragraph>
+            </div>
+            <div className="workspace-guide-card">
+              <Typography.Text className="workspace-guide-label">1:1 映射方式</Typography.Text>
+              <Typography.Title level={5} style={{ marginTop: 8, marginBottom: 6 }}>
+                每一行就是关于页的一块
+              </Typography.Title>
+              <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+                从第 1 行到第 5 行，就是学生在关于页从上往下看到的顺序。
+              </Typography.Paragraph>
+            </div>
+          </div>
         </Space>
       </Card>
 
@@ -211,17 +222,13 @@ export function AboutContentPage({ auth }: AboutContentPageProps) {
         </div>
       ) : (
         <Card className="home-workspace-card">
-          <ProTable<AboutSectionRow>
+          <Table<AboutSectionRow>
             rowKey="id"
-            search={false}
-            options={{ density: false, fullScreen: false, reload: false, setting: false }}
-            pagination={false}
             columns={columns}
             dataSource={rows}
             scroll={{ x: 1200 }}
-            toolbar={{
-              title: '关于页区块总表'
-            }}
+            pagination={false}
+            title={() => '关于页区块总表'}
           />
         </Card>
       )}

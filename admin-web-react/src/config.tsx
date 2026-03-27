@@ -66,7 +66,7 @@ export const moduleConfigs: ModuleConfig[] = [
     key: 'questionBank',
     label: '题库',
     title: '题库',
-    subtitle: '题库页骨架已接入，批量导入与复杂编辑暂保留旧后台。',
+    subtitle: '题库已迁入 React 主控区，可维护入口文案、题目、模拟卷和 CSV 导入记录。',
     pageKey: 'questionBank',
     collections: [
       { key: 'medicalQuestions', label: '题目列表' },
@@ -74,7 +74,7 @@ export const moduleConfigs: ModuleConfig[] = [
       { key: 'questionImports', label: '导入记录' }
     ],
     iconKey: 'book',
-    mode: 'mixed'
+    mode: 'list'
   },
   {
     key: 'media',

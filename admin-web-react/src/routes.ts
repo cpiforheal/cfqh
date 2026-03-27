@@ -10,6 +10,8 @@ const loadHomeContentPage = () =>
   import('./pages/HomeContentPage').then((module) => ({ default: module.HomeContentPage }));
 const loadMediaContentPage = () =>
   import('./pages/MediaContentPage').then((module) => ({ default: module.MediaContentPage }));
+const loadQuestionBankPage = () =>
+  import('./pages/QuestionBankPage').then((module) => ({ default: module.QuestionBankPage }));
 const loadLearnersPage = () =>
   import('./pages/LearnersPage').then((module) => ({ default: module.LearnersPage }));
 const loadAboutContentPage = () =>
@@ -28,6 +30,7 @@ export const AuthenticatedAppRoute = lazy(loadAuthenticatedApp);
 export const DirectionsPageRoute = lazy(loadDirectionsPage);
 export const HomeContentPageRoute = lazy(loadHomeContentPage);
 export const MediaContentPageRoute = lazy(loadMediaContentPage);
+export const QuestionBankPageRoute = lazy(loadQuestionBankPage);
 export const LearnersPageRoute = lazy(loadLearnersPage);
 export const AboutContentPageRoute = lazy(loadAboutContentPage);
 export const ContactContentPageRoute = lazy(loadContactContentPage);
@@ -51,6 +54,8 @@ export function preloadModuleRoute(moduleKey: ModuleKey) {
       return loadHomeContentPage();
     case 'learners':
       return loadLearnersPage();
+    case 'questionBank':
+      return loadQuestionBankPage();
     case 'about':
       return loadAboutContentPage();
     case 'contact':

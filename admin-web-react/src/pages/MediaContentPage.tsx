@@ -1,8 +1,6 @@
 import { lazy, Suspense, useMemo, useState } from 'react';
-import { App, Button, Card, Popconfirm, Result, Segmented, Space, Spin, Tag, Typography } from 'antd';
+import { App, Button, Card, Popconfirm, Result, Segmented, Space, Spin, Table, Tag, Typography, type TableProps } from 'antd';
 import { EditOutlined, PlusOutlined } from '@ant-design/icons';
-import ProTable from '@ant-design/pro-table';
-import type { ProColumns } from '@ant-design/pro-table';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import type { AuthState } from '../api';
@@ -44,7 +42,9 @@ type MediaSectionRow = {
   step: string;
   title: string;
   desc: string;
+  location: string;
   summary: string;
+  editFields: string;
   statusLabel: string;
   statusTone: 'success' | 'warning';
 };
@@ -60,6 +60,7 @@ function buildSectionRows(
       return {
         ...section,
         summary: `${page.header.title || '未填写标题'} / 搜索提示：${page.header.searchLabel || '未填写'}`,
+        editFields: '页面标题、搜索提示',
         statusLabel: ready ? '顶部已完整' : '建议补齐顶部文案',
         statusTone: ready ? 'success' : 'warning'
       };
@@ -70,6 +71,7 @@ function buildSectionRows(
       return {
         ...section,
         summary: page.stageTabs.map((item) => item.label).join(' / ') || '还没有配置阶段按钮',
+        editFields: '3 个阶段按钮名称',
         statusLabel: ready ? '阶段按钮已完整' : `已配置 ${page.stageTabs.length}/3`,
         statusTone: ready ? 'success' : 'warning'
       };
@@ -82,6 +84,7 @@ function buildSectionRows(
         summary: currentPackage
           ? `${page.mainSection.title || '未填写区块标题'} / ${currentPackage.title}`
           : `${page.mainSection.title || '未填写区块标题'} / 当前学科阶段还没有主推套系`,
+        editFields: '主推区标题、右侧提示、主卡标题、适合对象、卖点',
         statusLabel: ready ? '主推套系已完整' : currentPackage ? '建议补齐主卡信息' : '建议先创建当前主卡',
         statusTone: ready ? 'success' : 'warning'
       };
@@ -94,6 +97,7 @@ function buildSectionRows(
         summary: currentItems.length
           ? `${page.shelfSection.title || '未填写资料区标题'} / ${currentItems.length} 张资料卡`
           : `${page.shelfSection.title || '未填写资料区标题'} / 当前阶段还没有资料卡片`,
+        editFields: '资料区标题、右侧提示、资料卡标题、副标题、简介',
         statusLabel: ready ? `资料卡片 ${currentItems.length} 张` : '建议先补一张资料卡片',
         statusTone: ready ? 'success' : 'warning'
       };
@@ -103,6 +107,7 @@ function buildSectionRows(
     return {
       ...section,
       summary: `${page.consultBar.title || '未填写标题'} / ${page.consultBar.buttonText || '未填写按钮'}`,
+      editFields: '咨询标题、说明、按钮文案',
       statusLabel: ready ? '咨询条已完整' : '建议补齐咨询文案',
       statusTone: ready ? 'success' : 'warning'
     };
@@ -250,18 +255,16 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
     message.success('资料卡片已删除');
   }
 
-  const sectionColumns: ProColumns<MediaSectionRow>[] = [
+  const sectionColumns: TableProps<MediaSectionRow>['columns'] = [
     {
-      title: '顺序',
+      title: '前台顺序',
       dataIndex: 'step',
       width: 108,
-      search: false
     },
     {
-      title: '区块',
+      title: '前台区块',
       dataIndex: 'title',
       width: 340,
-      search: false,
       render: (_, record) => (
         <Space direction="vertical" size={2}>
           <Typography.Text strong>{record.title}</Typography.Text>
@@ -270,16 +273,24 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
       )
     },
     {
-      title: '当前内容摘要',
+      title: '前台位置',
+      dataIndex: 'location',
+      width: 180,
+    },
+    {
+      title: '老师当前会看到',
       dataIndex: 'summary',
-      ellipsis: true,
-      search: false
+      ellipsis: true
+    },
+    {
+      title: '点开后会改什么',
+      dataIndex: 'editFields',
+      width: 260
     },
     {
       title: '完成状态',
       dataIndex: 'statusLabel',
       width: 170,
-      search: false,
       render: (_, record) => <Tag color={record.statusTone === 'success' ? 'success' : 'warning'}>{record.statusLabel}</Tag>
     },
     {
@@ -287,7 +298,6 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
       key: 'option',
       width: 210,
       fixed: 'right',
-      valueType: 'option',
       render: (_, record) => [
         record.id === 'package' ? (
           <a key="package-section" onClick={() => setEditingSection('package')}>
@@ -334,12 +344,11 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
     }
   ];
 
-  const packageColumns: ProColumns<MaterialPackageRecord>[] = [
+  const packageColumns: TableProps<MaterialPackageRecord>['columns'] = [
     {
       title: '主推套系',
       dataIndex: 'title',
       width: 320,
-      search: false,
       render: (_, record) => (
         <Space direction="vertical" size={2}>
           <Typography.Text strong>{record.title || '未填写套系标题'}</Typography.Text>
@@ -352,14 +361,12 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
     {
       title: '解决问题',
       dataIndex: 'solves',
-      ellipsis: true,
-      search: false
+      ellipsis: true
     },
     {
       title: '卖点',
       dataIndex: 'features',
       width: 240,
-      search: false,
       render: (_, record) => (
         <Space wrap>
           {(record.features || []).length ? (record.features || []).map((item) => <Tag key={item}>{item}</Tag>) : <Tag bordered={false}>未填写</Tag>}
@@ -370,14 +377,12 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
       title: '状态',
       dataIndex: 'status',
       width: 120,
-      search: false,
       render: (_, record) => <Tag color={record.status === 'published' ? 'success' : 'default'}>{record.status === 'published' ? '已发布' : '草稿'}</Tag>
     },
     {
       title: '操作',
       key: 'option',
       width: 120,
-      valueType: 'option',
       render: (_, record) => [
         <a
           key="edit"
@@ -392,19 +397,17 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
     }
   ];
 
-  const itemColumns: ProColumns<MaterialItemRecord>[] = [
+  const itemColumns: TableProps<MaterialItemRecord>['columns'] = [
     {
       title: '排序',
       dataIndex: 'sort',
       width: 90,
-      search: false,
       sorter: (a, b) => Number(a.sort || 0) - Number(b.sort || 0)
     },
     {
       title: '资料卡片',
       dataIndex: 'title',
       width: 320,
-      search: false,
       render: (_, record) => (
         <Space direction="vertical" size={2}>
           <Typography.Text strong>{record.title || '未填写资料标题'}</Typography.Text>
@@ -417,14 +420,12 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
     {
       title: '简介',
       dataIndex: 'desc',
-      ellipsis: true,
-      search: false
+      ellipsis: true
     },
     {
       title: '状态',
       dataIndex: 'status',
       width: 120,
-      search: false,
       render: (_, record) => <Tag color={record.status === 'published' ? 'success' : 'default'}>{record.status === 'published' ? '已发布' : '草稿'}</Tag>
     },
     {
@@ -432,7 +433,6 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
       key: 'option',
       width: 140,
       fixed: 'right',
-      valueType: 'option',
       render: (_, record) => [
         <a
           key="edit"
@@ -459,14 +459,14 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
       <Card className="hero-card">
-        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+        <Space direction="vertical" size="small" style={{ width: '100%' }}>
           <div>
             <Typography.Text className="eyebrow">商城内容主控区</Typography.Text>
             <Typography.Title level={3} style={{ marginTop: 0, marginBottom: 8 }}>
-              顺着商城页面从上到下改，先看重点再进抽屉
+              先选学科和阶段，再从上到下维护商城
             </Typography.Title>
             <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
-              这里只保留老师最常改的 5 个区块。主表只看重点摘要，具体文案都收进弹出的表单里，不需要来回找。
+              这张主表只保留老师真正会改的关键条目，复杂字段都收进二级抽屉里。
             </Typography.Paragraph>
           </div>
 
@@ -499,17 +499,16 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
               />
             </Space>
             <Space wrap>
-              <Tag color="processing">表格主控区</Tag>
               <Tag color={auth.permissions.canWrite ? 'success' : 'default'}>
-                {auth.permissions.canWrite ? '可直接保存' : '当前为只读'}
+                {auth.permissions.canWrite ? '可直接保存' : '当前只读'}
               </Tag>
               <Tag>{`最近更新 ${lastUpdated}`}</Tag>
             </Space>
           </Space>
 
-          <Space wrap size="large">
+          <Space wrap size="middle">
             <div className="home-workspace-summary">
-              <Typography.Text type="secondary">当前视角</Typography.Text>
+              <Typography.Text type="secondary">你当前正在维护</Typography.Text>
               <Typography.Title level={3} style={{ margin: 0, color: palette.deep }}>
                 {materialDirectionLabels[direction]} · {materialStageLabels[stage]}
               </Typography.Title>
@@ -521,7 +520,7 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
               </Typography.Title>
             </div>
             <div className="home-workspace-summary">
-              <Typography.Text type="secondary">资料卡片数</Typography.Text>
+              <Typography.Text type="secondary">资料卡片</Typography.Text>
               <Typography.Title level={3} style={{ margin: 0 }}>
                 {currentItems.length}
               </Typography.Title>
@@ -529,10 +528,40 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
             <div className="home-workspace-tip">
               <Typography.Text strong>老师操作建议</Typography.Text>
               <Typography.Paragraph style={{ marginBottom: 0 }}>
-                先改“顶部信息”和“阶段按钮”，再补“主推套系”和“资料列表”。这样老师最容易按学生看到的顺序完成维护。
+                先改顶部信息和阶段按钮，再补主推套系与资料列表。
               </Typography.Paragraph>
             </div>
           </Space>
+
+          <div className="workspace-guide-grid">
+            <div className="workspace-guide-card">
+              <Typography.Text className="workspace-guide-label">第一次进入先做什么</Typography.Text>
+              <Typography.Title level={5} style={{ marginTop: 8, marginBottom: 6 }}>
+                先改第 3 块主推套系卡
+              </Typography.Title>
+              <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+                主推套系是老师最常改、也最容易看出变化的地方，先把主卡标题和适合对象补齐最有效。
+              </Typography.Paragraph>
+            </div>
+            <div className="workspace-guide-card">
+              <Typography.Text className="workspace-guide-label">老师如何理解 1:1 映射</Typography.Text>
+              <Typography.Title level={5} style={{ marginTop: 8, marginBottom: 6 }}>
+                每一行对应商城一块真实内容
+              </Typography.Title>
+              <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+                先改区块表，再改下面的主卡表和资料卡表，就能按学生在手机里看到的顺序自然维护。
+              </Typography.Paragraph>
+            </div>
+            <div className="workspace-guide-card">
+              <Typography.Text className="workspace-guide-label">保存范围提醒</Typography.Text>
+              <Typography.Title level={5} style={{ marginTop: 8, marginBottom: 6 }}>
+                保存只影响当前学科和阶段
+              </Typography.Title>
+              <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+                现在是 {materialDirectionLabels[direction]} 的 {materialStageLabels[stage]}，保存后只会更新这一套商城内容。
+              </Typography.Paragraph>
+            </div>
+          </div>
 
           <div
             style={{
@@ -554,20 +583,11 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
         </Space>
       </Card>
 
-      <ProTable<MediaSectionRow>
-        rowKey="id"
-        loading={pageQuery.isLoading || packagesQuery.isLoading || itemsQuery.isLoading}
-        columns={sectionColumns}
-        dataSource={sections}
-        search={false}
-        pagination={false}
-        options={false}
-        cardBordered={false}
-        scroll={{ x: 1080 }}
-        headerTitle="商城关键区块"
-        toolBarRender={() => [
+      <Card
+        className="home-workspace-card"
+        title="商城关键区块"
+        extra={
           <Button
-            key="edit-top"
             type="primary"
             icon={<EditOutlined />}
             disabled={!auth.permissions.canWrite}
@@ -575,24 +595,23 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
           >
             从顶部开始编辑
           </Button>
-        ]}
-      />
+        }
+      >
+        <Table<MediaSectionRow>
+          rowKey="id"
+          loading={pageQuery.isLoading || packagesQuery.isLoading || itemsQuery.isLoading}
+          columns={sectionColumns}
+          dataSource={sections}
+          pagination={false}
+          scroll={{ x: 1080 }}
+        />
+      </Card>
 
-      <ProTable<MaterialPackageRecord>
-        rowKey={(record) => record._id || `${record.direction}-${record.stage}`}
-        loading={packagesQuery.isLoading}
-        columns={packageColumns}
-        dataSource={currentPackage ? [currentPackage] : []}
-        search={false}
-        pagination={false}
-        options={false}
-        cardBordered={false}
-        scroll={{ x: 980 }}
-        headerTitle="当前主推套系"
-        locale={{ emptyText: '当前学科和阶段还没有主推套系' }}
-        toolBarRender={() => [
+      <Card
+        className="home-workspace-card"
+        title="当前主推套系"
+        extra={
           <Button
-            key="package"
             type="primary"
             icon={currentPackage ? <EditOutlined /> : <PlusOutlined />}
             disabled={!auth.permissions.canWrite}
@@ -603,24 +622,24 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
           >
             {currentPackage ? '编辑当前主卡' : '创建当前主卡'}
           </Button>
-        ]}
-      />
+        }
+      >
+        <Table<MaterialPackageRecord>
+          rowKey={(record) => record._id || `${record.direction}-${record.stage}`}
+          loading={packagesQuery.isLoading}
+          columns={packageColumns}
+          dataSource={currentPackage ? [currentPackage] : []}
+          pagination={false}
+          scroll={{ x: 980 }}
+          locale={{ emptyText: '当前学科和阶段还没有主推套系' }}
+        />
+      </Card>
 
-      <ProTable<MaterialItemRecord>
-        rowKey={(record) => record._id || `${record.direction}-${record.stage}-${record.sort}-${record.title}`}
-        loading={itemsQuery.isLoading}
-        columns={itemColumns}
-        dataSource={currentItems}
-        search={false}
-        pagination={false}
-        options={false}
-        cardBordered={false}
-        scroll={{ x: 980 }}
-        headerTitle="当前资料卡片"
-        locale={{ emptyText: '当前学科和阶段还没有资料卡片' }}
-        toolBarRender={() => [
+      <Card
+        className="home-workspace-card"
+        title="当前资料卡片"
+        extra={
           <Button
-            key="item"
             type="primary"
             icon={<PlusOutlined />}
             disabled={!auth.permissions.canWrite}
@@ -635,8 +654,18 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
           >
             新增资料卡片
           </Button>
-        ]}
-      />
+        }
+      >
+        <Table<MaterialItemRecord>
+          rowKey={(record) => record._id || `${record.direction}-${record.stage}-${record.sort}-${record.title}`}
+          loading={itemsQuery.isLoading}
+          columns={itemColumns}
+          dataSource={currentItems}
+          pagination={false}
+          scroll={{ x: 980 }}
+          locale={{ emptyText: '当前学科和阶段还没有资料卡片' }}
+        />
+      </Card>
 
       <Suspense
         fallback={

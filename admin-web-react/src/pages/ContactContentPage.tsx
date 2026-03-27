@@ -1,7 +1,5 @@
 import { lazy, Suspense, useMemo, useState } from 'react';
-import { App, Card, Result, Space, Spin, Tag, Typography } from 'antd';
-import ProTable from '@ant-design/pro-table';
-import type { ProColumns } from '@ant-design/pro-table';
+import { App, Card, Result, Space, Spin, Table, Tag, Typography, type TableProps } from 'antd';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AuthState } from '../api';
 import { api } from '../api';
@@ -99,18 +97,16 @@ export function ContactContentPage({ auth }: ContactContentPageProps) {
     setEditingSection(null);
   }
 
-  const columns: ProColumns<ContactSectionRow>[] = [
+  const columns: TableProps<ContactSectionRow>['columns'] = [
     {
       title: '顺序',
       dataIndex: 'step',
       width: 96,
-      search: false
     },
     {
       title: '区块',
       dataIndex: 'title',
       width: 260,
-      search: false,
       render: (_, record) => (
         <Space direction="vertical" size={2}>
           <Typography.Text strong>{record.title}</Typography.Text>
@@ -122,32 +118,27 @@ export function ContactContentPage({ auth }: ContactContentPageProps) {
       title: '前台位置',
       dataIndex: 'location',
       width: 190,
-      search: false
     },
     {
       title: '当前内容摘要',
       dataIndex: 'summary',
-      ellipsis: true,
-      search: false
+      ellipsis: true
     },
     {
       title: '点编辑后可改',
       dataIndex: 'editFields',
-      width: 220,
-      search: false
+      width: 220
     },
     {
       title: '状态',
       dataIndex: 'statusLabel',
       width: 160,
-      search: false,
       render: (_, record) => <Tag color={record.statusTone === 'success' ? 'success' : 'warning'}>{record.statusLabel}</Tag>
     },
     {
       title: '操作',
       key: 'option',
       width: 120,
-      valueType: 'option',
       fixed: 'right',
       render: (_, record) => [
         <a key="edit" onClick={() => setEditingSection(record.id)}>
@@ -164,10 +155,10 @@ export function ContactContentPage({ auth }: ContactContentPageProps) {
           <div>
             <Typography.Text className="eyebrow">站点设置主控区</Typography.Text>
             <Typography.Title level={3} style={{ marginTop: 0, marginBottom: 8 }}>
-              先保公共联系信息，再补地址和二维码
+              先把老师常用的公共联系方式补齐
             </Typography.Title>
             <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
-              这里维护的是多个页面共用的公共信息，所以主表只保留老师最容易找到的重点条目。
+              这里维护的是多个页面共用的公共信息，所以只保留品牌、联系和地址这 3 个最容易找的条目。
             </Typography.Paragraph>
           </div>
 
@@ -178,6 +169,26 @@ export function ContactContentPage({ auth }: ContactContentPageProps) {
             <Tag>{`已成型 ${readyCount}/${rows.length}`}</Tag>
             <Tag>{`最近更新 ${lastUpdated}`}</Tag>
           </Space>
+          <div className="workspace-guide-grid">
+            <div className="workspace-guide-card">
+              <Typography.Text className="workspace-guide-label">第一次进入先做什么</Typography.Text>
+              <Typography.Title level={5} style={{ marginTop: 8, marginBottom: 6 }}>
+                先改电话、微信和服务时间
+              </Typography.Title>
+              <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+                这是老师最常改、也最容易影响多个页面的公共信息，优先级最高。
+              </Typography.Paragraph>
+            </div>
+            <div className="workspace-guide-card">
+              <Typography.Text className="workspace-guide-label">保存后会影响哪里</Typography.Text>
+              <Typography.Title level={5} style={{ marginTop: 8, marginBottom: 6 }}>
+                多个页面会共用这一组信息
+              </Typography.Title>
+              <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+                品牌名、联系方式和二维码不只是改一个页面，而是改站点里共用的公共资料。
+              </Typography.Paragraph>
+            </div>
+          </div>
         </Space>
       </Card>
 
@@ -187,17 +198,13 @@ export function ContactContentPage({ auth }: ContactContentPageProps) {
         </div>
       ) : (
         <Card className="home-workspace-card">
-          <ProTable<ContactSectionRow>
+          <Table<ContactSectionRow>
             rowKey="id"
-            search={false}
-            options={{ density: false, fullScreen: false, reload: false, setting: false }}
-            pagination={false}
             columns={columns}
             dataSource={rows}
             scroll={{ x: 1180 }}
-            toolbar={{
-              title: '站点信息总表'
-            }}
+            pagination={false}
+            title={() => '站点信息总表'}
           />
         </Card>
       )}

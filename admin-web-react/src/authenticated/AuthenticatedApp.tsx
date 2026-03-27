@@ -15,7 +15,8 @@ import {
   ContactContentPageRoute,
   MediaContentPageRoute,
   OverviewPageRoute,
-  PageWorkbenchRoute
+  PageWorkbenchRoute,
+  QuestionBankPageRoute
 } from '../routes';
 import type { ThemeMode } from '../App';
 
@@ -91,6 +92,14 @@ export function AuthenticatedApp({ auth, health, onLogout, themeMode, onToggleTh
           }
         />
         <Route
+          path="/questionBank"
+          element={
+            <SuspendedRoute>
+              <QuestionBankPageRoute auth={auth} />
+            </SuspendedRoute>
+          }
+        />
+        <Route
           path="/learners"
           element={
             <SuspendedRoute>
@@ -131,7 +140,7 @@ export function AuthenticatedApp({ auth, health, onLogout, themeMode, onToggleTh
           }
         />
         {moduleConfigs
-          .filter((item) => !['overview', 'home', 'directions', 'learners', 'media', 'about', 'contact', 'accounts'].includes(item.key))
+          .filter((item) => !['overview', 'home', 'directions', 'questionBank', 'learners', 'media', 'about', 'contact', 'accounts'].includes(item.key))
           .map((item) => (
             <Route
               key={item.key}

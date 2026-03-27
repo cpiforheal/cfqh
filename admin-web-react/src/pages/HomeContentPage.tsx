@@ -1,8 +1,6 @@
 import { lazy, Suspense, useMemo, useState } from 'react';
-import { App, Button, Card, Result, Segmented, Space, Spin, Tag, Typography } from 'antd';
+import { App, Button, Card, Result, Segmented, Space, Spin, Table, Tag, Typography, type TableProps } from 'antd';
 import { EditOutlined } from '@ant-design/icons';
-import ProTable from '@ant-design/pro-table';
-import type { ProColumns } from '@ant-design/pro-table';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import type { AuthState } from '../api';
@@ -149,18 +147,16 @@ export function HomeContentPage({ auth }: HomeContentPageProps) {
     setEditingSection(null);
   }
 
-  const columns: ProColumns<HomeSectionRow>[] = [
+  const columns: TableProps<HomeSectionRow>['columns'] = [
     {
-      title: '顺序',
+      title: '前台顺序',
       dataIndex: 'step',
       width: 108,
-      search: false
     },
     {
-      title: '区块',
+      title: '前台区块',
       dataIndex: 'title',
       width: 280,
-      search: false,
       render: (_, record) => (
         <Space direction="vertical" size={2}>
           <Space size={8} wrap>
@@ -182,25 +178,21 @@ export function HomeContentPage({ auth }: HomeContentPageProps) {
       title: '前台位置',
       dataIndex: 'location',
       width: 180,
-      search: false
     },
     {
-      title: '当前内容摘要',
+      title: '老师当前会看到',
       dataIndex: 'summary',
-      ellipsis: true,
-      search: false
+      ellipsis: true
     },
     {
       title: '点编辑后可改',
       dataIndex: 'editFields',
-      width: 280,
-      search: false
+      width: 280
     },
     {
       title: '状态',
       dataIndex: 'statusLabel',
       width: 164,
-      search: false,
       render: (_, record) => <Tag color={record.statusTone === 'success' ? 'success' : 'warning'}>{record.statusLabel}</Tag>
     },
     {
@@ -208,7 +200,6 @@ export function HomeContentPage({ auth }: HomeContentPageProps) {
       key: 'option',
       width: 120,
       fixed: 'right',
-      valueType: 'option',
       render: (_, record) => [
         <a key="edit" onClick={() => setEditingSection(record.id)}>
           编辑
@@ -224,10 +215,10 @@ export function HomeContentPage({ auth }: HomeContentPageProps) {
           <div>
             <Typography.Text className="eyebrow">首页内容主控区</Typography.Text>
             <Typography.Title level={3} style={{ marginTop: 0, marginBottom: 8 }}>
-              按学生看到的顺序维护首页
+              新老师从第一行往下改，就能自然维护首页
             </Typography.Title>
             <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
-              主表只保留老师真正需要先看的信息，具体字段全部收进编辑抽屉。
+              主表只回答三个问题: 这一块在前台哪里、学生现在会看到什么、点开后会改哪些字段。
             </Typography.Paragraph>
           </div>
 
@@ -262,23 +253,43 @@ export function HomeContentPage({ auth }: HomeContentPageProps) {
             <Typography.Text type="secondary">{`快捷入口 ${subject.quickEntries.length}/4`}</Typography.Text>
             <Typography.Text type="secondary">{`资源卡片 ${subject.resources.length}/2`}</Typography.Text>
           </div>
+          <div className="workspace-guide-grid">
+            <div className="workspace-guide-card">
+              <Typography.Text className="workspace-guide-label">第一次进入先做什么</Typography.Text>
+              <Typography.Title level={5} style={{ marginTop: 8, marginBottom: 6 }}>
+                先看状态为黄色的行
+              </Typography.Title>
+              <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+                黄色代表这块还没成型，通常先补标题区、今日学习主卡和四个快捷入口。
+              </Typography.Paragraph>
+            </div>
+            <div className="workspace-guide-card">
+              <Typography.Text className="workspace-guide-label">老师如何理解 1:1 映射</Typography.Text>
+              <Typography.Title level={5} style={{ marginTop: 8, marginBottom: 6 }}>
+                每一行就是前台的一块
+              </Typography.Title>
+              <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+                从第 1 行到最后一行，就是小程序首页从上到下的展示顺序，不需要来回找字段。
+              </Typography.Paragraph>
+            </div>
+            <div className="workspace-guide-card">
+              <Typography.Text className="workspace-guide-label">保存后会发生什么</Typography.Text>
+              <Typography.Title level={5} style={{ marginTop: 8, marginBottom: 6 }}>
+                保存的是当前学科首页
+              </Typography.Title>
+              <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+                你现在切到哪一个首页视角，保存时就会更新对应首页的数据，不会误改另一套学科内容。
+              </Typography.Paragraph>
+            </div>
+          </div>
         </Space>
       </Card>
 
-      <ProTable<HomeSectionRow>
-        rowKey="id"
-        loading={homePageQuery.isLoading}
-        columns={columns}
-        dataSource={sections}
-        search={false}
-        pagination={false}
-        options={false}
-        cardBordered={false}
-        scroll={{ x: 1180 }}
-        headerTitle="首页区块总表"
-        toolBarRender={() => [
+      <Card
+        className="home-workspace-card"
+        title="首页区块总表"
+        extra={
           <Button
-            key="edit-first"
             type="primary"
             icon={<EditOutlined />}
             disabled={!auth.permissions.canWrite}
@@ -286,8 +297,17 @@ export function HomeContentPage({ auth }: HomeContentPageProps) {
           >
             从第一行开始编辑
           </Button>
-        ]}
-      />
+        }
+      >
+        <Table<HomeSectionRow>
+          rowKey="id"
+          loading={homePageQuery.isLoading}
+          columns={columns}
+          dataSource={sections}
+          pagination={false}
+          scroll={{ x: 1180 }}
+        />
+      </Card>
 
       {editingSection ? (
         <Suspense
