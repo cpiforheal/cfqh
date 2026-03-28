@@ -1,6 +1,7 @@
-import { lazy, Suspense, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { App, Card, Result, Space, Spin, Table, Tag, Typography, type TableProps } from 'antd';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import type { AuthState } from '../api';
 import { api } from '../api';
 import { formatDateTime } from '../utils';
@@ -64,7 +65,9 @@ function buildSectionRows(page: SitePageContent): ContactSectionRow[] {
 export function ContactContentPage({ auth }: ContactContentPageProps) {
   const { message } = App.useApp();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [editingSection, setEditingSection] = useState<ContactSectionId | null>(null);
+  const requestedSection = searchParams.get('section') as ContactSectionId | null;
 
   const siteQuery = useQuery({
     queryKey: ['page', 'site'],
@@ -82,6 +85,13 @@ export function ContactContentPage({ auth }: ContactContentPageProps) {
   const rows = useMemo(() => buildSectionRows(page), [page]);
   const readyCount = rows.filter((item) => item.statusTone === 'success').length;
   const lastUpdated = formatDateTime(page._meta?.updatedAt || page._updatedAt);
+
+  useEffect(() => {
+    if (!requestedSection) return;
+    if (rows.some((item) => item.id === requestedSection)) {
+      setEditingSection(requestedSection);
+    }
+  }, [requestedSection, rows]);
 
   if (!auth.permissions.canRead) {
     return <Result status="403" title="暂无查看权限" subTitle="当前账号无法读取站点设置。" />;
@@ -169,6 +179,10 @@ export function ContactContentPage({ auth }: ContactContentPageProps) {
             <Tag>{`已成型 ${readyCount}/${rows.length}`}</Tag>
             <Tag>{`最近更新 ${lastUpdated}`}</Tag>
           </Space>
+          <div className="page-location-strip">
+            <Tag bordered={false} color="processing">当前位置 联系方式 / 公共信息总表</Tag>
+            <Typography.Text type="secondary">这里维护多个页面共用的信息，建议先改电话、微信和服务时间。</Typography.Text>
+          </div>
           <div className="workspace-guide-grid">
             <div className="workspace-guide-card">
               <Typography.Text className="workspace-guide-label">第一次进入先做什么</Typography.Text>
@@ -216,7 +230,14 @@ export function ContactContentPage({ auth }: ContactContentPageProps) {
           page={page}
           canWrite={auth.permissions.canWrite}
           saving={updateMutation.isPending}
-          onClose={() => setEditingSection(null)}
+          onClose={() => {
+            setEditingSection(null);
+            setSearchParams((current) => {
+              const next = new URLSearchParams(current);
+              next.delete('section');
+              return next;
+            });
+          }}
           onSave={handleSave}
         />
       </Suspense>

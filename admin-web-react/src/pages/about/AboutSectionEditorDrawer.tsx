@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Alert, Button, Drawer, Form, Input, Space, Typography } from 'antd';
+import { Alert, Button, Collapse, Drawer, Form, Input, Space, Typography } from 'antd';
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import {
   aboutSectionModels,
@@ -158,9 +158,20 @@ export function AboutSectionEditorDrawer({
         <Form.Item name={['hero', 'imageUrl']} label="首图链接（可选）">
           <Input placeholder="https://..." disabled={!canWrite} />
         </Form.Item>
-        <Form.Item name={['hero', 'imageSeed']} label="占位种子（可选）">
-          <Input placeholder="campus" disabled={!canWrite} />
-        </Form.Item>
+        <Collapse
+          ghost
+          items={[
+            {
+              key: 'about-hero-advanced',
+              label: '高级设置',
+              children: (
+                <Form.Item name={['hero', 'imageSeed']} label="占位种子（可选）">
+                  <Input placeholder="campus" disabled={!canWrite} />
+                </Form.Item>
+              )
+            }
+          ]}
+        />
       </Space>
     );
   }
@@ -233,9 +244,20 @@ export function AboutSectionEditorDrawer({
                 <Form.Item name={[field.name, 'imageUrl']} label="图片链接">
                   <Input placeholder="https://..." disabled={!canWrite} />
                 </Form.Item>
-                <Form.Item name={[field.name, 'imageSeed']} label="占位种子（可选）">
-                  <Input placeholder="campus1" disabled={!canWrite} />
-                </Form.Item>
+                <Collapse
+                  ghost
+                  items={[
+                    {
+                      key: `about-image-advanced-${field.key}`,
+                      label: '高级设置',
+                      children: (
+                        <Form.Item name={[field.name, 'imageSeed']} label="占位种子（可选）">
+                          <Input placeholder="campus1" disabled={!canWrite} />
+                        </Form.Item>
+                      )
+                    }
+                  ]}
+                />
                 <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} disabled={!canWrite}>
                   删除这张图
                 </Button>
@@ -299,10 +321,11 @@ export function AboutSectionEditorDrawer({
               showIcon
               message={sectionNoteMap[sectionId]}
               description={
-                <Space direction="vertical" size={4}>
-                  <Typography.Text>{sectionFieldHintMap[sectionId]}</Typography.Text>
-                  <Typography.Text type="secondary">{`当前摘要：${preview}`}</Typography.Text>
-                </Space>
+              <Space direction="vertical" size={4}>
+                <Typography.Text strong>{`前台位置：${sectionMeta?.location || '当前区块'}`}</Typography.Text>
+                <Typography.Text>{sectionFieldHintMap[sectionId]}</Typography.Text>
+                <Typography.Text type="secondary">{`当前摘要：${preview}`}</Typography.Text>
+              </Space>
               }
             />
             {renderEditor()}

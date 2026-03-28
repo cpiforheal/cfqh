@@ -147,6 +147,7 @@ export function ContactSectionEditorDrawer({
               message={sectionNoteMap[sectionId]}
               description={
                 <Space direction="vertical" size={4}>
+                  <Typography.Text strong>{`前台位置：${sectionMeta?.location || '当前区块'}`}</Typography.Text>
                   <Typography.Text>{sectionFieldHintMap[sectionId]}</Typography.Text>
                   <Typography.Text type="secondary">{`当前摘要：${preview}`}</Typography.Text>
                 </Space>

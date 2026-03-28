@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { Button, Layout, Menu, Space, Tag, Tooltip, Typography } from 'antd';
+import { Button, Layout, Menu, Select, Space, Tag, Tooltip, Typography } from 'antd';
 import type { MenuProps } from 'antd';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -20,7 +20,7 @@ import {
   TeamOutlined
 } from '@ant-design/icons';
 import type { AuthState, HealthPayload, MetaPayload } from '../api';
-import { menuSections, moduleConfigMap, type ModuleKey } from '../config';
+import { adminSearchEntries, menuSections, moduleConfigMap, type ModuleKey } from '../config';
 import { preloadModuleRoute } from '../routes';
 import type { ThemeMode } from '../App';
 
@@ -69,6 +69,7 @@ export function AppShell({ auth, meta, health, onLogout, themeMode, onToggleThem
   const compactLabel = activeModule.label.length > 2 ? activeModule.label.slice(0, 2) : activeModule.label;
   const currentUserName = String(meta.currentUser?.name || auth.user?.name || '未命名账号');
   const currentUserRole = String(meta.currentUser?.roleLabel || auth.user?.roleLabel || '未分配角色');
+  const activeMenuSection = menuSections.find((section) => section.items.includes(activeModule.key));
 
   const handlePreload = (moduleKey: string) => {
     if (moduleKey in moduleConfigMap) {
@@ -94,6 +95,16 @@ export function AppShell({ auth, meta, health, onLogout, themeMode, onToggleThem
         </span>
       )
     }))
+  }));
+
+  const searchOptions = adminSearchEntries.map((entry) => ({
+    value: entry.path,
+    label: (
+      <div className="admin-search-option">
+        <Typography.Text strong>{entry.label}</Typography.Text>
+        <Typography.Text type="secondary">{`${entry.group} · ${entry.hint}`}</Typography.Text>
+      </div>
+    )
   }));
 
   return (
@@ -149,13 +160,41 @@ export function AppShell({ auth, meta, health, onLogout, themeMode, onToggleThem
       <Layout className="app-shell-main">
         <Header className="app-shell-header">
           <div className="app-shell-header-copy">
-            <Typography.Text className="eyebrow">3200 后台 React 工作台</Typography.Text>
+            <Typography.Text className="eyebrow">
+              {activeMenuSection ? `${activeMenuSection.label} · 3200 React 后台` : '3200 React 后台'}
+            </Typography.Text>
             <Typography.Title level={3} className="page-title">
               {activeModule.title}
             </Typography.Title>
             <Typography.Paragraph className="app-shell-header-meta">{activeModule.subtitle}</Typography.Paragraph>
+            <div className="app-shell-location-row">
+              <Tag bordered={false} color="default">
+                {`当前页 ${activeModule.label}`}
+              </Tag>
+              <Typography.Text type="secondary">
+                {activeModule.mode === 'list' || activeModule.mode === 'mixed'
+                  ? '主表先看顺序和摘要，细字段收进抽屉'
+                  : '先从任务入口进入，再按老师常用顺序操作'}
+              </Typography.Text>
+            </div>
           </div>
           <Space size="small" wrap className="app-shell-header-actions">
+            <Select
+              showSearch
+              allowClear
+              placeholder="搜索页面或常用操作"
+              optionFilterProp="label"
+              className="admin-header-search"
+              popupMatchSelectWidth={360}
+              options={searchOptions}
+              onSelect={(value) => navigate(String(value))}
+              filterOption={(input, option) => {
+                if (!option) return false;
+                const plain = adminSearchEntries.find((entry) => entry.path === option.value);
+                const haystack = `${plain?.label || ''} ${plain?.hint || ''} ${plain?.group || ''}`.toLowerCase();
+                return haystack.includes(input.toLowerCase());
+              }}
+            />
             <div className="header-user-chip">
               <Typography.Text strong className="header-user-name">
                 {currentUserName}

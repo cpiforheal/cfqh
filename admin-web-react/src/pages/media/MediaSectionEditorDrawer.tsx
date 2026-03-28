@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Alert, Button, Drawer, Form, Input, Space, Typography } from 'antd';
+import { Alert, Button, Collapse, Drawer, Form, Input, Space, Typography } from 'antd';
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { defaultMaterialsPage, mediaSectionModels, type MaterialSectionId, type MaterialsPageContent } from './types';
 
@@ -112,11 +112,11 @@ export function MediaSectionEditorDrawer({
 
     if (sectionId === 'categories') {
       nextPage.categoryTabs = (values.categoryTabs || [])
-        .map((item) => ({
-          key: String(item?.key || '').trim(),
+        .map((item, index) => ({
+          key: String(item?.key || '').trim() || `category_${index + 1}`,
           label: String(item?.label || '').trim()
         }))
-        .filter((item) => item.key && item.label);
+        .filter((item) => item.label);
     }
 
     if (sectionId === 'consultBar') {
@@ -156,14 +156,24 @@ export function MediaSectionEditorDrawer({
                 >
                   <Input placeholder="例如 系统班" disabled={!canWrite} />
                 </Form.Item>
-                <Form.Item
-                  name={[field.name, 'key']}
-                  label="后台识别名"
-                  rules={[{ required: true, message: '请填写后台识别名' }]}
-                  extra="建议使用英文下划线，例如 system_course。老师日常只需要关注上面的显示名称。"
-                >
-                  <Input placeholder="例如 system_course" disabled={!canWrite} />
-                </Form.Item>
+                <Collapse
+                  ghost
+                  items={[
+                    {
+                      key: `advanced-${field.key}`,
+                      label: '高级设置',
+                      children: (
+                        <Form.Item
+                          name={[field.name, 'key']}
+                          label="后台识别名"
+                          extra="留空也可以，系统会自动生成。只有需要和旧数据或特殊逻辑对齐时再填写。"
+                        >
+                          <Input placeholder="例如 system_course" disabled={!canWrite} />
+                        </Form.Item>
+                      )
+                    }
+                  ]}
+                />
                 <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} disabled={!canWrite}>
                   删除这个按钮
                 </Button>
@@ -225,6 +235,7 @@ export function MediaSectionEditorDrawer({
               <Space direction="vertical" size={4}>
                 <Typography.Text>{sectionNoteMap[sectionId]}</Typography.Text>
                 <Typography.Text>{sectionFieldHintMap[sectionId]}</Typography.Text>
+                <Typography.Text type="secondary">{`前台位置：${sectionMeta?.location || '当前区块'}`}</Typography.Text>
                 <Typography.Text type="secondary">{`当前摘要：${sectionPreview}`}</Typography.Text>
               </Space>
             }

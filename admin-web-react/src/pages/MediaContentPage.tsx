@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import {
   App,
   Button,
@@ -178,6 +178,32 @@ function formatEntitlementStatus(status: string) {
   return { label: '生效中', color: 'success' as const };
 }
 
+function buildProductItemPayload(
+  product: MallProductRecord,
+  asset: MallAssetRecord,
+  sortOrder: number,
+  existing?: MallProductItemRecord | null
+): MallProductItemRecord {
+  return {
+    ...(existing || defaultMallProductItem),
+    productId: product._id || '',
+    itemType: 'asset',
+    itemId: asset._id || '',
+    displayType: asset.assetType || existing?.displayType || '资料',
+    displayName: asset.title || asset.name || existing?.displayName || '',
+    displaySubTitle: asset.subTitle || existing?.displaySubTitle || '',
+    displayDescription: asset.description || existing?.displayDescription || '',
+    displayDetails: asset.description || existing?.displayDetails || '',
+    direction: product.direction,
+    previewEnabled: asset.previewEnabled,
+    previewPageCount: asset.previewPageCount,
+    accentStart: asset.accentStart,
+    accentEnd: asset.accentEnd,
+    sortOrder,
+    status: product.status
+  };
+}
+
 export function MediaContentPage({ auth }: MediaContentPageProps) {
   const { message } = App.useApp();
   const queryClient = useQueryClient();
@@ -192,6 +218,8 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
   const [workspacePanel, setWorkspacePanel] = useState<MediaWorkspacePanel>('products');
 
   const direction = readMaterialDirection(searchParams.get('subject'));
+  const requestedPanel = (searchParams.get('panel') as MediaWorkspacePanel | null) || null;
+  const requestedSection = (searchParams.get('section') as MaterialSectionId | null) || null;
 
   const pageQuery = useQuery({
     queryKey: ['page', 'materials'],
@@ -290,9 +318,36 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
     () => allProductItems.filter((item) => item.productId === selectedProduct?._id),
     [allProductItems, selectedProduct]
   );
+  const productItemCountByProductId = useMemo(() => {
+    const output = new Map<string, number>();
+    currentProducts.forEach((product) => {
+      if (!product._id) return;
+      const selectedCount = Array.isArray(product.selectedAssetIds) ? product.selectedAssetIds.filter(Boolean).length : 0;
+      output.set(product._id, selectedCount);
+    });
+    allProductItems.forEach((item) => {
+      if (!item.productId || output.has(item.productId)) return;
+      output.set(item.productId, (output.get(item.productId) || 0) + 1);
+    });
+    return output;
+  }, [allProductItems, currentProducts]);
 
   const frontRows = useMemo(() => buildFrontendRows(page, visibleProducts), [page, visibleProducts]);
   const lastUpdated = formatDateTime(page._meta?.updatedAt || page._updatedAt);
+
+  useEffect(() => {
+    if (!requestedPanel) return;
+    if (['products', 'items', 'assets', 'entitlements'].includes(requestedPanel)) {
+      setWorkspacePanel(requestedPanel);
+    }
+  }, [requestedPanel]);
+
+  useEffect(() => {
+    if (!requestedSection) return;
+    if (frontRows.some((item) => item.sectionId === requestedSection)) {
+      setEditingSection(requestedSection);
+    }
+  }, [frontRows, requestedSection]);
 
   if (!auth.permissions.canRead) {
     return <Result status="403" title="暂无查看权限" subTitle="当前账号无法读取商城内容配置。" />;
@@ -331,7 +386,7 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
         id: editingProduct._id,
         payload: nextProduct as unknown as Record<string, unknown>
       });
-      message.success('商品卡已保存');
+      return editingProduct._id || '';
     } else {
       const created = await createProductMutation.mutateAsync(nextProduct as unknown as Record<string, unknown>);
       if (created?._id) {
@@ -341,11 +396,66 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
           return next;
         });
       }
-      message.success('商品卡已创建');
+      return created?._id ? String(created._id) : '';
     }
-    await queryClient.invalidateQueries({ queryKey: ['collection', 'mallProducts'] });
+    return '';
+  }
+
+  async function syncProductAssets(product: MallProductRecord, selectedAssetIds: string[]) {
+    const productId = product._id || '';
+    if (!productId) return;
+
+    const normalizedIds = selectedAssetIds.filter(Boolean);
+    const assetsById = new Map(allAssets.map((asset) => [asset._id || '', asset]));
+    const existingItems = allProductItems.filter((item) => item.productId === productId && item.itemType === 'asset');
+    const existingByAssetId = new Map(existingItems.map((item) => [item.itemId, item]));
+
+    for (const item of existingItems) {
+      if (item._id && !normalizedIds.includes(item.itemId)) {
+        await deleteItemMutation.mutateAsync(item._id);
+      }
+    }
+
+    for (const [index, assetId] of normalizedIds.entries()) {
+      const asset = assetsById.get(assetId);
+      if (!asset) continue;
+      const existing = existingByAssetId.get(assetId);
+      const payload = buildProductItemPayload(product, asset, (index + 1) * 10, existing);
+      if (existing?._id) {
+        await updateItemMutation.mutateAsync({
+          id: existing._id,
+          payload: payload as unknown as Record<string, unknown>
+        });
+      } else {
+        await createItemMutation.mutateAsync(payload as unknown as Record<string, unknown>);
+      }
+    }
+  }
+
+  async function handleSaveProductBundle({
+    product,
+    selectedAssetIds
+  }: {
+    product: MallProductRecord;
+    selectedAssetIds: string[];
+  }) {
+    const nextProductPayload = {
+      ...product,
+      selectedAssetIds: selectedAssetIds.filter(Boolean)
+    };
+    const productId = await handleSaveProduct(nextProductPayload);
+    const nextProduct = { ...nextProductPayload, _id: productId || nextProductPayload._id };
+    if (nextProduct._id) {
+      await syncProductAssets(nextProduct, selectedAssetIds);
+    }
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['collection', 'mallProducts'] }),
+      queryClient.invalidateQueries({ queryKey: ['collection', 'mallProductItems'] }),
+      queryClient.invalidateQueries({ queryKey: ['collection', 'mallAssets'] })
+    ]);
     setProductDrawerOpen(false);
     setEditingProduct(null);
+    message.success(selectedAssetIds.length ? '商品卡和商品包内容已同步保存' : '商品卡已保存，当前还未关联资料资产');
     return true;
   }
 
@@ -368,15 +478,33 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
 
   async function handleDeleteAsset(record: MallAssetRecord) {
     if (!record._id) return;
+    const relatedItems = allProductItems.filter((item) => item.itemId === record._id);
+    for (const item of relatedItems) {
+      if (item._id) {
+        await deleteItemMutation.mutateAsync(item._id);
+      }
+    }
     await deleteAssetMutation.mutateAsync(record._id);
-    await queryClient.invalidateQueries({ queryKey: ['collection', 'mallAssets'] });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['collection', 'mallAssets'] }),
+      queryClient.invalidateQueries({ queryKey: ['collection', 'mallProductItems'] })
+    ]);
     message.success('资料资产已删除');
   }
 
   async function handleDeleteProduct(record: MallProductRecord) {
     if (!record._id) return;
+    const relatedItems = allProductItems.filter((item) => item.productId === record._id);
+    for (const item of relatedItems) {
+      if (item._id) {
+        await deleteItemMutation.mutateAsync(item._id);
+      }
+    }
     await deleteProductMutation.mutateAsync(record._id);
-    await queryClient.invalidateQueries({ queryKey: ['collection', 'mallProducts'] });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['collection', 'mallProducts'] }),
+      queryClient.invalidateQueries({ queryKey: ['collection', 'mallProductItems'] })
+    ]);
     if (selectedProduct?._id === record._id) {
       setSearchParams((current) => {
         const next = new URLSearchParams(current);
@@ -486,12 +614,13 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
       )
     },
     {
-      title: '封面与价格',
-      width: 220,
+      title: '封面 / 价格 / 资产数',
+      width: 260,
       render: (_, record) => (
         <Space direction="vertical" size={2}>
           <Typography.Text>{`${record.coverMark || 'A'} / ${record.buttonText || '查看详情'}`}</Typography.Text>
           <Typography.Text type="secondary">{`${formatPrice(record)} ${record.salesLabel ? `/ ${record.salesLabel}` : ''}`}</Typography.Text>
+          <Typography.Text type="secondary">{`已组合 ${productItemCountByProductId.get(record._id || '') || 0} 份资料资产`}</Typography.Text>
         </Space>
       )
     },
@@ -530,7 +659,7 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
             setProductDrawerOpen(true);
           }}
         >
-          编辑
+          编辑商品包
         </a>,
         <Popconfirm
           key="delete"
@@ -555,9 +684,9 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
         const asset = allAssets.find((item) => item._id === record.itemId);
         return (
           <Space direction="vertical" size={2}>
-            <Typography.Text strong>{record.displayName || '未填写内容项标题'}</Typography.Text>
+            <Typography.Text strong>{asset?.title || record.displayName || '未填写内容项标题'}</Typography.Text>
             <Typography.Text type="secondary">
-              {record.displayType || '资料'} / {record.displaySubTitle || '未填写副标题'}
+              {asset?.assetType || record.displayType || '资料'} / {asset?.subTitle || record.displaySubTitle || '未填写副标题'}
             </Typography.Text>
             <Typography.Text type="secondary">关联资料：{asset?.title || '未关联'}</Typography.Text>
           </Space>
@@ -832,6 +961,10 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
               <Tag>{`最近更新 ${lastUpdated}`}</Tag>
             </Space>
           </Space>
+          <div className="page-location-strip">
+            <Tag bordered={false} color="processing">{`当前位置 商城 / ${materialDirectionLabels[direction]}视角`}</Tag>
+            <Typography.Text type="secondary">主表只看前台真实顺序，商品卡、资产和权益放到下面分段工作台。</Typography.Text>
+          </div>
 
           <div className="home-workspace-compact-bar">
             <Typography.Text>当前维护：{materialDirectionLabels[direction]}</Typography.Text>
@@ -920,7 +1053,7 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
           {workspacePanel === 'products' ? (
             <>
               <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
-                这里管理的是商城主列表里直接展示的商品卡。老师改卡片标题、封面字、价格、按钮字，都会直接影响这页的实际展示。
+                这里管理的是商城主列表里直接展示的商品卡。老师在商品卡里可以直接挑选资料资产组成商品包，保存后前端会按同一组数据同步更新。
               </Typography.Paragraph>
               <Table<MallProductRecord>
                 rowKey={(record) => record._id || `${record.direction}-${record.stage}-${record.sortOrder}`}
@@ -937,7 +1070,7 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
           {workspacePanel === 'items' ? (
             <>
               <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
-                这张表更偏业务支撑，不是商城主列表的直接商品卡。如果后续要做商品详情、资料组合或权益发放，这里会继续用到。
+                这里展示的是当前商品包里已经勾选的资料资产顺序。老师通常不需要单独改这一层，优先在“商品卡”里直接勾选资产就够了。
               </Typography.Paragraph>
               <Table<MallProductItemRecord>
                 rowKey={(record) => record._id || `${record.productId}-${record.itemId}-${record.sortOrder}`}
@@ -992,7 +1125,14 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
           page={page}
           saving={updatePageMutation.isPending}
           canWrite={auth.permissions.canWrite}
-          onClose={() => setEditingSection(null)}
+          onClose={() => {
+            setEditingSection(null);
+            setSearchParams((current) => {
+              const next = new URLSearchParams(current);
+              next.delete('section');
+              return next;
+            });
+          }}
           onSave={async (payload) => handleSavePage(payload as unknown as Record<string, unknown>)}
         />
         <MediaPackageEditorDrawer
@@ -1000,13 +1140,23 @@ export function MediaContentPage({ auth }: MediaContentPageProps) {
           record={editingProduct}
           direction={direction}
           stage={editingProduct?.stage || selectedProduct?.stage || 'foundation'}
+          assetOptions={currentAssets}
+          selectedAssetIds={
+            editingProduct?._id
+              ? editingProduct.selectedAssetIds.length
+                ? editingProduct.selectedAssetIds
+                : allProductItems
+                    .filter((item) => item.productId === editingProduct._id && item.itemType === 'asset')
+                    .map((item) => item.itemId)
+              : []
+          }
           onOpenChange={(open) => {
             setProductDrawerOpen(open);
             if (!open) {
               setEditingProduct(null);
             }
           }}
-          onSubmit={handleSaveProduct}
+          onSubmit={handleSaveProductBundle}
         />
         <MediaItemEditorDrawer
           open={itemDrawerOpen}

@@ -1,6 +1,7 @@
-import { lazy, Suspense, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { App, Card, Result, Space, Spin, Table, Tag, Typography, type TableProps } from 'antd';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import type { AuthState } from '../api';
 import { api } from '../api';
 import { formatDateTime } from '../utils';
@@ -88,7 +89,9 @@ function buildSectionRows(page: AboutPageContent): AboutSectionRow[] {
 export function AboutContentPage({ auth }: AboutContentPageProps) {
   const { message } = App.useApp();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [editingSection, setEditingSection] = useState<AboutSectionId | null>(null);
+  const requestedSection = searchParams.get('section') as AboutSectionId | null;
 
   const aboutQuery = useQuery({
     queryKey: ['page', 'about'],
@@ -106,6 +109,13 @@ export function AboutContentPage({ auth }: AboutContentPageProps) {
   const rows = useMemo(() => buildSectionRows(page), [page]);
   const readyCount = rows.filter((item) => item.statusTone === 'success').length;
   const lastUpdated = formatDateTime(page._meta?.updatedAt || page._updatedAt);
+
+  useEffect(() => {
+    if (!requestedSection) return;
+    if (rows.some((item) => item.id === requestedSection)) {
+      setEditingSection(requestedSection);
+    }
+  }, [requestedSection, rows]);
 
   if (!auth.permissions.canRead) {
     return <Result status="403" title="暂无查看权限" subTitle="当前账号无法读取关于我们页面配置。" />;
@@ -193,6 +203,10 @@ export function AboutContentPage({ auth }: AboutContentPageProps) {
             <Tag>{`已成型 ${readyCount}/${rows.length}`}</Tag>
             <Tag>{`最近更新 ${lastUpdated}`}</Tag>
           </Space>
+          <div className="page-location-strip">
+            <Tag bordered={false} color="processing">当前位置 关于我们 / 页面区块总表</Tag>
+            <Typography.Text type="secondary">每一行都对应关于页从上到下的一块，点编辑后再看细字段。</Typography.Text>
+          </div>
           <div className="workspace-guide-grid">
             <div className="workspace-guide-card">
               <Typography.Text className="workspace-guide-label">建议修改顺序</Typography.Text>
@@ -240,7 +254,14 @@ export function AboutContentPage({ auth }: AboutContentPageProps) {
           page={page}
           canWrite={auth.permissions.canWrite}
           saving={updateMutation.isPending}
-          onClose={() => setEditingSection(null)}
+          onClose={() => {
+            setEditingSection(null);
+            setSearchParams((current) => {
+              const next = new URLSearchParams(current);
+              next.delete('section');
+              return next;
+            });
+          }}
           onSave={handleSave}
         />
       </Suspense>

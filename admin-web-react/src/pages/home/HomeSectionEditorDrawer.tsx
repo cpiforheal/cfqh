@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Alert, Button, Drawer, Form, Input, InputNumber, Select, Space, Typography } from 'antd';
+import { Alert, Button, Collapse, Drawer, Form, Input, InputNumber, Select, Space, Typography } from 'antd';
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { defaultHomePage, homeSectionModels, quickEntryKindOptions, subjectLabels, type HomePageContent, type HomeSectionId, type HomeSubjectKey, type LinkOpenType } from './types';
 
@@ -235,9 +235,20 @@ export function HomeSectionEditorDrawer({
         <Form.Item name={['learningCard', 'actionUrl']} label="按钮点击后去哪里" rules={[{ required: true, message: '请填写按钮跳转地址' }]}>
           <Input placeholder="/pages/question-bank/daily-question/index" disabled={!canWrite} />
         </Form.Item>
-        <Form.Item name={['learningCard', 'actionOpenType']} label="页面打开方式">
-          <Select options={openTypeOptions} disabled={!canWrite} />
-        </Form.Item>
+        <Collapse
+          ghost
+          items={[
+            {
+              key: 'daily-advanced',
+              label: '高级设置',
+              children: (
+                <Form.Item name={['learningCard', 'actionOpenType']} label="页面打开方式">
+                  <Select options={openTypeOptions} disabled={!canWrite} />
+                </Form.Item>
+              )
+            }
+          ]}
+        />
       </Space>
     );
   }
@@ -267,21 +278,34 @@ export function HomeSectionEditorDrawer({
                 <Form.Item name={[field.name, 'note']} label="入口副标题" rules={[{ required: true, message: '请填写入口副标题' }]}>
                   <Input placeholder="例如 保持手感" disabled={!canWrite} />
                 </Form.Item>
-                <Form.Item name={[field.name, 'kind']} label="图标类型" rules={[{ required: true, message: '请选择图标类型' }]}>
-                  <Select options={quickEntryKindOptions} disabled={!canWrite} />
-                </Form.Item>
-                <Form.Item name={[field.name, 'accent']} label="图标主色（可选）">
-                  <Input placeholder="#ffb6c1" disabled={!canWrite} />
-                </Form.Item>
-                <Form.Item name={[field.name, 'bg']} label="图标底色（可选）">
-                  <Input placeholder="#fff7f9" disabled={!canWrite} />
-                </Form.Item>
                 <Form.Item name={[field.name, 'url']} label="点击后去哪里" rules={[{ required: true, message: '请填写跳转地址' }]}>
                   <Input placeholder="/pages/question-bank/daily-question/index" disabled={!canWrite} />
                 </Form.Item>
-                <Form.Item name={[field.name, 'openType']} label="页面打开方式">
-                  <Select options={openTypeOptions} disabled={!canWrite} />
-                </Form.Item>
+                <Collapse
+                  ghost
+                  items={[
+                    {
+                      key: `quick-entry-advanced-${field.key}`,
+                      label: '高级设置',
+                      children: (
+                        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                          <Form.Item name={[field.name, 'kind']} label="图标类型" rules={[{ required: true, message: '请选择图标类型' }]}>
+                            <Select options={quickEntryKindOptions} disabled={!canWrite} />
+                          </Form.Item>
+                          <Form.Item name={[field.name, 'accent']} label="图标主色（可选）">
+                            <Input placeholder="#ffb6c1" disabled={!canWrite} />
+                          </Form.Item>
+                          <Form.Item name={[field.name, 'bg']} label="图标底色（可选）">
+                            <Input placeholder="#fff7f9" disabled={!canWrite} />
+                          </Form.Item>
+                          <Form.Item name={[field.name, 'openType']} label="页面打开方式">
+                            <Select options={openTypeOptions} disabled={!canWrite} />
+                          </Form.Item>
+                        </Space>
+                      )
+                    }
+                  ]}
+                />
                 <Button danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} disabled={!canWrite}>
                   删除这个入口
                 </Button>
@@ -398,6 +422,7 @@ export function HomeSectionEditorDrawer({
             message={`${sectionMeta.step} · ${sectionMeta.title}${sectionMeta.mode === 'subject' ? ` · ${subjectLabels[subjectKey]}` : ''}`}
             description={
               <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                <Typography.Text strong>{`前台位置：${sectionMeta.location}`}</Typography.Text>
                 <Typography.Text type="secondary">{sectionNoteMap[sectionId]}</Typography.Text>
                 <Typography.Text type="secondary">{sectionFieldHintMap[sectionId]}</Typography.Text>
                 <Typography.Text strong>{`当前摘要：${sectionPreview}`}</Typography.Text>

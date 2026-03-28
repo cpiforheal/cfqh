@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { App, Button, Card, Result, Segmented, Space, Spin, Table, Tag, Typography, type TableProps } from 'antd';
 import { EditOutlined } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -114,6 +114,7 @@ export function HomeContentPage({ auth }: HomeContentPageProps) {
   const [editingSection, setEditingSection] = useState<HomeSectionId | null>(null);
 
   const subjectKey = readSubjectKey(searchParams.get('subject'));
+  const requestedSection = searchParams.get('section') as HomeSectionId | null;
 
   const homePageQuery = useQuery({
     queryKey: ['page', 'home'],
@@ -132,6 +133,13 @@ export function HomeContentPage({ auth }: HomeContentPageProps) {
   const sections = useMemo(() => buildSectionRows(page, subjectKey), [page, subjectKey]);
   const readySectionCount = useMemo(() => countReadySections(sections), [sections]);
   const lastUpdated = formatDateTime(page._meta?.updatedAt || page._updatedAt);
+
+  useEffect(() => {
+    if (!requestedSection) return;
+    if (sections.some((item) => item.id === requestedSection)) {
+      setEditingSection(requestedSection);
+    }
+  }, [requestedSection, sections]);
 
   if (!auth.permissions.canRead) {
     return <Result status="403" title="暂无查看权限" subTitle="当前账号无法读取首页内容配置。" />;
@@ -247,6 +255,10 @@ export function HomeContentPage({ auth }: HomeContentPageProps) {
               <Tag>{`最近更新 ${lastUpdated}`}</Tag>
             </Space>
           </Space>
+          <div className="page-location-strip">
+            <Tag bordered={false} color="processing">{`当前位置 首页 / ${subjectLabels[subjectKey]}首页`}</Tag>
+            <Typography.Text type="secondary">前台位置和主表顺序完全一致，老师只需要从上往下找。</Typography.Text>
+          </div>
           <div className="home-workspace-compact-bar">
             <Typography.Text type="secondary">{`区块 ${homeSectionModels.length} 行`}</Typography.Text>
             <Typography.Text type="secondary">{`已成型 ${readySectionCount}/${homeSectionModels.length}`}</Typography.Text>
@@ -326,7 +338,14 @@ export function HomeContentPage({ auth }: HomeContentPageProps) {
             subjectKey={subjectKey}
             saving={updateMutation.isPending}
             canWrite={auth.permissions.canWrite}
-            onClose={() => setEditingSection(null)}
+            onClose={() => {
+              setEditingSection(null);
+              setSearchParams((current) => {
+                const next = new URLSearchParams(current);
+                next.delete('section');
+                return next;
+              });
+            }}
             onSave={handleSave}
           />
         </Suspense>
